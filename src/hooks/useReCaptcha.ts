@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { app } from '../firebase';
+import { recaptchaEnterpriseSiteKey } from '../config/environment';
 
-const SITE_KEY = '6LfdjDosAAAAAnRKcsZQSQLGYVA188hLY_O_naP';
+const SITE_KEY = recaptchaEnterpriseSiteKey;
 interface VerifyRecaptchaResponse {
   success: boolean;
   score: number | null;

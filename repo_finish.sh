@@ -6,6 +6,7 @@ for arg in "$@"; do [ "$arg" = "--dry-run" ] && DRY_RUN=1; done
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT_DIR"
+PROJECT_ID="${FIREBASE_PROJECT_ID:-ai-integra-course-v2}"
 LOG_DIR="$ROOT_DIR/reorg_logs"; mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/repo_finish_$(date -u +%Y%m%d-%H%M%S).log"
 say(){ printf '%s\n' "$*" | tee -a "$LOG_FILE" >&2; }
@@ -88,8 +89,8 @@ install_build(){
   run "npm run build || true"
 }
 
-firestore_backup(){ mkdir -p "$HOME/backups"; run "firebase firestore:export '$HOME/backups/firestore_$(date -Iseconds)' || true"; }
-apply_rules(){ run "firebase deploy --only firestore:rules || true"; }
+firestore_backup(){ mkdir -p "$HOME/backups"; run "firebase firestore:export '$HOME/backups/firestore_$(date -Iseconds)' --project '$PROJECT_ID' || true"; }
+apply_rules(){ run "firebase deploy --only firestore:rules --project '$PROJECT_ID' || true"; }
 migrate_firestore(){ run "node ./firestore_migrate.js --apply --manifest ./reorg_logs/firestore_migration_manifest.json || true"; }
 verify_stripe(){ env | awk -F= '/^STRIPE_/ {print "- present: "$1}' | tee -a "$LOG_FILE" >/dev/null || true; }
 health_check(){ run "curl -sS -o /dev/null -w '%{http_code} %{url_effective}\n' https://aiintegrationcourse.com || true"; }

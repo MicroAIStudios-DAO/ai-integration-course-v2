@@ -21,7 +21,7 @@ npm run deploy
 📋 **See [PRODUCTION_READINESS.md](PRODUCTION_READINESS.md) for deployment checklist**
 
 ### ⚠️ Pre-Deployment Requirements
-- [ ] Configure `FIREBASE_SERVICE_ACCOUNT_AI_INTEGRA_COURSE_V2` secret in GitHub
+- [ ] Configure `GCP_SA_KEY` secret in GitHub
 - [ ] Set OpenAI API key: `firebase functions:secrets:set OPENAI_API_KEY`
 - [ ] Deploy Firestore rules: `firebase deploy --only firestore:rules`
 

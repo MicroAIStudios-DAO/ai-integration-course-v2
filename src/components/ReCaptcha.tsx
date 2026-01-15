@@ -1,4 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
+import { recaptchaEnterpriseSiteKey } from '../config/environment';
 
 // Note: Window.grecaptcha type is declared in src/hooks/useReCaptcha.ts
 
@@ -7,7 +8,7 @@ interface ReCaptchaProps {
   action: string;
 }
 
-const SITE_KEY = '6LfG8DgsAAAAAG6uFvWgQOFNgy1eR1qW6HH7Ojkh';
+const SITE_KEY = recaptchaEnterpriseSiteKey;
 const ReCaptcha: React.FC<ReCaptchaProps> = ({ onVerify, action }) => {
   
   const handleVerify = useCallback(async () => {

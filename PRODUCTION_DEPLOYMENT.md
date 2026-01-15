@@ -18,7 +18,7 @@ The following secrets must be configured in GitHub repository settings (Settings
 
 ### 1. Firebase Service Account
 ```
-FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE
+GCP_SA_KEY
 ```
 This is the Firebase service account JSON that enables GitHub Actions to deploy to Firebase Hosting.
 
@@ -300,7 +300,7 @@ firebase use ai-integra-course-v2
 **Issue:** GitHub Actions deployment fails
 ```
 # Check GitHub Secrets are configured:
-# - FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE
+# - GCP_SA_KEY
 # Check workflow logs for specific errors
 ```
 

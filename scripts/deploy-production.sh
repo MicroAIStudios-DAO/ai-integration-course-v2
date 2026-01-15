@@ -15,6 +15,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+PROJECT_ID=${FIREBASE_PROJECT_ID:-ai-integra-course-v2}
 
 # Function to print colored output
 print_status() {
@@ -62,9 +63,9 @@ else
     
     # Verify gcloud project is set
     CURRENT_PROJECT=$(gcloud config get-value project 2>/dev/null || echo "")
-    if [ "$CURRENT_PROJECT" != "ai-integra-course-v2" ]; then
-        print_status "Setting gcloud project to ai-integra-course-v2..."
-        gcloud config set project ai-integra-course-v2 2>/dev/null || {
+    if [ "$CURRENT_PROJECT" != "$PROJECT_ID" ]; then
+        print_status "Setting gcloud project to $PROJECT_ID..."
+        gcloud config set project "$PROJECT_ID" 2>/dev/null || {
             print_warning "Could not set gcloud project (continuing anyway)"
         }
     fi
@@ -74,7 +75,7 @@ fi
 if [ ! -f "FIREBASE_OPTIMIZATION_REPORT.md" ]; then
     print_status "Running Firebase optimization for first-time setup..."
     if [ -f "scripts/optimize-firebase.sh" ]; then
-        ./scripts/optimize-firebase.sh --project ai-integra-course-v2 || print_warning "Optimization script encountered issues (non-critical)"
+        ./scripts/optimize-firebase.sh --project "$PROJECT_ID" || print_warning "Optimization script encountered issues (non-critical)"
     else
         print_warning "Optimization script not found. Skipping optimization."
     fi
@@ -124,7 +125,6 @@ print_success "Build artifacts verified"
 print_status "Deploying to Firebase..."
 
 # Respect overrides while defaulting to the production IDs
-PROJECT_ID=${FIREBASE_PROJECT_ID:-ai-integra-course-v2}
 SITE_ID=${FIREBASE_HOSTING_SITE:-$PROJECT_ID}
 FUNCTIONS_REGION=${FIREBASE_FUNCTIONS_REGION:-us-central1}
 
@@ -176,6 +176,6 @@ fi
 
 echo "=================================================="
 echo "✅ Production deployment completed!"
-echo "🌐 Frontend: https://ai-integra-course-v2.web.app"
-echo "🔧 Firebase Console: https://console.firebase.google.com/project/ai-integra-course-v2"
+echo "🌐 Frontend: https://$SITE_ID.web.app"
+echo "🔧 Firebase Console: https://console.firebase.google.com/project/$PROJECT_ID"
 echo "=================================================="

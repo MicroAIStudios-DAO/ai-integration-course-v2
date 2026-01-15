@@ -198,6 +198,10 @@ export const config: EnvironmentConfig = createEnvironmentConfig();
 
 // Export individual configurations for convenience
 export const firebaseConfig = config.firebase;
+export const recaptchaEnterpriseSiteKey = getEnvVar(
+  'REACT_APP_RECAPTCHA_ENTERPRISE_KEY',
+  '6LfdjDosAAAAANnRKcsZQSQLGYVA188hLY_O_naP'
+);
 export const appConfig = config.app;
 
 // Export utility functions for testing

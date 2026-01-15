@@ -2,7 +2,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { RecaptchaEnterpriseServiceClient } from "@google-cloud/recaptcha-enterprise";
 
 const PROJECT_ID = "ai-integra-course-v2";
-const SITE_KEY = "6LfdjDosAAAAAnRKcsZQSQLGYVA188hLY_O_naP";
+const SITE_KEY = "6LfdjDosAAAAANnRKcsZQSQLGYVA188hLY_O_naP";
 // Minimum score threshold (0.0 to 1.0, higher is more likely human)
 const MIN_SCORE_THRESHOLD = 0.5;
 

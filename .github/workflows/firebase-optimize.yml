@@ -39,12 +39,12 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
       
       - name: Setup Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
-          project_id: goldenaige
+          project_id: ai-integra-course-v2
           
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
@@ -57,7 +57,7 @@ jobs:
       - name: Run Firebase optimization
         run: |
           chmod +x scripts/optimize-firebase.sh
-          ./scripts/optimize-firebase.sh --project goldenaige
+          ./scripts/optimize-firebase.sh --project ai-integra-course-v2
         continue-on-error: true
         
       - name: Run deployment validation

@@ -25,7 +25,7 @@ jobs:
       - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@v2
         with:
-          project_id: goldenaige
+          project_id: ai-integra-course-v2
           install_components: 'beta'
 
       - name: Configure Docker for Artifact Registry

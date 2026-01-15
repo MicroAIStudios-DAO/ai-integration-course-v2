@@ -427,7 +427,7 @@ STRIPE_SECRET_KEY=your-stripe-secret
 
 2. **Add to GitHub Secrets**
    - Go to: Repository → Settings → Secrets → Actions
-   - Name: `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE`
+   - Name: `GCP_SA_KEY`
    - Value: Content of `key.json`
 
 3. **Workflow already configured**

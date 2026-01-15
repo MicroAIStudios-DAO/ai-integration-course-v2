@@ -22,7 +22,7 @@ npm run deploy
 
 Go to: https://github.com/Gnoscenti/ai-integration-course/settings/secrets/actions
 
-Add: `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE`
+Add: `GCP_SA_KEY`
 
 Get value from: Firebase Console → Project Settings → Service Accounts → Generate new private key
 
