@@ -21,7 +21,7 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
       const origin = window.location.origin;
       const createCheckoutSession = httpsCallable(functions, 'createCheckoutSession');
       const result = await createCheckoutSession({
-        priceId: priceId || "default_price_id",
+        priceId: priceId || "price_1SmgMKKnsQ10RdBLEWL2w8e4",
         successUrl: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${origin}/payment-cancel`
       });

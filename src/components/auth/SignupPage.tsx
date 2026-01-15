@@ -15,7 +15,7 @@ const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { executeAndVerify, isLoaded } = useReCaptcha();
-  const priceId = process.env.REACT_APP_STRIPE_PRICE_ID || "default_price_id";
+  const priceId = process.env.REACT_APP_STRIPE_PRICE_ID || "price_1SmgMKKnsQ10RdBLEWL2w8e4";
   const queryParams = new URLSearchParams(location.search);
   const checkoutCancelled = queryParams.get("checkout") === "cancelled";
 

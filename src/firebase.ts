@@ -14,7 +14,7 @@ const db = getFirestore(app);
 let analytics: ReturnType<typeof getAnalytics> | null = null;
 if (typeof window !== "undefined") {
   if (process.env.REACT_APP_APPCHECK_DEBUG === "true") {
-    (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+    (globalThis as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
   }
 
   try {
