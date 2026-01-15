@@ -1,30 +1,33 @@
 name: Deploy to Firebase Hosting
+
 on:
   push:
     branches:
       - main
   workflow_dispatch:
+
 permissions:
   contents: read
   checks: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     env:
-      # Firebase configuration - these are PUBLIC keys safe to expose in client bundle
-      REACT_APP_FIREBASE_API_KEY: ${{ secrets.REACT_APP_FIREBASE_API_KEY || 'AIzaSyC7f1xf4Rx1fvwn9_1luGK4m1aQonFiibE' }}
-      REACT_APP_FIREBASE_AUTH_DOMAIN: ${{ secrets.REACT_APP_FIREBASE_AUTH_DOMAIN || 'goldenaige.firebaseapp.com' }}
-      REACT_APP_FIREBASE_PROJECT_ID: ${{ secrets.REACT_APP_FIREBASE_PROJECT_ID || 'goldenaige' }}
-      REACT_APP_FIREBASE_STORAGE_BUCKET: ${{ secrets.REACT_APP_FIREBASE_STORAGE_BUCKET || 'goldenaige.firebasestorage.app' }}
-      REACT_APP_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.REACT_APP_FIREBASE_MESSAGING_SENDER_ID || '591959645726' }}
-      REACT_APP_FIREBASE_APP_ID: ${{ secrets.REACT_APP_FIREBASE_APP_ID || '1:591959645726:web:7ef2fcfc07f64cbfa5ec8b' }}
-      REACT_APP_FIREBASE_MEASUREMENT_ID: ${{ secrets.REACT_APP_FIREBASE_MEASUREMENT_ID || 'G-W5M6NQZK7D' }}
+      REACT_APP_FIREBASE_API_KEY: AIzaSyDbkztazekIxE8KUB2MydZXLVW7p52CUOQ
+      REACT_APP_FIREBASE_AUTH_DOMAIN: ai-integra-course-v2.firebaseapp.com
+      REACT_APP_FIREBASE_PROJECT_ID: ai-integra-course-v2
+      REACT_APP_FIREBASE_STORAGE_BUCKET: ai-integra-course-v2.firebasestorage.app
+      REACT_APP_FIREBASE_MESSAGING_SENDER_ID: "313115890482"
+      REACT_APP_FIREBASE_APP_ID: 1:313115890482:web:cca32371be86c0863cbd2b
+      REACT_APP_FIREBASE_MEASUREMENT_ID: G-15SDDF1S5S
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: 'npm'
@@ -42,6 +45,6 @@ jobs:
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE }}'
+          firebaseServiceAccount: '${{ secrets.GCP_SA_KEY }}'
           channelId: live
-          projectId: goldenaige
+          projectId: ai-integra-course-v2
