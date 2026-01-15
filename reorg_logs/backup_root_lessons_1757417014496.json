@@ -1,0 +1,50 @@
+{
+  "lessons/embeddings": {
+    "tier": "premium",
+    "md": "# Building the Embed Pipeline\n\nPremium deep dive into the embedding service and ingestion workflows.\n\n- Optimize model loading and batching\n- Index tuning (lists/probes) for pgvector\n- Pagination and deduplication strategies\n\n",
+    "videoId": null,
+    "title": "Building the Embed Pipeline",
+    "slug": "embeddings",
+    "thumbnailUrl": "",
+    "updatedAt": {
+      "_seconds": 1757228282,
+      "_nanoseconds": 265000000
+    }
+  },
+  "lessons/intro": {
+    "tier": "free",
+    "md": "# Welcome to Allie\n\nThis free lesson introduces the Allie course and the architecture of the embed pipeline you will build.\n\n- Ingest YouTube transcripts\n- Generate embeddings via Sentence Transformers\n- Store vectors in Supabase (pgvector)\n- Explore similarity search\n\n",
+    "videoId": "YOUR_INTRO_VIDEO_ID",
+    "title": "Welcome to Allie",
+    "slug": "intro",
+    "thumbnailUrl": "",
+    "updatedAt": {
+      "_seconds": 1757228281,
+      "_nanoseconds": 787000000
+    }
+  },
+  "lessons/setup": {
+    "tier": "free",
+    "md": "# Setup: Supabase and Firebase\n\nIn this lesson, you will provision Supabase (for Postgres + pgvector) and Firebase (Auth + Functions + Firestore).\n\nSteps:\n- Create a Supabase project and run `allie/sql/schema.sql` in the SQL Editor.\n- Create a Firebase project, enable Authentication and Firestore.\n- Deploy functions in `firebase/functions` and set Stripe keys.\n\n",
+    "videoId": "YOUR_SETUP_VIDEO_ID",
+    "title": "Setup: Supabase, Firebase",
+    "slug": "setup",
+    "thumbnailUrl": "",
+    "updatedAt": {
+      "_seconds": 1757228282,
+      "_nanoseconds": 73000000
+    }
+  },
+  "lessons/stripe": {
+    "tier": "premium",
+    "md": "# Stripe Integration End-to-End\n\nPremium lesson on integrating Stripe with Firebase Functions and gating premium content.\n\n- Create Checkout Sessions\n- Webhook handling for subscription lifecycle\n- Firestore rules for premium gating\n\n",
+    "videoId": null,
+    "title": "Stripe Integration End-to-End",
+    "slug": "stripe",
+    "thumbnailUrl": "",
+    "updatedAt": {
+      "_seconds": 1757228282,
+      "_nanoseconds": 463000000
+    }
+  }
+}

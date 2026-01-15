@@ -1,0 +1,63 @@
+name: iOS (Capacitor) build
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - "main"
+
+jobs:
+  ios:
+    name: Build iOS (only if ios/ exists)
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect native project
+        id: detect
+        run: |
+          if [ -d ios ] && ls ios | grep -qiE '\\.xcworkspace$|\\.xcodeproj$'; then
+            echo "has_ios=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_ios=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node
+        if: steps.detect.outputs.has_ios == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps & build web
+        if: steps.detect.outputs.has_ios == 'true'
+        run: |
+          npm ci
+          npm run build
+          npx cap copy ios
+
+      - name: Setup Xcode
+        if: steps.detect.outputs.has_ios == 'true'
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.0'
+
+      - name: Build iOS (simulator)
+        if: steps.detect.outputs.has_ios == 'true'
+        env:
+          SCHEME: ${{ vars.XCODE_SCHEME || 'App' }}
+        run: |
+          set -euo pipefail
+          dev=$(xcrun simctl list devices available | sed -n 's/.*(Booted)//p;q' || true)
+          if [ -z "$dev" ]; then
+            xcrun simctl boot "iPhone 15" || true
+          fi
+          xcodebuild \
+            -workspace ios/App/App.xcworkspace \
+            -scheme "$SCHEME" \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+            build-for-testing

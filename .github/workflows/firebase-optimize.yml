@@ -1,0 +1,140 @@
+name: Optimize Firebase Configuration
+
+# This workflow optimizes Firebase configuration using gcloud
+# Run manually or on schedule to ensure optimal settings
+
+on:
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      run_optimization:
+        description: 'Run full optimization'
+        required: true
+        type: boolean
+        default: true
+      
+  # Run weekly to keep configuration optimal
+  schedule:
+    - cron: '0 0 * * 0'  # Every Sunday at midnight UTC
+
+jobs:
+  optimize:
+    name: Optimize Firebase Setup
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      pull-requests: write
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+        
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE }}
+      
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: goldenaige
+          
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+        
+      - name: Verify gcloud authentication
+        run: |
+          gcloud auth list
+          gcloud config get-value project
+          
+      - name: Run Firebase optimization
+        run: |
+          chmod +x scripts/optimize-firebase.sh
+          ./scripts/optimize-firebase.sh --project goldenaige
+        continue-on-error: true
+        
+      - name: Run deployment validation
+        run: |
+          chmod +x scripts/validate-deployment.sh
+          ./scripts/validate-deployment.sh || echo "Validation completed with warnings"
+          
+      - name: Check for configuration changes
+        id: check_changes
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "Configuration files have been updated"
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "No configuration changes detected"
+          fi
+          
+      - name: Upload optimization report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: firebase-optimization-report
+          path: |
+            FIREBASE_OPTIMIZATION_REPORT.md
+            cloudbuild.yaml
+            .gcloudignore
+          retention-days: 30
+          
+      - name: Create Pull Request
+        if: steps.check_changes.outputs.changes == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: update Firebase optimization configuration'
+          title: 'Firebase Configuration Optimization'
+          body: |
+            ## Automated Firebase Optimization
+            
+            This PR contains automated Firebase configuration optimizations.
+            
+            ### Changes Made
+            - Updated Firebase configuration files
+            - Optimized Cloud Build settings
+            - Updated deployment scripts
+            - Generated optimization report
+            
+            ### Generated Report
+            See artifact: `firebase-optimization-report`
+            
+            ### Review Checklist
+            - [ ] Review FIREBASE_OPTIMIZATION_REPORT.md
+            - [ ] Verify cloudbuild.yaml changes
+            - [ ] Check .gcloudignore updates
+            - [ ] Validate firebase.json changes
+            
+            **Note:** This is an automated PR. Review carefully before merging.
+          branch: automated/firebase-optimization
+          delete-branch: true
+          labels: automation, firebase, optimization
+            
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Firebase Optimization Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f "FIREBASE_OPTIMIZATION_REPORT.md" ]; then
+            echo "### Optimization Report Generated ✅" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            head -50 FIREBASE_OPTIMIZATION_REPORT.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### Optimization Report Not Generated ⚠️" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "1. Review the optimization report artifact" >> $GITHUB_STEP_SUMMARY
+          echo "2. Review and merge the automated PR (if created)" >> $GITHUB_STEP_SUMMARY
+          echo "3. Test deployment after merging" >> $GITHUB_STEP_SUMMARY

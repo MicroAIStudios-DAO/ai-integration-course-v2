@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1a1a2e" />
+    
+    <!-- Primary Meta Tags -->
+    <title>AI Integration Course | Outthink the AI Hype</title>
+    <meta name="title" content="AI Integration Course | Outthink the AI Hype" />
+    <meta name="description" content="Unlock your potential in the age of AI with Golden Age Mindset. Tools, insights, and strategies to outthink the hype and invest with confidence. Start your 7-day free trial today!" />
+    <meta name="keywords" content="AI course, artificial intelligence, machine learning, AI investment, AI strategy, tech education, online learning, AI certification" />
+    <meta name="author" content="Golden Age Mindset" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <link rel="canonical" href="https://aiintegrationcourse.com/" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://aiintegrationcourse.com/" />
+    <meta property="og:title" content="AI Integration Course | Outthink the AI Hype" />
+    <meta property="og:description" content="Unlock your potential in the age of AI with Golden Age Mindset. Tools, insights, and strategies to outthink the hype and invest with confidence." />
+    <meta property="og:image" content="https://aiintegrationcourse.com/images/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="AI Integration Course" />
+    <meta property="og:locale" content="en_US" />
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://aiintegrationcourse.com/" />
+    <meta name="twitter:title" content="AI Integration Course | Outthink the AI Hype" />
+    <meta name="twitter:description" content="Unlock your potential in the age of AI. Tools, insights, and strategies to outthink the hype and invest with confidence." />
+    <meta name="twitter:image" content="https://aiintegrationcourse.com/images/og-image.png" />
+    <meta name="twitter:creator" content="@GoldenAgeMindset" />
+    
+    <!-- Apple / iOS -->
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="AI Course" />
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://firestore.googleapis.com" />
+    <link rel="preconnect" href="https://www.googletagmanager.com" />
+    
+    <!-- DNS Prefetch -->
+    <link rel="dns-prefetch" href="https://api.openai.com" />
+    <link rel="dns-prefetch" href="https://js.stripe.com" />
+    
+    <!-- Structured Data - Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Golden Age Mindset",
+      "alternateName": "AI Integration Course",
+      "url": "https://aiintegrationcourse.com",
+      "logo": "https://aiintegrationcourse.com/images/logo.png",
+      "description": "Educational platform for AI integration and investment strategies",
+      "sameAs": [
+        "https://twitter.com/GoldenAgeMindset",
+        "https://linkedin.com/company/golden-age-mindset"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "email": "support@aiintegrationcourse.com",
+        "contactType": "customer support"
+      }
+    }
+    </script>
+    
+    <!-- Structured Data - Course -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Course",
+      "name": "AI Integration Course",
+      "description": "Comprehensive course on AI integration and investment strategies. Learn to outthink the AI hype and invest with confidence.",
+      "provider": {
+        "@type": "Organization",
+        "name": "Golden Age Mindset",
+        "sameAs": "https://aiintegrationcourse.com"
+      },
+      "offers": {
+        "@type": "Offer",
+        "category": "Subscription",
+        "price": "0",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock",
+        "validFrom": "2024-01-01",
+        "description": "7-day free trial, then premium subscription"
+      },
+      "educationalLevel": "Beginner to Advanced",
+      "teaches": ["Artificial Intelligence", "Machine Learning", "AI Investment", "Tech Strategy"],
+      "inLanguage": "en",
+      "hasCourseInstance": {
+        "@type": "CourseInstance",
+        "courseMode": "online",
+        "courseWorkload": "PT20H"
+      }
+    }
+    </script>
+    
+    <!-- Structured Data - WebSite with SearchAction -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "AI Integration Course",
+      "url": "https://aiintegrationcourse.com",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://aiintegrationcourse.com/search?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+    
+    <!-- Noscript fallback styles -->
+    <noscript>
+      <style>
+        .no-js-message {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+          padding: 2rem;
+          text-align: center;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+          background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+          color: #fff;
+        }
+        .no-js-message h1 {
+          font-size: 2rem;
+          margin-bottom: 1rem;
+        }
+        .no-js-message p {
+          font-size: 1.1rem;
+          opacity: 0.8;
+          max-width: 500px;
+        }
+      </style>
+    </noscript>
+  </head>
+  <body>
+    <noscript>
+      <div class="no-js-message">
+        <h1>AI Integration Course</h1>
+        <p>Welcome to AI Integration Course by Golden Age Mindset. Please enable JavaScript to access our interactive learning platform with AI-powered tutoring, video lessons, and progress tracking.</p>
+        <p style="margin-top: 1rem;">
+          <strong>Features include:</strong><br/>
+          • Comprehensive AI & Investment courses<br/>
+          • Interactive AI tutor assistance<br/>
+          • Progress tracking & certificates<br/>
+          • 7-day free trial
+        </p>
+        <p style="margin-top: 2rem; font-size: 0.9rem;">
+          Contact: support@aiintegrationcourse.com
+        </p>
+      </div>
+    </noscript>
+    <div id="root"></div>
+  </body>
+</html>

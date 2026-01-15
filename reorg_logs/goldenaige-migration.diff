@@ -1,0 +1,1867 @@
+--- BUILD_DEPLOYMENT_GUIDE.md
++++ BUILD_DEPLOYMENT_GUIDE.md
+@@ -87,10 +87,10 @@
+ ```bash
+ # Ensure you are authenticated and targeting the correct project
+ gcloud auth login
+-gcloud config set project goldenaige
++gcloud config set project ai-integra-course-v2
+ 
+ # Confirm that the latest hosting release is live
+-gcloud firebase hosting:releases list --site goldenaige --limit=1
++gcloud firebase hosting:releases list --site ai-integra-course-v2 --limit=1
+ 
+ # Confirm that Cloud Functions are deployed in the expected region
+ gcloud functions list --regions us-central1
+
+--- DEPLOYMENT.md
++++ DEPLOYMENT.md
+@@ -38,7 +38,7 @@
+ 4. **gcloud CLI**: Install the [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) and authenticate:
+    ```bash
+    gcloud auth login
+-   gcloud config set project goldenaige
++   gcloud config set project ai-integra-course-v2
+    ```
+ 
+ ## Deployment Process
+@@ -66,10 +66,10 @@
+ After Firebase finishes deploying, verify that both hosting and Cloud Functions are live using the gcloud CLI:
+ ```bash
+ # Confirm latest hosting release
+-gcloud firebase hosting:releases list --project goldenaige --site goldenaige --limit=1
++gcloud firebase hosting:releases list --project ai-integra-course-v2 --site ai-integra-course-v2 --limit=1
+ 
+ # Confirm Cloud Functions deployment in the target region
+-gcloud functions list --project goldenaige --regions us-central1
++gcloud functions list --project ai-integra-course-v2 --regions us-central1
+ ```
+ The commands above provide an immediate status check for the frontend (Firebase Hosting) and backend (Cloud Functions) surfaces.
+ 
+
+--- DEPLOYMENT_STATUS.md
++++ DEPLOYMENT_STATUS.md
+@@ -2,7 +2,7 @@
+ 
+ **Date**: October 20, 2025  
+ **Project**: AI Integration Course  
+-**Firebase Project**: goldenaige  
++**Firebase Project**: ai-integra-course-v2  
+ **Repository**: github.com/Gnoscenti/ai-integration-course  
+ **Branch**: copilot/redeploy-commit  
+ **Commit**: 7182ea5 - "Adjust CI build and fix firebase optimize workflow"  
+@@ -126,7 +126,7 @@
+ npm run deploy:functions
+ 
+ # Deploy everything
+-firebase deploy --project goldenaige
++firebase deploy --project ai-integra-course-v2
+ ```
+ 
+ ### Option 3: Deployment Script
+@@ -156,7 +156,7 @@
+ 
+ **How to obtain the service account:**
+ 1. Go to [Firebase Console](https://console.firebase.google.com/)
+-2. Select project `goldenaige`
++2. Select project `ai-integra-course-v2`
+ 3. Project Settings → Service Accounts
+ 4. Click "Generate new private key"
+ 5. Copy the entire JSON content
+@@ -167,13 +167,13 @@
+ **Action Required**: Configure OpenAI API key for AI Tutor
+ 
+ ```bash
+-firebase functions:secrets:set OPENAI_API_KEY --project goldenaige
++firebase functions:secrets:set OPENAI_API_KEY --project ai-integra-course-v2
+ ```
+ 
+ **Optional** (for payment features):
+ ```bash
+-firebase functions:secrets:set STRIPE_SECRET_KEY --project goldenaige
+-firebase functions:secrets:set STRIPE_WEBHOOK_SECRET --project goldenaige
++firebase functions:secrets:set STRIPE_SECRET_KEY --project ai-integra-course-v2
++firebase functions:secrets:set STRIPE_WEBHOOK_SECRET --project ai-integra-course-v2
+ ```
+ 
+ #### 3. Deploy Firestore Security Rules ⚠️
+@@ -181,7 +181,7 @@
+ **Action Required**: Deploy security rules to protect data
+ 
+ ```bash
+-firebase deploy --only firestore:rules --project goldenaige
++firebase deploy --only firestore:rules --project ai-integra-course-v2
+ ```
+ 
+ ### Recommended (Should Complete)
+@@ -193,7 +193,7 @@
+ 
+ - **Backup Firestore Data**: Create backup before migration
+   ```bash
+-  firebase firestore:export backup_$(date +%Y%m%d) --project goldenaige
++  firebase firestore:export backup_$(date +%Y%m%d) --project ai-integra-course-v2
+   ```
+ 
+ - **Test Build Locally**: Verify everything works
+@@ -217,7 +217,7 @@
+ After deploying, verify:
+ 
+ ### Website Access
+-- [ ] https://goldenaige.web.app loads
++- [ ] https://ai-integra-course-v2.web.app loads
+ - [ ] https://aiintegrationcourse.com loads (if DNS configured)
+ - [ ] Homepage displays correctly
+ - [ ] Navigation works
+@@ -259,8 +259,8 @@
+ 
+ ### CLI Rollback
+ ```bash
+-firebase hosting:channel:list --project goldenaige
+-firebase hosting:clone goldenaige:VERSION_ID goldenaige:live
++firebase hosting:channel:list --project ai-integra-course-v2
++firebase hosting:clone ai-integra-course-v2:VERSION_ID ai-integra-course-v2:live
+ ```
+ 
+ ### Code Rollback
+@@ -308,9 +308,9 @@
+ 
+ ## Production URLs
+ 
+-- **Primary**: https://goldenaige.web.app
++- **Primary**: https://ai-integra-course-v2.web.app
+ - **Custom Domain**: https://aiintegrationcourse.com (if configured)
+-- **Firebase Console**: https://console.firebase.google.com/project/goldenaige
++- **Firebase Console**: https://console.firebase.google.com/project/ai-integra-course-v2
+ 
+ ## Next Steps
+ 
+
+--- DEPLOYMENT_SUMMARY.md
++++ DEPLOYMENT_SUMMARY.md
+@@ -160,8 +160,8 @@
+ 
+ ## Firebase Project Configuration
+ 
+-- **Project ID:** goldenaige
+-- **Hosting URL:** https://goldenaige.web.app
++- **Project ID:** ai-integra-course-v2
++- **Hosting URL:** https://ai-integra-course-v2.web.app
+ - **Custom Domain:** https://aiintegrationcourse.com
+ - **Node Runtime:** 20.x
+ - **Build Output:** `build/` directory
+@@ -174,7 +174,7 @@
+ 1. **Seed Lessons to Firestore**
+    ```bash
+    source venv/bin/activate
+-   python allie/tools/seed_lessons_firestore.py --project goldenaige
++   python allie/tools/seed_lessons_firestore.py --project ai-integra-course-v2
+    ```
+ 
+ 2. **Backend API** (Flask/FastAPI)
+@@ -233,7 +233,7 @@
+ firebase hosting:channel:list
+ 
+ # Rollback if needed
+-firebase hosting:clone <previous-version> goldenaige:live
++firebase hosting:clone <previous-version> ai-integra-course-v2:live
+ ```
+ 
+ ## Support Resources
+
+--- FIREBASE_BUILD_FAILURES_RESOLVED.md
++++ FIREBASE_BUILD_FAILURES_RESOLVED.md
+@@ -133,8 +133,8 @@
+ 
+ ### How to Get the Value:
+ 
+-1. Go to [Google Cloud Console](https://console.cloud.google.com/iam-admin/serviceaccounts?project=goldenaige)
+-2. Select your project: **goldenaige**
++1. Go to [Google Cloud Console](https://console.cloud.google.com/iam-admin/serviceaccounts?project=ai-integra-course-v2)
++2. Select your project: **ai-integra-course-v2**
+ 3. Find or create a service account with these permissions:
+    - Firebase Admin
+    - Cloud Functions Admin (if using functions)
+@@ -162,7 +162,7 @@
+ 1. **Automatic Deployment on Push to Main:**
+    - Workflow: `firebase-hosting-merge.yml`
+    - Triggers: Every push to main branch
+-   - Result: Deploys to https://goldenaige.web.app
++   - Result: Deploys to https://ai-integra-course-v2.web.app
+ 
+ 2. **Preview Deployments on Pull Requests:**
+    - Workflow: `firebase-hosting-pull-request.yml`
+@@ -217,12 +217,12 @@
+    - Should show green checkmark ✅
+ 
+ 2. **Check Firebase Console:**
+-   - Go to [Firebase Console](https://console.firebase.google.com/project/goldenaige/hosting)
++   - Go to [Firebase Console](https://console.firebase.google.com/project/ai-integra-course-v2/hosting)
+    - Should show new deployment
+    - Click "View" to see your live site
+ 
+ 3. **Visit Your Site:**
+-   - URL: https://goldenaige.web.app
++   - URL: https://ai-integra-course-v2.web.app
+    - Should load without errors
+ 
+ ---
+@@ -295,7 +295,7 @@
+ 2. **Set the GitHub secret** - `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE`
+ 3. **Merge this PR** - To main branch
+ 4. **Monitor deployment** - GitHub Actions tab
+-5. **Verify site is live** - https://goldenaige.web.app
++5. **Verify site is live** - https://ai-integra-course-v2.web.app
+ 
+ ---
+ 
+
+--- FIREBASE_DEPLOYMENT_FIX.md
++++ FIREBASE_DEPLOYMENT_FIX.md
+@@ -54,8 +54,8 @@
+ **Secret Name:** `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE`
+ 
+ **How to get the value:**
+-1. Go to [Google Cloud Console](https://console.cloud.google.com/iam-admin/serviceaccounts?project=goldenaige)
+-2. Select your project: `goldenaige`
++1. Go to [Google Cloud Console](https://console.cloud.google.com/iam-admin/serviceaccounts?project=ai-integra-course-v2)
++2. Select your project: `ai-integra-course-v2`
+ 3. Find or create service account with Firebase Admin role
+ 4. Create a JSON key
+ 5. Copy the entire JSON content
+@@ -105,7 +105,7 @@
+ 
+ ### Firebase Project Configuration
+ 
+-- **Project ID:** goldenaige
++- **Project ID:** ai-integra-course-v2
+ - **Hosting public directory:** build/
+ - **Firestore database:** (default)
+ - **Firestore rules:** premium_rules.rules
+@@ -132,7 +132,7 @@
+ 1. **Merge this PR** to main branch
+ 2. **Verify the secret** `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE` is set
+ 3. **Monitor the deployment** in GitHub Actions tab
+-4. **Check your site** at https://goldenaige.web.app
++4. **Check your site** at https://ai-integra-course-v2.web.app
+ 
+ The deployment should complete successfully within 2-3 minutes.
+ 
+
+--- FIREBASE_OPTIMIZATION_GUIDE.md
++++ FIREBASE_OPTIMIZATION_GUIDE.md
+@@ -43,7 +43,7 @@
+    gcloud auth login
+    
+    # Set project
+-   gcloud config set project goldenaige
++   gcloud config set project ai-integra-course-v2
+    ```
+ 
+ 3. **Firebase CLI**
+@@ -55,7 +55,7 @@
+    firebase login
+    
+    # Select project
+-   firebase use goldenaige
++   firebase use ai-integra-course-v2
+    ```
+ 
+ ### Repository Setup
+@@ -80,7 +80,7 @@
+ chmod +x scripts/optimize-firebase.sh
+ 
+ # Run optimization
+-./scripts/optimize-firebase.sh --project goldenaige
++./scripts/optimize-firebase.sh --project ai-integra-course-v2
+ ```
+ 
+ **What this script does:**
+@@ -301,7 +301,7 @@
+ 1. **Test Production Site**
+    ```bash
+    # Open in browser
+-   open https://goldenaige.web.app
++   open https://ai-integra-course-v2.web.app
+    open https://aiintegrationcourse.com
+    ```
+ 
+@@ -386,16 +386,16 @@
+ **Solution:**
+ ```bash
+ # Verify project access
+-gcloud projects get-iam-policy goldenaige
++gcloud projects get-iam-policy ai-integra-course-v2
+ 
+ # Check service account roles
+-gcloud projects get-iam-policy goldenaige \
++gcloud projects get-iam-policy ai-integra-course-v2 \
+   --flatten="bindings[].members" \
+-  --filter="bindings.members:serviceAccount:firebase-deploy@goldenaige.iam.gserviceaccount.com"
++  --filter="bindings.members:serviceAccount:firebase-deploy@ai-integra-course-v2.iam.gserviceaccount.com"
+ 
+ # Add missing roles
+-gcloud projects add-iam-policy-binding goldenaige \
+-  --member="serviceAccount:firebase-deploy@goldenaige.iam.gserviceaccount.com" \
++gcloud projects add-iam-policy-binding ai-integra-course-v2 \
++  --member="serviceAccount:firebase-deploy@ai-integra-course-v2.iam.gserviceaccount.com" \
+   --role="roles/firebase.admin"
+ ```
+ 
+@@ -428,7 +428,7 @@
+ python3 -m json.tool firebase.json
+ 
+ # Re-run optimization to fix
+-./scripts/optimize-firebase.sh --project goldenaige
++./scripts/optimize-firebase.sh --project ai-integra-course-v2
+ ```
+ 
+ ### Debugging Commands
+@@ -438,13 +438,13 @@
+ firebase hosting:channel:list
+ 
+ # Check quota usage
+-gcloud compute project-info describe --project=goldenaige
++gcloud compute project-info describe --project=ai-integra-course-v2
+ 
+ # View active services
+-gcloud services list --enabled --project=goldenaige
++gcloud services list --enabled --project=ai-integra-course-v2
+ 
+ # Check Cloud Build history
+-gcloud builds list --project=goldenaige --limit=10
++gcloud builds list --project=ai-integra-course-v2 --limit=10
+ 
+ # View function details
+ firebase functions:list
+@@ -483,7 +483,7 @@
+ 
+ # Access in functions
+ const secret = await secretManagerClient.accessSecretVersion({
+-  name: 'projects/goldenaige/secrets/my-secret/versions/latest'
++  name: 'projects/ai-integra-course-v2/secrets/my-secret/versions/latest'
+ });
+ ```
+ 
+@@ -567,8 +567,8 @@
+ ```bash
+ # Project Management
+ gcloud projects list
+-gcloud config set project goldenaige
+-firebase use goldenaige
++gcloud config set project ai-integra-course-v2
++firebase use ai-integra-course-v2
+ 
+ # Deployment
+ firebase deploy
+@@ -600,5 +600,5 @@
+ ---
+ 
+ **Generated:** $(date)  
+-**Project:** goldenaige  
++**Project:** ai-integra-course-v2  
+ **Repository:** https://github.com/Gnoscenti/ai-integration-course
+
+--- FIREBASE_OPTIMIZATION_IMPLEMENTATION.md
++++ FIREBASE_OPTIMIZATION_IMPLEMENTATION.md
+@@ -1,7 +1,7 @@
+ # Firebase Optimization Implementation Summary
+ 
+ **Date:** October 14, 2025  
+-**Project:** AI Integration Course (goldenaige)  
++**Project:** AI Integration Course (ai-integra-course-v2)  
+ **Purpose:** Optimize Firebase setup for automated deployment using gcloud
+ 
+ ## Overview
+@@ -26,7 +26,7 @@
+ 
+ **Usage:**
+ ```bash
+-./scripts/optimize-firebase.sh --project goldenaige
++./scripts/optimize-firebase.sh --project ai-integra-course-v2
+ ```
+ 
+ #### `/scripts/validate-deployment.sh`
+@@ -175,7 +175,7 @@
+ 
+ The script creates and configures:
+ 
+-**Service Account:** `firebase-deploy@goldenaige.iam.gserviceaccount.com`
++**Service Account:** `firebase-deploy@ai-integra-course-v2.iam.gserviceaccount.com`
+ 
+ **Roles Assigned:**
+ - `roles/firebase.admin` - Full Firebase administration
+@@ -288,12 +288,12 @@
+ ```bash
+ # 1. Authenticate
+ gcloud auth login
+-gcloud config set project goldenaige
++gcloud config set project ai-integra-course-v2
+ firebase login
+-firebase use goldenaige
++firebase use ai-integra-course-v2
+ 
+ # 2. Optimize Firebase
+-./scripts/optimize-firebase.sh --project goldenaige
++./scripts/optimize-firebase.sh --project ai-integra-course-v2
+ 
+ # 3. Validate
+ ./scripts/validate-deployment.sh
+@@ -356,7 +356,7 @@
+ 
+ 2. **Run Optimization**
+    ```bash
+-   ./scripts/optimize-firebase.sh --project goldenaige
++   ./scripts/optimize-firebase.sh --project ai-integra-course-v2
+    ```
+ 
+ 3. **Validate Setup**
+
+--- FIREBASE_OPTIMIZATION_QUICKSTART.md
++++ FIREBASE_OPTIMIZATION_QUICKSTART.md
+@@ -8,7 +8,7 @@
+ - ✅ Node.js 20+ installed
+ - ✅ Google Cloud CLI (gcloud) installed
+ - ✅ Firebase CLI installed
+-- ✅ Access to Firebase project `goldenaige`
++- ✅ Access to Firebase project `ai-integra-course-v2`
+ 
+ ## Quick Setup (5 minutes)
+ 
+@@ -19,13 +19,13 @@
+ gcloud auth login
+ 
+ # Set the project
+-gcloud config set project goldenaige
++gcloud config set project ai-integra-course-v2
+ 
+ # Authenticate with Firebase
+ firebase login
+ 
+ # Select the project
+-firebase use goldenaige
++firebase use ai-integra-course-v2
+ ```
+ 
+ ### Step 2: Run Optimization
+@@ -35,7 +35,7 @@
+ chmod +x scripts/*.sh
+ 
+ # Run the optimization script
+-./scripts/optimize-firebase.sh --project goldenaige
++./scripts/optimize-firebase.sh --project ai-integra-course-v2
+ ```
+ 
+ This will:
+@@ -160,7 +160,7 @@
+ 
+ ```bash
+ # Check project access
+-gcloud projects get-iam-policy goldenaige
++gcloud projects get-iam-policy ai-integra-course-v2
+ 
+ # Request access from project owner
+ ```
+@@ -171,7 +171,7 @@
+ 
+ ```bash
+ # Enable a specific API
+-gcloud services enable firebase.googleapis.com --project=goldenaige
++gcloud services enable firebase.googleapis.com --project=ai-integra-course-v2
+ ```
+ 
+ ### Issue: "Build fails"
+@@ -219,7 +219,7 @@
+ 
+ ```bash
+ # Optimization
+-./scripts/optimize-firebase.sh --project goldenaige
++./scripts/optimize-firebase.sh --project ai-integra-course-v2
+ 
+ # Validation
+ ./scripts/validate-deployment.sh
+
+--- FIREBASE_OPTIMIZATION_REPORT.md
++++ FIREBASE_OPTIMIZATION_REPORT.md
+@@ -1,7 +1,7 @@
+ # Firebase Optimization Report
+ 
+ **Generated:** Sun Dec 28 01:05:35 UTC 2025
+-**Project:** goldenaige
++**Project:** ai-integra-course-v2
+ 
+ ## Configuration Status
+ 
+@@ -32,9 +32,9 @@
+ - **Cache Strategy:** Configured in firebase.json
+ 
+ ### Deployment Configuration
+-- **Service Account:** firebase-deploy@goldenaige.iam.gserviceaccount.com
++- **Service Account:** firebase-deploy@ai-integra-course-v2.iam.gserviceaccount.com
+ - **Default Region:** us-central1
+-- **Project ID:** goldenaige
++- **Project ID:** ai-integra-course-v2
+ 
+ ### Files Created/Updated
+ - ✅ .gcloudignore (root)
+@@ -79,7 +79,7 @@
+ 
+ ### Check quotas
+ ```bash
+-gcloud compute project-info describe --project=goldenaige
++gcloud compute project-info describe --project=ai-integra-course-v2
+ ```
+ 
+ ---
+
+--- GCLOUD_ARCHITECTURE.md
++++ GCLOUD_ARCHITECTURE.md
+@@ -25,7 +25,7 @@
+ │              STEP 2: GCloud Authentication & Setup                  │
+ ├─────────────────────────────────────────────────────────────────────┤
+ │  ✓ Verify active GCloud account                                     │
+-│  ✓ Set project to goldenaige                                        │
++│  ✓ Set project to ai-integra-course-v2                                        │
+ │  ✓ Verify project access (project number)                          │
+ └────────────────────────┬────────────────────────────────────────────┘
+                          │
+@@ -80,7 +80,7 @@
+ │                 STEP 7: Firebase Deployment                         │
+ ├─────────────────────────────────────────────────────────────────────┤
+ │  ✓ Verify Firebase authentication                                   │
+-│  ✓ Deploy to Firebase (firebase deploy --project goldenaige)       │
++│  ✓ Deploy to Firebase (firebase deploy --project ai-integra-course-v2)       │
+ │  │                                                                   │
+ │  ├── Deploy Hosting                                                 │
+ │  │   • Upload build/ directory                                      │
+@@ -112,12 +112,12 @@
+ │                   DEPLOYMENT COMPLETE ✅                            │
+ ├─────────────────────────────────────────────────────────────────────┤
+ │  Production URLs:                                                   │
+-│  • https://goldenaige.web.app                                       │
++│  • https://ai-integra-course-v2.web.app                                       │
+ │  • https://aiintegrationcourse.com                                  │
+ │                                                                      │
+ │  Consoles:                                                          │
+-│  • Firebase: console.firebase.google.com/project/goldenaige         │
+-│  • GCP: console.cloud.google.com/home/dashboard?project=goldenaige  │
++│  • Firebase: console.firebase.google.com/project/ai-integra-course-v2         │
++│  • GCP: console.cloud.google.com/home/dashboard?project=ai-integra-course-v2  │
+ └─────────────────────────────────────────────────────────────────────┘
+ ```
+ 
+@@ -174,7 +174,7 @@
+ ```
+ ┌─────────────────────────────────────────────────────────────────┐
+ │                    GOOGLE CLOUD PROJECT                         │
+-│                      (goldenaige)                               │
++│                      (ai-integra-course-v2)                               │
+ └─────────────────────────────────────────────────────────────────┘
+                               │
+         ┌─────────────────────┼─────────────────────┐
+
+--- GCLOUD_DEPLOYMENT.md
++++ GCLOUD_DEPLOYMENT.md
+@@ -37,7 +37,7 @@
+ 
+ ### Required Access
+ 
+-- Google Cloud Project: `goldenaige`
++- Google Cloud Project: `ai-integra-course-v2`
+ - Firebase project access
+ - IAM permissions:
+   - Firebase Admin
+@@ -79,7 +79,7 @@
+ 
+ **What the setup does:**
+ 1. ✅ Authenticates with GCloud and Firebase
+-2. ✅ Sets project to `goldenaige`
++2. ✅ Sets project to `ai-integra-course-v2`
+ 3. ✅ Enables required GCP APIs:
+    - Cloud Functions API
+    - Cloud Build API
+@@ -155,7 +155,7 @@
+ cd functions && npm run build && cd ..
+ 
+ # 6. Deploy to Firebase
+-firebase deploy --project goldenaige
++firebase deploy --project ai-integra-course-v2
+ ```
+ 
+ ### Deployment Process Details
+@@ -225,21 +225,21 @@
+ 
+ 1. **Check Hosting**
+    ```bash
+-   curl -I https://goldenaige.web.app
++   curl -I https://ai-integra-course-v2.web.app
+    ```
+ 
+ 2. **Check Functions**
+    ```bash
+-   gcloud functions list --project=goldenaige
++   gcloud functions list --project=ai-integra-course-v2
+    ```
+ 
+ 3. **View Logs**
+    ```bash
+-   gcloud functions logs read --project=goldenaige --limit=50
++   gcloud functions logs read --project=ai-integra-course-v2 --limit=50
+    ```
+ 
+ 4. **Test Application**
+-   - Visit: https://goldenaige.web.app
++   - Visit: https://ai-integra-course-v2.web.app
+    - Visit: https://aiintegrationcourse.com
+ 
+ ---
+@@ -264,7 +264,7 @@
+ 
+ #### 2. Project Access Denied
+ 
+-**Problem:** `ERROR: Cannot access project goldenaige`
++**Problem:** `ERROR: Cannot access project ai-integra-course-v2`
+ 
+ **Solution:**
+ ```bash
+@@ -272,10 +272,10 @@
+ gcloud projects list
+ 
+ # Set the correct project
+-gcloud config set project goldenaige
++gcloud config set project ai-integra-course-v2
+ 
+ # Verify access
+-gcloud projects describe goldenaige
++gcloud projects describe ai-integra-course-v2
+ ```
+ 
+ #### 3. API Not Enabled
+@@ -319,14 +319,14 @@
+ **Solution:**
+ ```bash
+ # Check function logs
+-gcloud functions logs read --project=goldenaige --limit=100
++gcloud functions logs read --project=ai-integra-course-v2 --limit=100
+ 
+ # Deploy functions separately
+ cd functions
+ npm install
+ npm run build
+ cd ..
+-firebase deploy --only functions --project=goldenaige
++firebase deploy --only functions --project=ai-integra-course-v2
+ ```
+ 
+ #### 6. Firestore Permissions
+@@ -336,12 +336,12 @@
+ **Solution:**
+ ```bash
+ # Check Firestore status
+-gcloud firestore databases list --project=goldenaige
++gcloud firestore databases list --project=ai-integra-course-v2
+ 
+ # Create database if needed
+ gcloud firestore databases create \
+   --location=nam5 \
+-  --project=goldenaige
++  --project=ai-integra-course-v2
+ ```
+ 
+ ### Rollback Procedure
+@@ -350,11 +350,11 @@
+ 
+ ```bash
+ # Rollback Firebase Hosting
+-firebase hosting:rollback --project=goldenaige
++firebase hosting:rollback --project=ai-integra-course-v2
+ 
+ # Rollback to specific version
+-firebase hosting:versions:list --project=goldenaige
+-firebase hosting:rollback <version-id> --project=goldenaige
++firebase hosting:versions:list --project=ai-integra-course-v2
++firebase hosting:rollback <version-id> --project=ai-integra-course-v2
+ ```
+ 
+ ### Debug Mode
+@@ -369,7 +369,7 @@
+ ./scripts/gcloud-deploy.sh
+ 
+ # Or with Firebase debug
+-firebase deploy --debug --project=goldenaige
++firebase deploy --debug --project=ai-integra-course-v2
+ ```
+ 
+ ---
+@@ -404,8 +404,8 @@
+ ```bash
+ # Firebase Configuration
+ REACT_APP_FIREBASE_API_KEY=your-api-key
+-REACT_APP_FIREBASE_AUTH_DOMAIN=goldenaige.firebaseapp.com
+-REACT_APP_FIREBASE_PROJECT_ID=goldenaige
++REACT_APP_FIREBASE_AUTH_DOMAIN=ai-integra-course-v2.firebaseapp.com
++REACT_APP_FIREBASE_PROJECT_ID=ai-integra-course-v2
+ 
+ # OpenAI Configuration
+ OPENAI_API_KEY=your-openai-key
+@@ -422,7 +422,7 @@
+ 1. **Generate Service Account Key**
+    ```bash
+    gcloud iam service-accounts keys create key.json \
+-     --iam-account=firebase-deployer@goldenaige.iam.gserviceaccount.com
++     --iam-account=firebase-deployer@ai-integra-course-v2.iam.gserviceaccount.com
+    ```
+ 
+ 2. **Add to GitHub Secrets**
+@@ -450,16 +450,16 @@
+ 
+ ```bash
+ # Deploy to staging
+-firebase deploy --project=goldenaige-staging
++firebase deploy --project=ai-integra-course-v2-staging
+ 
+ # Deploy only hosting
+-firebase deploy --only hosting --project=goldenaige
++firebase deploy --only hosting --project=ai-integra-course-v2
+ 
+ # Deploy only functions
+-firebase deploy --only functions --project=goldenaige
++firebase deploy --only functions --project=ai-integra-course-v2
+ 
+ # Deploy only firestore rules
+-firebase deploy --only firestore:rules --project=goldenaige
++firebase deploy --only firestore:rules --project=ai-integra-course-v2
+ ```
+ 
+ ### Performance Optimization
+@@ -513,13 +513,13 @@
+ 
+ ```bash
+ # Firebase Functions logs
+-firebase functions:log --project=goldenaige
++firebase functions:log --project=ai-integra-course-v2
+ 
+ # GCloud Functions logs
+-gcloud functions logs read --project=goldenaige --limit=50
++gcloud functions logs read --project=ai-integra-course-v2 --limit=50
+ 
+ # Firestore logs
+-gcloud logging read "resource.type=firestore_database" --project=goldenaige
++gcloud logging read "resource.type=firestore_database" --project=ai-integra-course-v2
+ ```
+ 
+ #### Set Up Alerts
+@@ -565,20 +565,20 @@
+ 
+ # GCloud Commands
+ gcloud auth login            # Authenticate
+-gcloud config set project goldenaige  # Set project
++gcloud config set project ai-integra-course-v2  # Set project
+ gcloud projects list         # List projects
+ gcloud services list --enabled  # List enabled APIs
+ ```
+ 
+ ### Useful Links
+ 
+-- **Firebase Console:** https://console.firebase.google.com/project/goldenaige
+-- **GCP Console:** https://console.cloud.google.com/home/dashboard?project=goldenaige
+-- **Production Site:** https://goldenaige.web.app
++- **Firebase Console:** https://console.firebase.google.com/project/ai-integra-course-v2
++- **GCP Console:** https://console.cloud.google.com/home/dashboard?project=ai-integra-course-v2
++- **Production Site:** https://ai-integra-course-v2.web.app
+ - **Custom Domain:** https://aiintegrationcourse.com
+-- **Cloud Functions:** https://console.cloud.google.com/functions/list?project=goldenaige
+-- **Firestore:** https://console.firebase.google.com/project/goldenaige/firestore
+-- **Cloud Storage:** https://console.cloud.google.com/storage/browser?project=goldenaige
++- **Cloud Functions:** https://console.cloud.google.com/functions/list?project=ai-integra-course-v2
++- **Firestore:** https://console.firebase.google.com/project/ai-integra-course-v2/firestore
++- **Cloud Storage:** https://console.cloud.google.com/storage/browser?project=ai-integra-course-v2
+ 
+ ---
+ 
+@@ -586,7 +586,7 @@
+ 
+ For issues or questions:
+ 
+-1. **Check Logs:** `gcloud functions logs read --project=goldenaige`
++1. **Check Logs:** `gcloud functions logs read --project=ai-integra-course-v2`
+ 2. **Validate Setup:** `npm run gcloud:validate`
+ 3. **Review Documentation:** This file and README.md
+ 4. **Firebase Support:** https://firebase.google.com/support
+
+--- GCLOUD_DEPLOYMENT_CHECKLIST.md
++++ GCLOUD_DEPLOYMENT_CHECKLIST.md
+@@ -16,9 +16,9 @@
+ 
+ - [ ] Authenticated with GCloud (`gcloud auth login`)
+ - [ ] Application Default Credentials configured (`gcloud auth application-default login`)
+-- [ ] Project access verified (`gcloud projects describe goldenaige`)
++- [ ] Project access verified (`gcloud projects describe ai-integra-course-v2`)
+ - [ ] Firebase authenticated (`firebase login`)
+-- [ ] Firebase project set (`firebase use goldenaige`)
++- [ ] Firebase project set (`firebase use ai-integra-course-v2`)
+ 
+ ### ✅ Configuration Validation
+ 
+@@ -105,7 +105,7 @@
+ 
+ ### ✅ Deployment Verification
+ 
+-- [ ] Hosting is live (https://goldenaige.web.app returns 200)
++- [ ] Hosting is live (https://ai-integra-course-v2.web.app returns 200)
+ - [ ] Custom domain works (https://aiintegrationcourse.com)
+ - [ ] No console errors in browser
+ - [ ] All pages load correctly
+@@ -140,7 +140,7 @@
+ 
+ - [ ] Cloud Functions deployed
+   ```bash
+-  gcloud functions list --project=goldenaige
++  gcloud functions list --project=ai-integra-course-v2
+   ```
+ 
+ - [ ] Functions are responding
+@@ -195,11 +195,11 @@
+ 
+ ```bash
+ # Rollback Firebase Hosting
+-firebase hosting:rollback --project=goldenaige
++firebase hosting:rollback --project=ai-integra-course-v2
+ 
+ # Or rollback to specific version
+-firebase hosting:versions:list --project=goldenaige
+-firebase hosting:rollback <version-id> --project=goldenaige
++firebase hosting:versions:list --project=ai-integra-course-v2
++firebase hosting:rollback <version-id> --project=ai-integra-course-v2
+ ```
+ 
+ ### Full Rollback
+@@ -241,10 +241,10 @@
+ 1. **Check Logs**
+    ```bash
+    # Function logs
+-   gcloud functions logs read --project=goldenaige --limit=100
++   gcloud functions logs read --project=ai-integra-course-v2 --limit=100
+    
+    # Firebase logs
+-   firebase functions:log --project=goldenaige
++   firebase functions:log --project=ai-integra-course-v2
+    ```
+ 
+ 2. **Validate Configuration**
+@@ -289,5 +289,5 @@
+ 
+ **Project:** AI Integration Course  
+ **Repository:** https://github.com/Gnoscenti/ai-integration-course  
+-**Production URL:** https://goldenaige.web.app  
++**Production URL:** https://ai-integra-course-v2.web.app  
+ **Custom Domain:** https://aiintegrationcourse.com
+
+--- GCLOUD_QUICKSTART.md
++++ GCLOUD_QUICKSTART.md
+@@ -49,9 +49,9 @@
+ 
+ ### Project Management
+ ```bash
+-gcloud config set project goldenaige           # Set project
++gcloud config set project ai-integra-course-v2           # Set project
+ gcloud config get-value project                # Check current project
+-gcloud projects describe goldenaige            # Project details
++gcloud projects describe ai-integra-course-v2            # Project details
+ ```
+ 
+ ### API Management
+@@ -77,7 +77,7 @@
+ 
+ ### Deployment
+ ```bash
+-firebase deploy --project goldenaige           # Full deploy
++firebase deploy --project ai-integra-course-v2           # Full deploy
+ firebase deploy --only hosting                 # Hosting only
+ firebase deploy --only functions               # Functions only
+ firebase hosting:rollback                      # Rollback hosting
+@@ -85,7 +85,7 @@
+ 
+ ### Project Management
+ ```bash
+-firebase use goldenaige                        # Set project
++firebase use ai-integra-course-v2                        # Set project
+ firebase projects:list                         # List projects
+ firebase open                                  # Open console
+ ```
+@@ -101,8 +101,8 @@
+ ### Required for Development
+ ```bash
+ REACT_APP_FIREBASE_API_KEY=<your-api-key>
+-REACT_APP_FIREBASE_AUTH_DOMAIN=goldenaige.firebaseapp.com
+-REACT_APP_FIREBASE_PROJECT_ID=goldenaige
++REACT_APP_FIREBASE_AUTH_DOMAIN=ai-integra-course-v2.firebaseapp.com
++REACT_APP_FIREBASE_PROJECT_ID=ai-integra-course-v2
+ OPENAI_API_KEY=<your-openai-key>
+ ```
+ 
+@@ -151,13 +151,13 @@
+ 
+ ## Useful URLs
+ 
+-- **Firebase Console**: https://console.firebase.google.com/project/goldenaige
+-- **GCP Console**: https://console.cloud.google.com/home/dashboard?project=goldenaige
+-- **Production Site**: https://goldenaige.web.app
++- **Firebase Console**: https://console.firebase.google.com/project/ai-integra-course-v2
++- **GCP Console**: https://console.cloud.google.com/home/dashboard?project=ai-integra-course-v2
++- **Production Site**: https://ai-integra-course-v2.web.app
+ - **Custom Domain**: https://aiintegrationcourse.com
+-- **Cloud Functions**: https://console.cloud.google.com/functions/list?project=goldenaige
+-- **Firestore**: https://console.firebase.google.com/project/goldenaige/firestore
+-- **Storage**: https://console.cloud.google.com/storage/browser?project=goldenaige
++- **Cloud Functions**: https://console.cloud.google.com/functions/list?project=ai-integra-course-v2
++- **Firestore**: https://console.firebase.google.com/project/ai-integra-course-v2/firestore
++- **Storage**: https://console.cloud.google.com/storage/browser?project=ai-integra-course-v2
+ 
+ ## Script Locations
+ 
+
+--- GETTING_STARTED_GCLOUD.md
++++ GETTING_STARTED_GCLOUD.md
+@@ -41,7 +41,7 @@
+ 
+ **What this does:**
+ - ✅ Authenticates you with Google Cloud
+-- ✅ Sets up the `goldenaige` project
++- ✅ Sets up the `ai-integra-course-v2` project
+ - ✅ Enables all required APIs (11 total)
+ - ✅ Creates Firestore database
+ - ✅ Installs all dependencies
+@@ -63,7 +63,7 @@
+ ⏱️ **Time:** ~3-5 minutes
+ 
+ **Done!** 🎉 Your app is now live at:
+-- https://goldenaige.web.app
++- https://ai-integra-course-v2.web.app
+ - https://aiintegrationcourse.com
+ 
+ ---
+@@ -76,7 +76,7 @@
+ 3. Sets up Application Default Credentials
+ 
+ ### Configuration Phase
+-1. Sets GCloud project to `goldenaige`
++1. Sets GCloud project to `ai-integra-course-v2`
+ 2. Verifies project access
+ 3. Configures default regions:
+    - Cloud Functions: `us-central1`
+@@ -111,7 +111,7 @@
+ |-------|-------------|
+ | ✓ GCloud CLI | Ensures gcloud is installed |
+ | ✓ Authentication | Verifies you're logged in |
+-| ✓ Project Access | Confirms access to goldenaige |
++| ✓ Project Access | Confirms access to ai-integra-course-v2 |
+ | ✓ Node.js Version | Checks Node.js >= 20 |
+ | ✓ Firebase CLI | Verifies Firebase tools |
+ | ✓ APIs Enabled | Confirms all APIs are active |
+@@ -201,7 +201,7 @@
+ source ~/.bashrc  # or source ~/.zshrc
+ ```
+ 
+-### Problem: "Cannot access project goldenaige"
++### Problem: "Cannot access project ai-integra-course-v2"
+ 
+ **Solution:**
+ ```bash
+@@ -273,7 +273,7 @@
+ 
+ ### Firebase Console
+ ```
+-https://console.firebase.google.com/project/goldenaige
++https://console.firebase.google.com/project/ai-integra-course-v2
+ ```
+ View:
+ - Hosting metrics
+@@ -283,7 +283,7 @@
+ 
+ ### GCP Console
+ ```
+-https://console.cloud.google.com/home/dashboard?project=goldenaige
++https://console.cloud.google.com/home/dashboard?project=ai-integra-course-v2
+ ```
+ View:
+ - Cloud Functions logs
+@@ -307,7 +307,7 @@
+ Now that you're deployed:
+ 
+ 1. **Test Your Site**
+-   - Visit https://goldenaige.web.app
++   - Visit https://ai-integra-course-v2.web.app
+    - Test all features
+    - Check browser console for errors
+ 
+@@ -348,7 +348,7 @@
+ 
+ After your first deployment:
+ 
+-- [ ] Site loads at https://goldenaige.web.app
++- [ ] Site loads at https://ai-integra-course-v2.web.app
+ - [ ] Can sign up/login
+ - [ ] Can view courses
+ - [ ] AI Tutor responds
+
+--- IMPLEMENTATION_SUMMARY.md
++++ IMPLEMENTATION_SUMMARY.md
+@@ -66,7 +66,7 @@
+ 
+ **What it does:**
+ - Authenticates with Google Cloud
+-- Sets project to `goldenaige`
++- Sets project to `ai-integra-course-v2`
+ - Enables 11 required GCP APIs
+ - Creates Firestore database (nam5 location)
+ - Configures Cloud Functions region (us-central1)
+@@ -131,7 +131,7 @@
+ ### Configuration Settings
+ 
+ **Project Configuration:**
+-- Project ID: `goldenaige`
++- Project ID: `ai-integra-course-v2`
+ - Project Number: Auto-detected
+ - Default Region: `us-central1`
+ - Firestore Location: `nam5` (North America multi-region)
+@@ -170,7 +170,7 @@
+          ↓
+ 2. GCloud Setup
+    - Verify authentication
+-   - Set project to goldenaige
++   - Set project to ai-integra-course-v2
+    - Verify project access
+          ↓
+ 3. Enable GCP APIs
+@@ -206,7 +206,7 @@
+    - Show useful next steps
+          ↓
+ ✅ Deployment Complete!
+-   - Live at: https://goldenaige.web.app
++   - Live at: https://ai-integra-course-v2.web.app
+    - Custom: https://aiintegrationcourse.com
+ ```
+ 
+
+--- INSTALLATION.md
++++ INSTALLATION.md
+@@ -71,7 +71,7 @@
+ 2. **Initialize Firebase project locally (if not already set up)**
+    ```bash
+    firebase use --add
+-   # Select the project that hosts goldenaige.web.app
++   # Select the project that hosts ai-integra-course-v2.web.app
+    ```
+ 
+ 3. **Run the production build**
+
+--- LAUNCH_CHECKLIST.md
++++ LAUNCH_CHECKLIST.md
+@@ -14,7 +14,7 @@
+ 
+ 0) Set environment and install dependencies
+ ```bash
+-export GOOGLE_APPLICATION_CREDENTIALS=/home/microai/Downloads/goldenaige-3619158f2924.json
++export GOOGLE_APPLICATION_CREDENTIALS=/home/microai/Downloads/ai-integra-course-v2-3619158f2924.json
+ cd ~/dev/ai-integration-course
+ npm ci
+ (cd functions && npm ci)
+@@ -22,7 +22,7 @@
+ 
+ 1) Deploy Firestore rules + Tutor function
+ ```bash
+-firebase deploy --only firestore:rules,functions:tutor --project goldenaige
++firebase deploy --only firestore:rules,functions:tutor --project ai-integra-course-v2
+ ```
+ 
+ 2) Remove bogus root lessons (backup first)
+
+--- PRODUCTION_CHECKLIST.md
++++ PRODUCTION_CHECKLIST.md
+@@ -47,7 +47,7 @@
+ **Check Firebase project:**
+ ```bash
+ firebase projects:list
+-firebase use goldenaige
++firebase use ai-integra-course-v2
+ ```
+ 
+ ### 4. Environment Variables Setup
+@@ -110,7 +110,7 @@
+ 
+ ### 7. Post-Deployment Verification
+ 
+-1. **Visit production site**: https://goldenaige.web.app
++1. **Visit production site**: https://ai-integra-course-v2.web.app
+ 2. **Test authentication**: Sign up / Sign in
+ 3. **Verify Firebase connection**: Check browser console for errors
+ 4. **Test premium features**: Verify gating works
+@@ -170,7 +170,7 @@
+ firebase login --reauth
+ 
+ # Verify project
+-firebase use goldenaige
++firebase use ai-integra-course-v2
+ 
+ # Check firebase.json is valid
+ cat firebase.json | jq .
+
+--- PRODUCTION_DEPLOYMENT.md
++++ PRODUCTION_DEPLOYMENT.md
+@@ -6,7 +6,7 @@
+ 
+ Before deploying to production, ensure you have:
+ 
+-1. **Firebase Project**: `goldenaige` project configured
++1. **Firebase Project**: `ai-integra-course-v2` project configured
+ 2. **GitHub Repository Access**: Write access to repository
+ 3. **Firebase CLI**: Installed and authenticated (`firebase login`)
+ 4. **Node.js**: Version 20.x (as specified in `.nvmrc`)
+@@ -24,7 +24,7 @@
+ 
+ **How to obtain:**
+ 1. Go to [Firebase Console](https://console.firebase.google.com/)
+-2. Select project `goldenaige`
++2. Select project `ai-integra-course-v2`
+ 3. Project Settings → Service Accounts
+ 4. Generate new private key
+ 5. Copy the entire JSON content
+@@ -48,7 +48,7 @@
+ 
+ **How to obtain:**
+ 1. Go to [Firebase Console](https://console.firebase.google.com/)
+-2. Select project `goldenaige`
++2. Select project `ai-integra-course-v2`
+ 3. Project Settings → General → Your apps → Web app
+ 4. Find your web app configuration
+ 5. Copy each value
+@@ -116,7 +116,7 @@
+ npm run build
+ 
+ # Deploy to Firebase Hosting
+-firebase deploy --only hosting --project goldenaige
++firebase deploy --only hosting --project ai-integra-course-v2
+ 
+ # Or use npm script
+ npm run deploy
+@@ -136,7 +136,7 @@
+ After deployment, verify the following:
+ 
+ ### 1. Website Accessibility
+-- [ ] Visit https://goldenaige.web.app
++- [ ] Visit https://ai-integra-course-v2.web.app
+ - [ ] Visit https://aiintegrationcourse.com (if DNS configured)
+ - [ ] Check that homepage loads correctly
+ - [ ] Verify footer shows "© 2025 MicroAI Studios™"
+@@ -178,7 +178,7 @@
+ firebase login
+ 
+ # Set project
+-firebase use goldenaige
++firebase use ai-integra-course-v2
+ ```
+ 
+ ### Deploy Functions
+@@ -191,7 +191,7 @@
+ npm install
+ npm run build
+ cd ..
+-firebase deploy --only functions --project goldenaige
++firebase deploy --only functions --project ai-integra-course-v2
+ ```
+ 
+ ### Required Environment Variables for Functions
+@@ -200,11 +200,11 @@
+ 
+ ```bash
+ # OpenAI API Key
+-firebase functions:secrets:set OPENAI_API_KEY --project goldenaige
++firebase functions:secrets:set OPENAI_API_KEY --project ai-integra-course-v2
+ 
+ # Stripe Secret Key (if using payments)
+-firebase functions:secrets:set STRIPE_SECRET_KEY --project goldenaige
+-firebase functions:secrets:set STRIPE_WEBHOOK_SECRET --project goldenaige
++firebase functions:secrets:set STRIPE_SECRET_KEY --project ai-integra-course-v2
++firebase functions:secrets:set STRIPE_WEBHOOK_SECRET --project ai-integra-course-v2
+ ```
+ 
+ ## Firestore Configuration
+@@ -218,7 +218,7 @@
+ 
+ **Deploy rules:**
+ ```bash
+-firebase deploy --only firestore:rules --project goldenaige
++firebase deploy --only firestore:rules --project ai-integra-course-v2
+ ```
+ 
+ ### Data Migration
+@@ -294,7 +294,7 @@
+ firebase login --reauth
+ 
+ # Verify project
+-firebase use goldenaige
++firebase use ai-integra-course-v2
+ ```
+ 
+ **Issue:** GitHub Actions deployment fails
+@@ -315,7 +315,7 @@
+ **Issue:** Secret environment variables not available
+ ```bash
+ # Set secrets using Firebase CLI
+-firebase functions:secrets:set OPENAI_API_KEY --project goldenaige
++firebase functions:secrets:set OPENAI_API_KEY --project ai-integra-course-v2
+ ```
+ 
+ ## Rollback Procedure
+@@ -324,17 +324,17 @@
+ 
+ ### Option 1: Rollback via Firebase Console
+ 1. Go to [Firebase Console](https://console.firebase.google.com/)
+-2. Select project `goldenaige`
++2. Select project `ai-integra-course-v2`
+ 3. Hosting → Release history
+ 4. Click on previous version → Rollback
+ 
+ ### Option 2: Rollback via CLI
+ ```bash
+ # List previous deployments
+-firebase hosting:channel:list --project goldenaige
++firebase hosting:channel:list --project ai-integra-course-v2
+ 
+ # Rollback to specific version (replace VERSION_ID)
+-firebase hosting:clone goldenaige:VERSION_ID goldenaige:live
++firebase hosting:clone ai-integra-course-v2:VERSION_ID ai-integra-course-v2:live
+ ```
+ 
+ ### Option 3: Redeploy Previous Commit
+@@ -348,9 +348,9 @@
+ 
+ ## Production URLs
+ 
+-- **Primary**: https://goldenaige.web.app
++- **Primary**: https://ai-integra-course-v2.web.app
+ - **Custom Domain**: https://aiintegrationcourse.com (if configured)
+-- **Firebase Console**: https://console.firebase.google.com/project/goldenaige
++- **Firebase Console**: https://console.firebase.google.com/project/ai-integra-course-v2
+ 
+ ## Support and Monitoring
+ 
+@@ -404,5 +404,5 @@
+ 
+ **Last Updated:** October 14, 2025  
+ **Project:** AI Integration Course  
+-**Firebase Project:** goldenaige  
++**Firebase Project:** ai-integra-course-v2  
+ **Status:** Production Ready
+
+--- PRODUCTION_DEPLOYMENT_CHECKLIST.md
++++ PRODUCTION_DEPLOYMENT_CHECKLIST.md
+@@ -34,7 +34,7 @@
+ ## Deployment Requirements
+ 
+ ### Required Accounts & Access
+-- [ ] Firebase project access (goldenaige)
++- [ ] Firebase project access (ai-integra-course-v2)
+ - [ ] Google Cloud Platform access
+ - [ ] OpenAI API account and key
+ - [ ] Stripe account and keys
+@@ -44,9 +44,9 @@
+ ```bash
+ # Firebase
+ REACT_APP_FIREBASE_API_KEY=
+-REACT_APP_FIREBASE_AUTH_DOMAIN=goldenaige.firebaseapp.com
+-REACT_APP_FIREBASE_PROJECT_ID=goldenaige
+-REACT_APP_FIREBASE_STORAGE_BUCKET=goldenaige.appspot.com
++REACT_APP_FIREBASE_AUTH_DOMAIN=ai-integra-course-v2.firebaseapp.com
++REACT_APP_FIREBASE_PROJECT_ID=ai-integra-course-v2
++REACT_APP_FIREBASE_STORAGE_BUCKET=ai-integra-course-v2.firebasestorage.app
+ REACT_APP_FIREBASE_MESSAGING_SENDER_ID=
+ REACT_APP_FIREBASE_APP_ID=
+ 
+@@ -87,7 +87,7 @@
+ npm run build:production
+ 
+ # 4. Deploy to Firebase
+-firebase deploy --project goldenaige
++firebase deploy --project ai-integra-course-v2
+ ```
+ 
+ ### Selective Deployment
+@@ -105,7 +105,7 @@
+ ## Post-Deployment Verification
+ 
+ ### ✅ Frontend Checks
+-- [ ] Website loads at https://goldenaige.web.app
++- [ ] Website loads at https://ai-integra-course-v2.web.app
+ - [ ] All pages render correctly
+ - [ ] Authentication flow works
+ - [ ] Responsive design working
+@@ -126,8 +126,8 @@
+ - [ ] Premium features accessible
+ 
+ ### ✅ gcloud Verification
+-- [ ] Hosting release confirmed (`gcloud firebase hosting:releases list --project goldenaige --site goldenaige --limit=1`)
+-- [ ] Functions present in target region (`gcloud functions list --project goldenaige --regions us-central1`)
++- [ ] Hosting release confirmed (`gcloud firebase hosting:releases list --project ai-integra-course-v2 --site ai-integra-course-v2 --limit=1`)
++- [ ] Functions present in target region (`gcloud functions list --project ai-integra-course-v2 --regions us-central1`)
+ 
+ ## Monitoring & Maintenance
+ 
+@@ -168,7 +168,7 @@
+ 
+ ## Support Resources
+ 
+-- Firebase Console: https://console.firebase.google.com/project/goldenaige
++- Firebase Console: https://console.firebase.google.com/project/ai-integra-course-v2
+ - Google Cloud Console: https://console.cloud.google.com/
+ - Repository: https://github.com/Gnoscenti/ai-integration-course
+ - Documentation: See README.md
+
+--- PRODUCTION_READINESS.md
++++ PRODUCTION_READINESS.md
+@@ -3,7 +3,7 @@
+ This document tracks the production deployment readiness status for the AI Integration Course.
+ 
+ **Project**: AI Integration Course  
+-**Firebase Project**: goldenaige  
++**Firebase Project**: ai-integra-course-v2  
+ **Status**: ✅ Ready for Production  
+ **Date**: October 14, 2025
+ 
+@@ -25,7 +25,7 @@
+   - ✅ `firebase.json` properly configured
+   - ✅ Hosting points to `build/` directory
+   - ✅ Functions source points to `functions/` directory
+-  - ✅ Project ID set to `goldenaige`
++  - ✅ Project ID set to `ai-integra-course-v2`
+   - ✅ Node runtime set to 20.x
+ 
+ ## ✅ GitHub Actions Workflows
+@@ -97,16 +97,16 @@
+ - [ ] **Set Firebase Function Secrets**
+   ```bash
+   # OpenAI API Key for AI Tutor
+-  firebase functions:secrets:set OPENAI_API_KEY --project goldenaige
++  firebase functions:secrets:set OPENAI_API_KEY --project ai-integra-course-v2
+   
+   # Optional: Stripe keys (when implementing payments)
+-  firebase functions:secrets:set STRIPE_SECRET_KEY --project goldenaige
+-  firebase functions:secrets:set STRIPE_WEBHOOK_SECRET --project goldenaige
++  firebase functions:secrets:set STRIPE_SECRET_KEY --project ai-integra-course-v2
++  firebase functions:secrets:set STRIPE_WEBHOOK_SECRET --project ai-integra-course-v2
+   ```
+ 
+ - [ ] **Deploy Firestore Security Rules**
+   ```bash
+-  firebase deploy --only firestore:rules --project goldenaige
++  firebase deploy --only firestore:rules --project ai-integra-course-v2
+   ```
+ 
+ ### Recommended (Should Complete)
+@@ -122,7 +122,7 @@
+ 
+ - [ ] **Backup Firestore Data**
+   ```bash
+-  firebase firestore:export backup_$(date +%Y%m%d) --project goldenaige
++  firebase firestore:export backup_$(date +%Y%m%d) --project ai-integra-course-v2
+   ```
+ 
+ - [ ] **Test Build Locally**
+@@ -190,7 +190,7 @@
+ After deploying, verify these items:
+ 
+ ### Website Access
+-- [ ] https://goldenaige.web.app loads
++- [ ] https://ai-integra-course-v2.web.app loads
+ - [ ] Homepage displays correctly
+ - [ ] Navigation works
+ - [ ] Footer shows copyright
+@@ -234,10 +234,10 @@
+ ### CLI Rollback
+ ```bash
+ # List releases
+-firebase hosting:channel:list --project goldenaige
++firebase hosting:channel:list --project ai-integra-course-v2
+ 
+ # Rollback to specific version
+-firebase hosting:clone goldenaige:VERSION_ID goldenaige:live
++firebase hosting:clone ai-integra-course-v2:VERSION_ID ai-integra-course-v2:live
+ ```
+ 
+ ### Code Rollback
+@@ -305,7 +305,7 @@
+ ## 📞 Support Contacts
+ 
+ **Technical Lead**: Review GitHub repository  
+-**Firebase Project**: goldenaige  
++**Firebase Project**: ai-integra-course-v2  
+ **Admin Account**: livetrue2u@gmail.com  
+ **Documentation**: See PRODUCTION_DEPLOYMENT.md
+ 
+
+--- PR_CONSOLIDATION_SUMMARY.md
++++ PR_CONSOLIDATION_SUMMARY.md
+@@ -153,7 +153,7 @@
+ 2. ✅ **Merge this PR to main branch**
+ 3. ✅ **Close PR #51, #52, and #53** (changes incorporated here)
+ 4. ✅ **Deploy to production** with `npm run deploy`
+-5. ✅ **Verify** https://goldenaige.web.app serves the React app
++5. ✅ **Verify** https://ai-integra-course-v2.web.app serves the React app
+ 
+ **Benefits of Merging:**
+ - All improvements from three PRs applied at once
+@@ -175,7 +175,7 @@
+ - [ ] Close PR #52 (changes incorporated)
+ - [ ] Close PR #53 (changes incorporated)
+ - [ ] Deploy to Firebase: `npm run deploy`
+-- [ ] Verify production site: https://goldenaige.web.app
++- [ ] Verify production site: https://ai-integra-course-v2.web.app
+ - [ ] Verify AI Tutor functionality
+ - [ ] Update environment variables in production
+ - [ ] Rotate any exposed API keys
+
+--- QUICKSTART.md
++++ QUICKSTART.md
+@@ -35,7 +35,7 @@
+ cp .env.example .env
+ 
+ # Edit .env with your Firebase config
+-# Get values from: https://console.firebase.google.com/project/goldenaige/settings/general
++# Get values from: https://console.firebase.google.com/project/ai-integra-course-v2/settings/general
+ nano .env
+ ```
+ 
+@@ -100,7 +100,7 @@
+ source venv/bin/activate
+ 
+ # Seed lessons to Firestore
+-python allie/tools/seed_lessons_firestore.py --project goldenaige
++python allie/tools/seed_lessons_firestore.py --project ai-integra-course-v2
+ 
+ # Deactivate when done
+ deactivate
+@@ -118,12 +118,12 @@
+ 
+ ```bash
+ firebase projects:list
+-firebase use goldenaige
++firebase use ai-integra-course-v2
+ ```
+ 
+ ### View Deployment
+ 
+-Production: https://goldenaige.web.app
++Production: https://ai-integra-course-v2.web.app
+ 
+ ## Troubleshooting
+ 
+
+--- QUICK_DEPLOY.md
++++ QUICK_DEPLOY.md
+@@ -29,13 +29,13 @@
+ ### 2. Set Firebase Secrets (One-time)
+ 
+ ```bash
+-firebase functions:secrets:set OPENAI_API_KEY --project goldenaige
++firebase functions:secrets:set OPENAI_API_KEY --project ai-integra-course-v2
+ ```
+ 
+ ### 3. Deploy Security Rules (One-time)
+ 
+ ```bash
+-firebase deploy --only firestore:rules --project goldenaige
++firebase deploy --only firestore:rules --project ai-integra-course-v2
+ ```
+ 
+ ## Verification
+@@ -47,7 +47,7 @@
+ 
+ ## Post-Deployment Check
+ 
+-Visit: https://goldenaige.web.app
++Visit: https://ai-integra-course-v2.web.app
+ 
+ Test:
+ - [ ] Sign up / Sign in works
+@@ -71,5 +71,5 @@
+ ---
+ 
+ **Project**: AI Integration Course  
+-**Firebase Project**: goldenaige  
+-**Production URL**: https://goldenaige.web.app
++**Firebase Project**: ai-integra-course-v2  
++**Production URL**: https://ai-integra-course-v2.web.app
+
+--- README.md
++++ README.md
+@@ -28,8 +28,8 @@
+ ## 🌐 Production URLs
+ 
+ - **Website**: https://aiintegrationcourse.com
+-- **Firebase Hosting**: https://goldenaige.web.app
+-- **Firebase Project**: goldenaige
++- **Firebase Hosting**: https://ai-integra-course-v2.web.app
++- **Firebase Project**: ai-integra-course-v2
+ - **Status**: ✅ Production Ready
+ 
+ ## Production Setup
+@@ -45,13 +45,13 @@
+ ```bash
+ # Authenticate with Google Cloud and Firebase
+ gcloud auth login
+-gcloud config set project goldenaige
++gcloud config set project ai-integra-course-v2
+ firebase login
+-firebase use goldenaige
++firebase use ai-integra-course-v2
+ 
+ # Run optimization script
+ chmod +x scripts/optimize-firebase.sh
+-./scripts/optimize-firebase.sh --project goldenaige
++./scripts/optimize-firebase.sh --project ai-integra-course-v2
+ 
+ # Validate setup
+ chmod +x scripts/validate-deployment.sh
+@@ -271,5 +271,5 @@
+ ## 🔗 Links
+ 
+ - **Production**: https://aiintegrationcourse.com
+-- **Firebase**: https://goldenaige.web.app
++- **Firebase**: https://ai-integra-course-v2.web.app
+ - **Repository**: https://github.com/Gnoscenti/ai-integration-course
+
+--- README_CROSS_ANALYSIS.md
++++ README_CROSS_ANALYSIS.md
+@@ -299,7 +299,7 @@
+   "build": "react-scripts --openssl-legacy-provider build",
+   "test": "vitest run",
+   "deploy": "npm run build && npx firebase deploy --only hosting",
+-  "deploy:functions": "npm run build && GOOGLE_CLOUD_PROJECT=goldenaige npx firebase deploy --only functions",
++  "deploy:functions": "npm run build && GOOGLE_CLOUD_PROJECT=ai-integra-course-v2 npx firebase deploy --only functions",
+   "preview": "npm run build && npx serve -s build"
+ }
+ ```
+@@ -348,8 +348,8 @@
+ 
+ **README doesn't mention:**
+ - Production URL: https://aiintegrationcourse.com
+-- Firebase hosting: https://goldenaige.web.app
+-- Project ID: goldenaige
++- Firebase hosting: https://ai-integra-course-v2.web.app
++- Project ID: ai-integra-course-v2
+ 
+ ### 14. **Incomplete Features List** 🟢 LOW
+ 
+@@ -532,7 +532,7 @@
+    - AI tutor architecture
+    - RAG implementation details
+    - Multiple codebases explanation
+-   - Firebase project ID (goldenaige)
++   - Firebase project ID (ai-integra-course-v2)
+    - Complete environment variables
+    - Actual tech stack
+ 
+
+--- README_FIXES_APPLIED.md
++++ README_FIXES_APPLIED.md
+@@ -192,8 +192,8 @@
+ ## 🌐 Production URLs
+ 
+ - **Website**: https://aiintegrationcourse.com
+-- **Firebase Hosting**: https://goldenaige.web.app
+-- **Firebase Project**: goldenaige
++- **Firebase Hosting**: https://ai-integra-course-v2.web.app
++- **Firebase Project**: ai-integra-course-v2
+ - **Status**: Production (Active)
+ ```
+ 
+@@ -286,7 +286,7 @@
+ 
+ ### 4. Cross-file Consistency
+ - ✅ Node 20.x specified in: README, INSTALLATION, CONTRIBUTING, package.json, .nvmrc
+-- ✅ Firebase project "goldenaige" mentioned consistently
++- ✅ Firebase project "ai-integra-course-v2" mentioned consistently
+ - ✅ Production URLs match across documentation
+ 
+ ---
+
+--- README_QUICK_FIXES.md
++++ README_QUICK_FIXES.md
+@@ -316,7 +316,7 @@
+ ### Firebase
+ ```bash
+ firebase login           # Authenticate with Firebase
+-firebase use goldenaige  # Select Firebase project
++firebase use ai-integra-course-v2  # Select Firebase project
+ firebase emulators:start # Run local Firebase emulators
+ ```
+ 
+@@ -355,7 +355,7 @@
+ **Prerequisites:**
+ - Firebase CLI installed: `npm install -g firebase-tools`
+ - Firebase authentication: `firebase login`
+-- Firebase project selected: `firebase use goldenaige`
++- Firebase project selected: `firebase use ai-integra-course-v2`
+ 
+ **Deploy Manually:**
+ ```bash
+@@ -368,7 +368,7 @@
+ - Requires `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE` secret in GitHub
+ 
+ **Production URL:** https://aiintegrationcourse.com  
+-**Firebase URL:** https://goldenaige.web.app
++**Firebase URL:** https://ai-integra-course-v2.web.app
+ 
+ ### Firebase Functions
+ 
+@@ -466,8 +466,8 @@
+ ## Production URLs
+ 
+ - **Website:** https://aiintegrationcourse.com
+-- **Firebase Hosting:** https://goldenaige.web.app
+-- **Firebase Project:** goldenaige
++- **Firebase Hosting:** https://ai-integra-course-v2.web.app
++- **Firebase Project:** ai-integra-course-v2
+ - **Status:** Production (Active)
+ ```
+ 
+
+--- REDEPLOYMENT_SUMMARY.md
++++ REDEPLOYMENT_SUMMARY.md
+@@ -76,7 +76,7 @@
+ 2. Dependencies will be installed
+ 3. Production build will be created with `npm run build`
+ 4. Build artifacts will be deployed to Firebase Hosting
+-5. Site will be live at https://goldenaige.web.app
++5. Site will be live at https://ai-integra-course-v2.web.app
+ 
+ ### Manual Deployment (If Needed)
+ 
+@@ -89,7 +89,7 @@
+ # Or step by step
+ npm run build:production
+ npm run prepare:hosting
+-firebase deploy --project goldenaige
++firebase deploy --project ai-integra-course-v2
+ 
+ # Or hosting only
+ npm run deploy:hosting
+@@ -107,7 +107,7 @@
+ ### Post-Merge (Auto-Deploy)
+ - [ ] GitHub Actions workflow triggers
+ - [ ] Workflow completes successfully
+-- [ ] Site accessible at https://goldenaige.web.app
++- [ ] Site accessible at https://ai-integra-course-v2.web.app
+ - [ ] All routes load correctly
+ - [ ] No console errors
+ 
+@@ -169,7 +169,7 @@
+                             ▼
+                     ┌───────────────┐
+                     │ Site Live at  │
+-                    │ goldenaige    │
++                    │ ai-integra-course-v2    │
+                     │ .web.app      │
+                     └───────────────┘
+ ```
+@@ -206,8 +206,8 @@
+ 
+ ## Production URLs
+ 
+-- **Primary**: https://goldenaige.web.app
+-- **Firebase Console**: https://console.firebase.google.com/project/goldenaige
++- **Primary**: https://ai-integra-course-v2.web.app
++- **Firebase Console**: https://console.firebase.google.com/project/ai-integra-course-v2
+ - **GitHub Actions**: https://github.com/Gnoscenti/ai-integration-course/actions
+ 
+ ## Notes
+
+--- allie/tools/seed_course_structure.py
++++ allie/tools/seed_course_structure.py
+@@ -3,7 +3,7 @@
+ Seed course structure into Firestore to match the hierarchical format expected by the app.
+ 
+ Usage:
+-  python allie/tools/seed_course_structure.py --project goldenaige
++  python allie/tools/seed_course_structure.py --project ai-integra-course-v2
+ """
+ from __future__ import annotations
+ 
+@@ -32,11 +32,11 @@
+ 
+ def main() -> int:
+     p = argparse.ArgumentParser()
+-    p.add_argument('--project', default='goldenaige', help='GCP project ID')
++    p.add_argument('--project', default='ai-integra-course-v2', help='GCP project ID')
+     args = p.parse_args()
+ 
+     db = firestore.Client(project=args.project)
+-    bucket = 'gs://goldenaige.firebasestorage.app'
++    bucket = 'gs://ai-integra-course-v2.firebasestorage.app'
+ 
+     # Course data
+     course_id = 'course_01_id'
+
+--- new/create_free_user.js
++++ new/create_free_user.js
+@@ -69,7 +69,7 @@
+     console.log('🆓 Subscription: None (Free Tier)');
+     console.log('\n✅ This account can ONLY access FREE lessons!');
+     console.log('❌ Premium lessons will show "Login to access" or be blocked');
+-    console.log('\nLogin at: https://goldenaige.web.app/login');
++    console.log('\nLogin at: https://ai-integra-course-v2.web.app/login');
+     
+   } catch (error) {
+     console.error('❌ Error creating test user:', error.message);
+
+--- new/create_test_user.js
++++ new/create_test_user.js
+@@ -73,7 +73,7 @@
+     console.log('💎 Subscription: Active (Premium)');
+     console.log('📅 Valid until:', new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString());
+     console.log('\n✅ This account can access ALL premium lessons!');
+-    console.log('\nLogin at: https://goldenaige.web.app/login');
++    console.log('\nLogin at: https://ai-integra-course-v2.web.app/login');
+     
+   } catch (error) {
+     console.error('❌ Error creating test user:', error.message);
+
+--- repo_finish.sh
++++ repo_finish.sh
+@@ -67,7 +67,7 @@
+ 
+   # If a local service account JSON is present and not yet configured, set GOOGLE_APPLICATION_CREDENTIALS
+   if [ -z "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]; then
+-    local sa_json_default="$HOME/Downloads/goldenaige-3619158f2924.json"
++    local sa_json_default="$HOME/Downloads/ai-integra-course-v2-3619158f2924.json"
+     if [ -f "$sa_json_default" ]; then
+       if [ $DRY_RUN -eq 1 ]; then say "DRYRUN: would export GOOGLE_APPLICATION_CREDENTIALS to local service account JSON"; else export GOOGLE_APPLICATION_CREDENTIALS="$sa_json_default"; fi
+     fi
+
+--- scripts/deploy-production.sh
++++ scripts/deploy-production.sh
+@@ -62,9 +62,9 @@
+     
+     # Verify gcloud project is set
+     CURRENT_PROJECT=$(gcloud config get-value project 2>/dev/null || echo "")
+-    if [ "$CURRENT_PROJECT" != "goldenaige" ]; then
+-        print_status "Setting gcloud project to goldenaige..."
+-        gcloud config set project goldenaige 2>/dev/null || {
++    if [ "$CURRENT_PROJECT" != "ai-integra-course-v2" ]; then
++        print_status "Setting gcloud project to ai-integra-course-v2..."
++        gcloud config set project ai-integra-course-v2 2>/dev/null || {
+             print_warning "Could not set gcloud project (continuing anyway)"
+         }
+     fi
+@@ -74,7 +74,7 @@
+ if [ ! -f "FIREBASE_OPTIMIZATION_REPORT.md" ]; then
+     print_status "Running Firebase optimization for first-time setup..."
+     if [ -f "scripts/optimize-firebase.sh" ]; then
+-        ./scripts/optimize-firebase.sh --project goldenaige || print_warning "Optimization script encountered issues (non-critical)"
++        ./scripts/optimize-firebase.sh --project ai-integra-course-v2 || print_warning "Optimization script encountered issues (non-critical)"
+     else
+         print_warning "Optimization script not found. Skipping optimization."
+     fi
+@@ -124,7 +124,7 @@
+ print_status "Deploying to Firebase..."
+ 
+ # Respect overrides while defaulting to the production IDs
+-PROJECT_ID=${FIREBASE_PROJECT_ID:-goldenaige}
++PROJECT_ID=${FIREBASE_PROJECT_ID:-ai-integra-course-v2}
+ SITE_ID=${FIREBASE_HOSTING_SITE:-$PROJECT_ID}
+ FUNCTIONS_REGION=${FIREBASE_FUNCTIONS_REGION:-us-central1}
+ 
+@@ -176,6 +176,6 @@
+ 
+ echo "=================================================="
+ echo "✅ Production deployment completed!"
+-echo "🌐 Frontend: https://goldenaige.web.app"
+-echo "🔧 Firebase Console: https://console.firebase.google.com/project/goldenaige"
++echo "🌐 Frontend: https://ai-integra-course-v2.web.app"
++echo "🔧 Firebase Console: https://console.firebase.google.com/project/ai-integra-course-v2"
+ echo "=================================================="
+
+--- scripts/enable_compute_api_and_check_sa.cjs
++++ scripts/enable_compute_api_and_check_sa.cjs
+@@ -2,7 +2,7 @@
+ const { GoogleAuth } = require('google-auth-library');
+ 
+ async function enableComputeAndCheck(){
+-  const PROJECT_ID = 'goldenaige';
++  const PROJECT_ID = 'ai-integra-course-v2';
+   const PROJECT_NUMBER = '241195884047';
+   const COMPUTE_SA_EMAIL = `${PROJECT_NUMBER}-compute@developer.gserviceaccount.com`;
+ 
+
+--- scripts/optimize-firebase.sh
++++ scripts/optimize-firebase.sh
+@@ -34,7 +34,7 @@
+ }
+ 
+ # Parse command line arguments
+-PROJECT_ID="goldenaige"
++PROJECT_ID="ai-integra-course-v2"
+ while [[ $# -gt 0 ]]; do
+     case $1 in
+         --project)
+@@ -176,9 +176,9 @@
+       - 'NODE_OPTIONS=--openssl-legacy-provider'
+     
+   # Deploy to Firebase Hosting
+-  - name: 'gcr.io/goldenaige/firebase'
++  - name: 'gcr.io/ai-integra-course-v2/firebase'
+     id: 'deploy-hosting'
+-    args: ['deploy', '--only', 'hosting', '--project', 'goldenaige']
++    args: ['deploy', '--only', 'hosting', '--project', 'ai-integra-course-v2']
+     
+   # Build and deploy Firebase Functions
+   - name: 'node:20'
+@@ -187,9 +187,9 @@
+     entrypoint: 'npm'
+     args: ['run', 'build']
+     
+-  - name: 'gcr.io/goldenaige/firebase'
++  - name: 'gcr.io/ai-integra-course-v2/firebase'
+     id: 'deploy-functions'
+-    args: ['deploy', '--only', 'functions', '--project', 'goldenaige']
++    args: ['deploy', '--only', 'functions', '--project', 'ai-integra-course-v2']
+ 
+ timeout: '1800s'  # 30 minutes
+ 
+@@ -198,7 +198,7 @@
+   logging: CLOUD_LOGGING_ONLY
+   
+ substitutions:
+-  _FIREBASE_PROJECT_ID: 'goldenaige'
++  _FIREBASE_PROJECT_ID: 'ai-integra-course-v2'
+ EOF
+     print_success "cloudbuild.yaml created"
+ else
+
+--- scripts/update-lesson-tiers.js
++++ scripts/update-lesson-tiers.js
+@@ -19,7 +19,7 @@
+ // Uses Application Default Credentials when deployed or GOOGLE_APPLICATION_CREDENTIALS env var
+ if (!admin.apps.length) {
+   admin.initializeApp({
+-    projectId: 'goldenaige'
++    projectId: 'ai-integra-course-v2'
+   });
+ }
+ 
+
+--- verify-deployment.sh
++++ verify-deployment.sh
+@@ -88,10 +88,10 @@
+ log_info "Checking Firebase configuration..."
+ if [ -f ".firebaserc" ]; then
+     PROJECT_ID=$(grep -o '"default": "[^"]*"' .firebaserc | cut -d'"' -f4)
+-    if [ "$PROJECT_ID" = "goldenaige" ]; then
++    if [ "$PROJECT_ID" = "ai-integra-course-v2" ]; then
+         log_success "Firebase project configured: $PROJECT_ID"
+     else
+-        log_error "Unexpected Firebase project ID: $PROJECT_ID (expected: goldenaige)"
++        log_error "Unexpected Firebase project ID: $PROJECT_ID (expected: ai-integra-course-v2)"
+         ((ERRORS++))
+     fi
+ else

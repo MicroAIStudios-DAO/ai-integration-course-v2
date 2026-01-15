@@ -1,0 +1,27 @@
+# AI Integration Course - robots.txt
+# https://aiintegrationcourse.com
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://aiintegrationcourse.com/sitemap.xml
+
+# Crawl-delay for responsible crawling
+Crawl-delay: 1
+
+# Disallow admin and private routes
+Disallow: /admin
+Disallow: /api/
+Disallow: /__/
+Disallow: /firebase/
+
+# Allow all course content to be indexed
+Allow: /courses/
+Allow: /modules/
+Allow: /lessons/
+
+# Allow static assets
+Allow: /static/
+Allow: /images/
+Allow: /assets/

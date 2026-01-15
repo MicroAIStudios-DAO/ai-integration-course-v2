@@ -1,0 +1,40 @@
+# CODEOWNERS file for AI Integration Course
+# This file defines individuals or teams that are responsible for code in this repository.
+# 
+# Each line is a file pattern followed by one or more owners.
+# Order is important; the last matching pattern takes the most precedence.
+
+# Default owners for everything in the repo
+* @Gnoscenti
+
+# Frontend components and pages
+/src/components/ @Gnoscenti
+/src/pages/ @Gnoscenti
+/src/styles/ @Gnoscenti
+
+# Backend and API
+/api/ @Gnoscenti
+/functions/ @Gnoscenti
+/backend/ @Gnoscenti
+
+# AI Tutor specific
+/api/tutor.ts @Gnoscenti
+/src/components/AITutor.tsx @Gnoscenti
+/prompts/ @Gnoscenti
+
+# Configuration and deployment
+/.github/ @Gnoscenti
+/firebase.json @Gnoscenti
+/vercel.json @Gnoscenti
+*.config.js @Gnoscenti
+*.config.ts @Gnoscenti
+
+# Documentation
+*.md @Gnoscenti
+/lessons/ @Gnoscenti
+
+# Security-sensitive files
+/.env* @Gnoscenti
+/database.rules.json @Gnoscenti
+/storage.rules @Gnoscenti
+/premium_rules.rules @Gnoscenti

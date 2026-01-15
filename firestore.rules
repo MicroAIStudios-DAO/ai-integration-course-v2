@@ -1,0 +1,266 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if user owns this document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Check if user has premium access
+    function isPremium() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.premium == true;
+    }
+    
+    // Check if user has active subscription
+    function hasActiveSubscription() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.subscriptionStatus == 'active';
+    }
+    
+    // Check if user is in trial period
+    function isInTrial() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.subscriptionStatus == 'trialing';
+    }
+    
+    // Check if user has any form of access (premium, active subscription, or trial)
+    function hasPremiumAccess() {
+      return isPremium() || hasActiveSubscription() || isInTrial();
+    }
+    
+    // Check if lesson is free tier
+    function isFreeLesson(lessonData) {
+      return lessonData.tier == 'free' || lessonData.isFree == true;
+    }
+    
+    // Check if user is admin
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Validate email format
+    function isValidEmail(email) {
+      return email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+    }
+    
+    // ============================================
+    // USER DOCUMENTS
+    // ============================================
+    
+    match /users/{userId} {
+      // Users can read their own data
+      allow read: if isOwner(userId);
+      
+      // Users can create their own profile
+      allow create: if isOwner(userId) && 
+        request.resource.data.keys().hasAll(['email']) &&
+        isValidEmail(request.resource.data.email);
+      
+      // Users can update their own profile (but not premium status or role)
+      allow update: if isOwner(userId) && 
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['premium', 'role', 'subscriptionStatus']);
+      
+      // Only admins can delete users
+      allow delete: if isAdmin();
+      
+      // Admin override - admins can read/write all user data
+      allow read, write: if isAdmin();
+      
+      // User progress subcollection
+      match /progress/{progressId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // User completed lessons
+      match /completedLessons/{lessonId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+    
+    // ============================================
+    // COURSES (Public structure, gated content)
+    // ============================================
+    
+    match /courses/{courseId} {
+      // Anyone can read course metadata (titles, descriptions, structure)
+      allow read: if true;
+      
+      // Only admins can write courses
+      allow write: if isAdmin();
+      
+      // Modules subcollection
+      match /modules/{moduleId} {
+        // Anyone can read module metadata
+        allow read: if true;
+        
+        // Only admins can write modules
+        allow write: if isAdmin();
+        
+        // Lessons subcollection - THIS IS WHERE TIER GATING HAPPENS
+        match /lessons/{lessonId} {
+          // Read rules for lessons based on tier
+          allow read: if 
+            // Anyone can read lesson metadata (title, description, tier info)
+            // But content is filtered on the client side based on tier
+            true;
+          
+          // Only admins can write lessons
+          allow write: if isAdmin();
+        }
+      }
+    }
+    
+    // ============================================
+    // LESSON CONTENT (Separate collection for content gating)
+    // ============================================
+    
+    match /lessonContent/{contentId} {
+      // Gated read access based on tier
+      allow read: if isAuthenticated() && (
+        // Free content accessible to all authenticated users
+        resource.data.tier == 'free' ||
+        // Premium content requires premium access
+        hasPremiumAccess()
+      );
+      
+      // Only admins can write content
+      allow write: if isAdmin();
+    }
+    
+    // ============================================
+    // PREMIUM CONTENT (Strictly gated)
+    // ============================================
+    
+    match /premiumContent/{contentId} {
+      // Only premium users can read
+      allow read: if hasPremiumAccess();
+      
+      // Only admins can write
+      allow write: if isAdmin();
+    }
+    
+    // ============================================
+    // AI TUTOR INTERACTIONS
+    // ============================================
+    
+    match /tutorSessions/{sessionId} {
+      // Users can read their own sessions
+      allow read: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      
+      // Users can create sessions
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
+      
+      // Users can update their own sessions
+      allow update: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      
+      // No deletion allowed (for analytics)
+      allow delete: if isAdmin();
+    }
+    
+    // ============================================
+    // SUBSCRIPTIONS (Stripe integration)
+    // ============================================
+    
+    match /subscriptions/{subscriptionId} {
+      // Users can read their own subscriptions
+      allow read: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      
+      // Only backend (via admin SDK) can write subscriptions
+      allow write: if false;
+    }
+    
+    // ============================================
+    // PAYMENTS / INVOICES
+    // ============================================
+    
+    match /payments/{paymentId} {
+      // Users can read their own payments
+      allow read: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      
+      // Only backend can write payments
+      allow write: if false;
+    }
+    
+    // ============================================
+    // EMBEDDINGS CACHE (AI Tutor)
+    // ============================================
+    
+    match /embeddings/{embeddingId} {
+      // Anyone authenticated can read embeddings (for AI tutor)
+      allow read: if isAuthenticated();
+      
+      // Only backend/admin can write embeddings
+      allow write: if isAdmin();
+    }
+    
+    // ============================================
+    // ANALYTICS (Admin only)
+    // ============================================
+    
+    match /analytics/{docId} {
+      // Only admins can read/write analytics
+      allow read, write: if isAdmin();
+    }
+    
+    // ============================================
+    // FEEDBACK & SUPPORT
+    // ============================================
+    
+    match /feedback/{feedbackId} {
+      // Users can create feedback
+      allow create: if isAuthenticated();
+      
+      // Users can read their own feedback
+      allow read: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      
+      // Admins can read all feedback
+      allow read: if isAdmin();
+      
+      // No updates or deletes from users
+      allow update, delete: if isAdmin();
+    }
+    
+    // ============================================
+    // WAITLIST (Pre-launch)
+    // ============================================
+    
+    match /waitlist/{entryId} {
+      // Anyone can join waitlist
+      allow create: if true;
+      
+      // Only admins can read/manage waitlist
+      allow read, update, delete: if isAdmin();
+    }
+    
+    // ============================================
+    // DEFAULT DENY
+    // ============================================
+    
+    // Deny all other access by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

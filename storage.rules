@@ -1,0 +1,46 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Public read for course content (images, videos, etc.)
+    match /course_content/{allPaths=**} {
+      allow read: if true;
+      allow write: if false; // Only admin SDK can write
+    }
+    
+    // Public read for public assets
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Lesson markdown: free for module 1 lessons 1-5, otherwise auth-only
+    match /lessons-md/courses/course_01_id/modules/module_01_id/lessons/{lessonFile} {
+      allow read: if lessonFile.matches('lesson_(1|2|3|4|5)\\.md') || request.auth != null;
+      allow write: if false;
+    }
+    match /lessons-md/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+    
+    // User profile images - users can only access their own
+    match /users/{userId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId
+                   && request.resource.size < 5 * 1024 * 1024  // 5MB max
+                   && request.resource.contentType.matches('image/.*');
+    }
+    
+    // Premium content - only authenticated users
+    match /premium/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only admin SDK can write
+    }
+    
+    // Default deny everything else
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

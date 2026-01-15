@@ -1,0 +1,44 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          # Pin to Node 20.x
+          node-version: '20.x'
+
+      - name: Ensure npm@11
+        run: |
+          # Pin to npm 11 to avoid accidental npm 9/10 behavior differences
+          node -v || true
+          npm -v || true
+          npm install -g npm@11
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Deploy to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          # Requires VERCEL_TOKEN set in repository secrets.
+          # Optionally set VERCEL_ORG_ID and VERCEL_PROJECT_ID as secrets for precise targeting.
+          if ! command -v vercel >/dev/null 2>&1; then
+            npm install -g vercel
+          fi
+          # Use --prod to publish production. If you maintain multiple projects, set VERCEL_ORG_ID and VERCEL_PROJECT_ID.
+          vercel --token "$VERCEL_TOKEN" --prod
+

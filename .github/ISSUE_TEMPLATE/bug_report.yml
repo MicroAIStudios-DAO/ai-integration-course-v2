@@ -1,0 +1,103 @@
+name: 🐛 Bug Report
+description: Report a bug or issue with the AI Integration Course platform
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! Please provide as much detail as possible.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of the bug
+      placeholder: Tell us what went wrong
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: Describe the expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Describe what actually happened
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which component is affected?
+      options:
+        - Frontend (React UI)
+        - Backend (Firebase/Vercel)
+        - AI Tutor
+        - Authentication
+        - Premium/Subscription
+        - Lessons/Content
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Please provide environment details
+      placeholder: |
+        - Browser: [e.g., Chrome 120, Safari 17]
+        - OS: [e.g., Windows 11, macOS 14]
+        - Device: [e.g., Desktop, iPhone 15]
+      value: |
+        - Browser:
+        - OS:
+        - Device:
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain your problem
+      placeholder: Paste or drag images here
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console Logs
+      description: If applicable, paste any relevant console logs
+      placeholder: Paste console errors or logs here
+      render: shell
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here
+      placeholder: Any additional information that might help

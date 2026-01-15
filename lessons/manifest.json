@@ -1,0 +1,10 @@
+{
+  "free": [
+    { "slug": "intro", "title": "Welcome to Allie", "path": "free/intro.md", "videoId": "YOUR_INTRO_VIDEO_ID", "thumbnailUrl": "" },
+    { "slug": "setup", "title": "Setup: Supabase, Firebase", "path": "free/setup.md", "videoId": "YOUR_SETUP_VIDEO_ID", "thumbnailUrl": "" }
+  ],
+  "premium": [
+    { "slug": "embeddings", "title": "Building the Embed Pipeline", "path": "premium/embeddings.md", "thumbnailUrl": "" },
+    { "slug": "stripe", "title": "Stripe Integration End-to-End", "path": "premium/stripe.md", "thumbnailUrl": "" }
+  ]
+}

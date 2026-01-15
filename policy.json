@@ -1,0 +1,318 @@
+{
+  "bindings": [
+    {
+      "members": [
+        "serviceAccount:service-241195884047@gcp-sa-artifactregistry.iam.gserviceaccount.com"
+      ],
+      "role": "roles/artifactregistry.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-241195884047@gcp-sa-cloudaicompanion.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudaicompanion.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:241195884047@cloudbuild.gserviceaccount.com"
+      ],
+      "role": "roles/cloudbuild.builds.builder"
+    },
+    {
+      "members": [
+        "serviceAccount:service-241195884047@gcp-sa-cloudbuild.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudbuild.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-adminsdk-fbsvc@ai-integra-course-v2.iam.gserviceaccount.com",
+        "serviceAccount:firebase-compute-deployer@ai-integra-course-v2.iam.gserviceaccount.com",
+        "serviceAccount:firebase-deployer@ai-integra-course-v2.iam.gserviceaccount.com",
+        "serviceAccount:firebase-functions-compute@ai-integra-course-v2.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudfunctions.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-deploy@ai-integra-course-v2.iam.gserviceaccount.com",
+        "serviceAccount:github-action-989564894@ai-integra-course-v2.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudfunctions.developer"
+    },
+    {
+      "condition": {
+        "expression": "resource.name == \"projects/ai-integra-course-v2/databases/cloudresourcemanagerai-integra-course-v2\"",
+        "title": "[Auto-generated from Firestore Authentication page]"
+      },
+      "members": [
+        "serviceAccount:firebase-compute@ai-integra-course-v2.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudfunctions.developer"
+    },
+    {
+      "members": [
+        "serviceAccount:service-241195884047@gcf-admin-robot.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudfunctions.serviceAgent"
+    },
+    {
+      "members": [
+        "user:livetrue2u@gmail.com"
+      ],
+      "role": "roles/cloudhub.operator"
+    },
+    {
+      "members": [
+        "serviceAccount:service-241195884047@gcp-sa-cloudscheduler.iam.gserviceaccount.com"
+      ],
+      "role": "roles/cloudscheduler.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:compute-dev@ai-integra-course-v2.iam.gserviceaccount.com",
+        "serviceAccount:firebase-app-hosting-compute@ai-integra-course-v2.iam.gserviceaccount.com",
+        "serviceAccount:firebase-compute-deployer@ai-integra-course-v2.iam.gserviceaccount.com",
+        "serviceAccount:id-241195884047-compute-develo@ai-integra-course-v2.iam.gserviceaccount.com",
+        "serviceAccount:service-241195884047@gcf-admin-robot.iam.gserviceaccount.com"
+      ],
+      "role": "roles/compute.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:compute-dev@ai-integra-course-v2.iam.gserviceaccount.com",
+        "serviceAccount:firebase-app-hosting-compute@ai-integra-course-v2.iam.gserviceaccount.com",
+        "serviceAccount:firebase-functions-compute@ai-integra-course-v2.iam.gserviceaccount.com",
+        "serviceAccount:service-241195884047@compute-system.iam.gserviceaccount.com"
+      ],
+      "role": "roles/compute.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-241195884047@container-engine-robot.iam.gserviceaccount.com"
+      ],
+      "role": "roles/container.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-241195884047@container-analysis.iam.gserviceaccount.com"
+      ],
+      "role": "roles/containeranalysis.ServiceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-241195884047@containerregistry.iam.gserviceaccount.com"
+      ],
+      "role": "roles/containerregistry.ServiceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-241195884047@gcp-sa-containerscanning.iam.gserviceaccount.com"
+      ],
+      "role": "roles/containerscanning.ServiceAgent"
+    },
+    {
+      "condition": {
+        "expression": "resource.name == \"projects/ai-integra-course-v2/databases/cloudresourcemanagerai-integra-course-v2\"",
+        "title": "[Auto-generated from Firestore Authentication page]"
+      },
+      "members": [
+        "principal://firestore.googleapis.com/projects/241195884047/name/databases/cloudresourcemanagerai-integra-course-v2/userCreds/bpcadmin"
+      ],
+      "role": "roles/datastore.owner"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-app-hosting-compute@ai-integra-course-v2.iam.gserviceaccount.com"
+      ],
+      "role": "roles/developerconnect.readTokenAccessor"
+    },
+    {
+      "members": [
+        "serviceAccount:241195884047@cloudservices.gserviceaccount.com",
+        "serviceAccount:codex-235@ai-integra-course-v2.iam.gserviceaccount.com",
+        "serviceAccount:github-actions-deploy@ai-integra-course-v2.iam.gserviceaccount.com",
+        "serviceAccount:ai-integra-course-v2@appspot.gserviceaccount.com",
+        "serviceAccount:manus-431@ai-integra-course-v2.iam.gserviceaccount.com",
+        "serviceAccount:service-241195884047@compute-system.iam.gserviceaccount.com"
+      ],
+      "role": "roles/editor"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-deploy@ai-integra-course-v2.iam.gserviceaccount.com",
+        "serviceAccount:firebase-deployer@ai-integra-course-v2.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebase.admin"
+    },
+    {
+      "condition": {
+        "expression": "resource.name == \"projects/ai-integra-course-v2/databases/cloudresourcemanagerai-integra-course-v2\"",
+        "title": "[Auto-generated from Firestore Authentication page]"
+      },
+      "members": [
+        "serviceAccount:firebase-compute@ai-integra-course-v2.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebase.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:service-241195884047@gcp-sa-firebase.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebase.managementServiceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-adminsdk-fbsvc@ai-integra-course-v2.iam.gserviceaccount.com",
+        "serviceAccount:firebase-app-hosting-compute@ai-integra-course-v2.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebase.sdkAdminServiceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-adminsdk-fbsvc@ai-integra-course-v2.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebaseappcheck.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-app-hosting-compute@ai-integra-course-v2.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebaseapphosting.computeRunner"
+    },
+    {
+      "members": [
+        "serviceAccount:service-241195884047@gcp-sa-firebaseapphosting.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebaseapphosting.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-adminsdk-fbsvc@ai-integra-course-v2.iam.gserviceaccount.com",
+        "serviceAccount:github-action-989564894@ai-integra-course-v2.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebaseauth.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:service-241195884047@gcp-sa-firebasedataconnect.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebasedataconnect.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-deploy@ai-integra-course-v2.iam.gserviceaccount.com",
+        "serviceAccount:firebase-deployer@ai-integra-course-v2.iam.gserviceaccount.com",
+        "serviceAccount:github-action-989564894@ai-integra-course-v2.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebasehosting.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:service-241195884047@gcp-sa-firebasemods.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebasemods.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-241195884047@gcp-sa-firebasestorage.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebaserules.firestoreServiceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-241195884047@firebase-rules.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebaserules.system"
+    },
+    {
+      "members": [
+        "serviceAccount:service-241195884047@gcp-sa-firebasestorage.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firebasestorage.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:service-241195884047@gcp-sa-firestore.iam.gserviceaccount.com"
+      ],
+      "role": "roles/firestore.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:id-241195884047-compute-develo@ai-integra-course-v2.iam.gserviceaccount.com"
+      ],
+      "role": "roles/iam.devOps"
+    },
+    {
+      "members": [
+        "user:livetrue2u@gmail.com"
+      ],
+      "role": "roles/iam.serviceAccountCreator"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-adminsdk-fbsvc@ai-integra-course-v2.iam.gserviceaccount.com"
+      ],
+      "role": "roles/iam.serviceAccountTokenCreator"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-compute-deployer@ai-integra-course-v2.iam.gserviceaccount.com",
+        "serviceAccount:firebase-deployer@ai-integra-course-v2.iam.gserviceaccount.com"
+      ],
+      "role": "roles/iam.serviceAccountUser"
+    },
+    {
+      "members": [
+        "serviceAccount:service-241195884047@gcp-sa-identitytoolkit.iam.gserviceaccount.com"
+      ],
+      "role": "roles/identitytoolkit.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-adminsdk-fbsvc@ai-integra-course-v2.iam.gserviceaccount.com",
+        "user:livetrue2u@gmail.com"
+      ],
+      "role": "roles/owner"
+    },
+    {
+      "members": [
+        "serviceAccount:service-241195884047@serverless-robot-prod.iam.gserviceaccount.com"
+      ],
+      "role": "roles/run.serviceAgent"
+    },
+    {
+      "members": [
+        "serviceAccount:github-action-989564894@ai-integra-course-v2.iam.gserviceaccount.com"
+      ],
+      "role": "roles/run.viewer"
+    },
+    {
+      "members": [
+        "serviceAccount:github-action-989564894@ai-integra-course-v2.iam.gserviceaccount.com"
+      ],
+      "role": "roles/serviceusage.apiKeysViewer"
+    },
+    {
+      "members": [
+        "serviceAccount:github-action-989564894@ai-integra-course-v2.iam.gserviceaccount.com"
+      ],
+      "role": "roles/serviceusage.serviceUsageConsumer"
+    },
+    {
+      "members": [
+        "serviceAccount:codex-235@ai-integra-course-v2.iam.gserviceaccount.com",
+        "serviceAccount:firebase-adminsdk-fbsvc@ai-integra-course-v2.iam.gserviceaccount.com"
+      ],
+      "role": "roles/storage.admin"
+    },
+    {
+      "members": [
+        "serviceAccount:firebase-app-hosting-compute@ai-integra-course-v2.iam.gserviceaccount.com"
+      ],
+      "role": "roles/storage.objectViewer"
+    }
+  ],
+  "etag": "BwZCEx6WnE0=",
+  "version": 3
+}

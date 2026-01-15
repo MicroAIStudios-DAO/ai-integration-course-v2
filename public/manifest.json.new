@@ -1,0 +1,64 @@
+{
+  "short_name": "AI Course",
+  "name": "AI Integration Course",
+  "description": "Unlock your potential in the age of AI. Tools, insights, and strategies to outthink the hype and invest with confidence.",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#1a1a2e",
+  "background_color": "#0f0f1a",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en-US",
+  "categories": ["education", "business", "productivity"],
+  "screenshots": [
+    {
+      "src": "images/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "images/screenshot-narrow.png",
+      "sizes": "720x1280",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "My Courses",
+      "short_name": "Courses",
+      "description": "View your enrolled courses",
+      "url": "/courses",
+      "icons": [{ "src": "icons/courses-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your learning dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "icons/dashboard-96.png", "sizes": "96x96" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}

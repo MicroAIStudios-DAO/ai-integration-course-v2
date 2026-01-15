@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 💬 Questions & Support
+    url: https://github.com/Gnoscenti/ai-integration-course/discussions
+    about: Ask questions and get help from the community
+  - name: 📚 Documentation
+    url: https://github.com/Gnoscenti/ai-integration-course/blob/main/README.md
+    about: Check out the documentation and guides

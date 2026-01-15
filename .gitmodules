@@ -1,0 +1,3 @@
+[submodule "devlop"]
+	path = devlop
+	url = https://github.com/wooorm/devlop.git

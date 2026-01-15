@@ -1,0 +1,42 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() { return request.auth != null; }
+    function isPremium() { return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.premium == true; }
+    function isSubscribed() { return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSubscribed == true; }
+
+    // Users can read and update their own profile
+    match /users/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow write: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Courses - public read access for course structure
+    match /courses/{courseId} {
+      allow read: if true;
+      allow write: if false;
+
+      // Modules within courses
+      match /modules/{moduleId} {
+        allow read: if true;
+        allow write: if false;
+
+        // Lessons within modules
+        match /lessons/{lessonId} {
+          // Allow reading lesson metadata (title, order, tier)
+          // Content access is controlled separately via Storage rules
+          allow read: if true;
+          allow write: if false;
+        }
+      }
+    }
+
+    // Legacy lessons collection structure: lessons/{slug} with field tier in ['free','premium']
+    match /lessons/{slug} {
+      allow read: if resource.data.tier == 'free' || isPremium();
+      allow list: if true; // filter happens client-side by tier
+      allow write: if false; // managed via admin/backoffice
+    }
+  }
+}
+

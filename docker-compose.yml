@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  client:
+    build:
+      context: ./packages/client
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_API_URL=http://localhost:5001
+    volumes:
+      - ./packages/client:/app
+      - /app/node_modules
+
+  functions:
+    build:
+      context: ./packages/functions
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    environment:
+      - NODE_ENV=development
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/service-account.json
+    volumes:
+      - ./packages/functions:/app
+      - /app/node_modules
+      - ./service-account.json:/app/service-account.json:ro
+
+  allie:
+    build:
+      context: ./allie/backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ALLIE_EMBED_MODEL=${ALLIE_EMBED_MODEL:-text-embedding-3-small}
+    volumes:
+      - ./allie/backend:/app
+    depends_on:
+      - db
+
+  db:
+    image: pgvector/pgvector:pg16
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

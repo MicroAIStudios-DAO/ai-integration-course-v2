@@ -1,0 +1,132 @@
+"use client";
+import React, { useEffect, useRef, useState } from "react";
+
+type Props = {
+  lessonId: string;
+  premium?: boolean;
+  hasAccess?: boolean;
+  supportEmail?: string;
+};
+
+type Message = { role: "user"|"assistant"; content: string };
+
+export default function AITutor({ lessonId, premium, hasAccess, supportEmail }: Props) {
+  const [q, setQ] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  // Remove unused error state as it's set but never displayed
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+
+  const ask = async () => {
+    if (!q.trim()) return;
+    if (premium && !hasAccess) { 
+      console.error("Subscribe to access premium tutor."); 
+      return; 
+    }
+    setLoading(true);
+    setMessages(m => [...m, { role: "user", content: q }]);
+    const question = q; setQ("");
+    try {
+      const res = await fetch("/api/tutor", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lessonId, question }) });
+      if (!res.ok || !res.body) throw new Error("Tutor error");
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let accumulatedContent = "";
+      
+      const processChunk = () => {
+        setMessages(m => {
+          const last = m[m.length - 1];
+          if (last && last.role === "assistant") return [...m.slice(0, -1), { role: "assistant", content: accumulatedContent }];
+          return [...m, { role: "assistant", content: accumulatedContent }];
+        });
+      };
+      
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        accumulatedContent += decoder.decode(value, { stream: true });
+        processChunk();
+      }
+    } catch (e:any) {
+      console.error(e?.message || "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyLast = async () => {
+    const last = [...messages].reverse().find(m => m.role === "assistant");
+    if (last) await navigator.clipboard.writeText(last.content);
+  };
+
+  return (
+    <div className="ai-tutor">
+      {premium && !hasAccess && (
+        <div className="premium-banner">This is a premium lesson. Subscribe to unlock the AI Tutor and full content.</div>
+      )}
+      <div className="messages">
+        {messages.map((m, i) => {
+          const lines = m.content.split("\n");
+          const lineNodes = lines.map((line, lineIndex) => {
+            const parts: React.ReactNode[] = [];
+            const citeRegex = /\(Lesson §[^)]+\)/g;
+            let lastIndex = 0;
+            let match;
+            while ((match = citeRegex.exec(line)) !== null) {
+              if (match.index > lastIndex) {
+                parts.push(line.slice(lastIndex, match.index));
+              }
+              parts.push(
+                <span key={`cite-${lineIndex}-${match.index}`} className="cite">
+                  {match[0]}
+                </span>
+              );
+              lastIndex = match.index + match[0].length;
+            }
+            if (lastIndex < line.length) {
+              parts.push(line.slice(lastIndex));
+            }
+            if (lineIndex < lines.length - 1) {
+              parts.push(<br key={`br-${lineIndex}`} />);
+            }
+            return parts;
+          });
+          return (
+            <div key={i} className={`msg ${m.role}`}>
+              {lineNodes}
+            </div>
+          );
+        })}
+        <div ref={scrollRef} />
+      </div>
+      <div className="composer">
+        <input placeholder="Ask a question about this lesson…" value={q} onChange={e=>setQ(e.target.value)} onKeyDown={e=>{ if(e.key==="Enter"&&!e.shiftKey) ask(); }} disabled={loading || (premium && !hasAccess)} />
+        <button onClick={ask} disabled={loading || (premium && !hasAccess)}>Ask</button>
+      </div>
+      {loading && <div className="typing">Thinking…</div>}
+      <div className="actions">
+        <button onClick={copyLast}>Copy answer</button>
+        <a href={`mailto:${supportEmail||'support@aiintegrationcourse.com'}?subject=AI%20Tutor%20issue%20for%20lesson%20${encodeURIComponent(lessonId)}`}>Report issue</a>
+        <a href={`mailto:${supportEmail||'support@aiintegrationcourse.com'}?subject=Need%20human%20support%20for%20lesson%20${encodeURIComponent(lessonId)}`}>Switch to human support</a>
+      </div>
+      <style>{`
+        .ai-tutor { border-top: 1px solid #e5e7eb; padding-top: 1rem; margin-top: 1rem; color: #1f2937 !important; }
+        .ai-tutor .messages,
+        .ai-tutor .msg,
+        .ai-tutor .msg.user,
+        .ai-tutor .msg.assistant { color: #1f2937 !important; }
+        .messages { display:flex; flex-direction:column; gap:.5rem; }
+        .msg.user{ align-self:flex-end; background:#eef; padding:.5rem .75rem; border-radius:8px; max-width:80% }
+        .msg.assistant{ align-self:flex-start; background:#f6f6f7; padding:.5rem .75rem; border-radius:8px; max-width:80% }
+        .msg .cite{ color:#2563eb; font-weight:600 }
+        .composer{ display:flex; gap:.5rem; margin-top:.5rem }
+        input{ flex:1; padding:.5rem .75rem; border:1px solid #d1d5db; border-radius:6px }
+        .typing{ font-size:.9rem; color:#6b7280; margin-top:.5rem }
+        .actions{ display:flex; gap:1rem; margin-top:.5rem; font-size:.9rem }
+        .premium-banner{ background:#fff3cd; border:1px solid #ffeeba; padding:.5rem .75rem; border-radius:6px; margin-bottom:.75rem }
+      `}</style>
+    </div>
+  );
+}

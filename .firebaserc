@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "ai-integra-course-v2"
+  },
+  "targets": {
+    "ai-integra-course-v2": {
+      "hosting": {
+        "main": [
+          "ai-integra-course-v2"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

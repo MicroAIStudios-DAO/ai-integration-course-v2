@@ -1,0 +1,135 @@
+/* Mobile iOS Compatibility Improvements */
+
+/* Prevent zoom on input focus (iOS Safari) */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea,
+select {
+  font-size: 16px !important;
+  -webkit-appearance: none;
+  border-radius: 0;
+}
+
+/* Fix iOS Safari viewport issues */
+@supports (-webkit-touch-callout: none) {
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* Improve touch targets for mobile */
+button,
+.clickable {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Fix iOS Safari button styling */
+button {
+  -webkit-appearance: none;
+  border-radius: 8px;
+}
+
+/* Improve mobile navigation */
+@media (max-width: 768px) {
+  .mobile-nav {
+    padding: 0.5rem;
+  }
+  
+  .mobile-nav a {
+    padding: 0.75rem 1rem;
+    display: block;
+    text-align: center;
+  }
+}
+
+/* Fix mobile course list layout */
+@media (max-width: 640px) {
+  .course-list {
+    padding: 1rem;
+  }
+  
+  .lesson-item {
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .lesson-button {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 14px;
+  }
+}
+
+/* Improve mobile dropdown */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%23666' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem top 50%;
+  background-size: 0.65rem auto;
+  padding-right: 2.5rem;
+}
+
+/* Fix mobile form styling */
+@media (max-width: 640px) {
+  .form-container {
+    padding: 1rem;
+    margin: 1rem;
+  }
+  
+  .form-input {
+    font-size: 16px;
+    padding: 0.75rem;
+  }
+  
+  .form-button {
+    padding: 0.875rem;
+    font-size: 16px;
+  }
+}
+
+/* Improve mobile lesson page */
+@media (max-width: 768px) {
+  .lesson-content {
+    padding: 1rem;
+  }
+  
+  .video-container {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16/9;
+  }
+}
+
+/* Fix iOS Safari sticky positioning */
+.sticky-header {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+/* Improve mobile text readability */
+@media (max-width: 640px) {
+  body {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  
+  h1 {
+    font-size: 1.875rem;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+  }
+  
+  h3 {
+    font-size: 1.25rem;
+  }
+}
+

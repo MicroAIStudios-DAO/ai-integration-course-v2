@@ -1,0 +1,27 @@
+PLAN dry-run transcript (no side effects)
+
+$ git status --porcelain
+$ git stash -u
+$ git fetch --all --prune
+$ git switch -c release/launch origin/main
+
+$ source $HOME/Desktop/env1.txt   # values not printed
+$ echo "NEXT_PUBLIC_* and REACT_APP_* → .env.local/.env.production"
+
+$ npm ci  # or npm install
+$ npm run build  # typecheck + build
+
+$ firebase firestore:export "$HOME/backups/firestore_2025-09-09T04:22:11+00:00"
+
+$ firebase deploy --only firestore:rules
+
+$ node ./firestore_migrate.js --apply --manifest ./reorg_logs/firestore_migration_manifest.json
+
+$ node ./tools/verify_stripe.cjs
+
+$ curl -sS -o /dev/null -w '%{http_code} %{url_effective}\n' https://aiintegrationcourse.com
+
+$ git add -A && git restore --staged .env* && git commit -m 'Release: AI Tutor + launch prep' && git push -u origin release/launch
+
+End of dry-run.
+
