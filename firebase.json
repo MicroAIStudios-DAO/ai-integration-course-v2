@@ -2,20 +2,12 @@
     "functions": [
           {
                   "codebase": "default",
-                  "source": "functions",
+                  "source": "firebase/functions",
                   "runtime": "nodejs20",
                   "region": "us-central1",
                   "serviceAccount": "firebase-app-hosting-compute@ai-integra-course-v2.iam.gserviceaccount.com",
                   "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run build"],
                   "ignore": ["node_modules", ".git", "firebase-debug.log", "firebase-debug.*.log", "*.local"]
-          },
-          {
-                  "codebase": "new",
-                  "source": "new",
-                  "runtime": "nodejs20",
-                  "region": "us-central1",
-                  "serviceAccount": "firebase-app-hosting-compute@ai-integra-course-v2.iam.gserviceaccount.com",
-                  "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run build"]
           }
     ],
     "firestore": {
