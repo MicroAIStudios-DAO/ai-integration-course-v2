@@ -365,7 +365,7 @@ npm run deploy  # Builds and deploys to Firebase Hosting
 **Automatic Deployment:**
 - Push to `main` branch triggers automatic deployment via GitHub Actions
 - Pull requests create preview deployments
-- Requires `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE` secret in GitHub
+- Requires `FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2` secret in GitHub
 
 **Production URL:** https://aiintegrationcourse.com  
 **Firebase URL:** https://ai-integra-course-v2.web.app

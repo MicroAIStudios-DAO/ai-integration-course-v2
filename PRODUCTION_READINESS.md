@@ -38,7 +38,7 @@ This document tracks the production deployment readiness status for the AI Integ
   - ✅ Environment variables configured with fallbacks
 
 - [x] **Required GitHub Secrets**
-  - ⚠️ `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE` - **Must be configured in GitHub**
+  - ⚠️ `FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2` - **Must be configured in GitHub**
   - ℹ️ Firebase config variables optional (have fallback values)
 
 ## ✅ Security & Configuration
@@ -90,7 +90,7 @@ This document tracks the production deployment readiness status for the AI Integ
   ```
   1. Go to GitHub repository settings
   2. Navigate to Secrets and variables → Actions
-  3. Add new secret: FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE
+  3. Add new secret: FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2
   4. Value: Firebase service account JSON from Firebase Console
   ```
 

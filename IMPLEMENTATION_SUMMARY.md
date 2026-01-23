@@ -405,7 +405,7 @@ firebase functions:log
 ### Recommended Actions
 
 1. **Set Up CI/CD:**
-   - Add GitHub secret: `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE`
+   - Add GitHub secret: `FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2`
    - Push to main = auto-deploy
 
 2. **Configure Monitoring:**

@@ -323,7 +323,7 @@ Now that you're deployed:
 
 4. **Set Up CI/CD**
    - Already configured in `.github/workflows/`
-   - Add GitHub secret: `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE`
+   - Add GitHub secret: `FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2`
    - Push to main = auto-deploy!
 
 ---

@@ -105,34 +105,34 @@ const HomePage: React.FC = () => {
         {/* Main Headline */}
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 max-w-5xl">
           <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Accelerate Your Future Skills Now
+            Build Your First AI Solution in 15 Minutes
           </span>
         </h1>
 
         {/* Subheadline */}
         <p className="text-lg md:text-xl lg:text-2xl max-w-3xl text-slate-300 mb-4 leading-relaxed">
-          AI built, AI powered. From overwhelm to action, we cut the noise.
+          From overwhelm to action. Stop learning about AI—start building with it.
         </p>
         <p className="text-md md:text-lg max-w-2xl text-slate-400 mb-8">
-          Your roadmap, your outcomes, no BS — everything's guided, simplified, and built to execute.
+          Get your first win in 15 minutes. No fluff, no theory—just practical AI skills that create immediate value.
         </p>
 
         {/* Key Value Props */}
         <div className="grid md:grid-cols-3 gap-6 max-w-4xl mb-12">
           <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-            <div className="text-3xl mb-3">🚀</div>
-            <h3 className="text-lg font-semibold mb-2">AI-Enhanced Learning</h3>
-            <p className="text-sm text-slate-400">Experience AI as your coach, not just a tool. Interactive lessons that think with you.</p>
+            <div className="text-3xl mb-3">⏱️</div>
+            <h3 className="text-lg font-semibold mb-2">First Win in 15 Minutes</h3>
+            <p className="text-sm text-slate-400">No lengthy setup. Complete your first AI project before your coffee gets cold.</p>
           </div>
           <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-            <div className="text-3xl mb-3">🎯</div>
-            <h3 className="text-lg font-semibold mb-2">Immediate Value</h3>
-            <p className="text-sm text-slate-400">Skip the overwhelm. Get skills, strategies, and mindsets that create results today.</p>
+            <div className="text-3xl mb-3">🛠️</div>
+            <h3 className="text-lg font-semibold mb-2">Built for Builders</h3>
+            <p className="text-sm text-slate-400">Skip the theory. Every lesson ends with something you can use immediately.</p>
           </div>
           <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-            <div className="text-3xl mb-3">⚡</div>
-            <h3 className="text-lg font-semibold mb-2">Built for Action</h3>
-            <p className="text-sm text-slate-400">Guided by humans, built 100% by AI for AI era learners. Every lesson pushes you toward mastery.</p>
+            <div className="text-3xl mb-3">🤖</div>
+            <h3 className="text-lg font-semibold mb-2">AI as Your Coach</h3>
+            <p className="text-sm text-slate-400">Not just videos—an AI-enhanced accelerator that thinks with you and pushes you toward mastery.</p>
           </div>
         </div>
 

@@ -65,7 +65,7 @@ This document provides step-by-step instructions for setting up, running, and de
 1. **Authenticate with Firebase**
    ```bash
    firebase login
-   # or use FIREBASE_TOKEN/FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE in CI
+   # or use FIREBASE_TOKEN/FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2 in CI
    ```
 
 2. **Initialize Firebase project locally (if not already set up)**
