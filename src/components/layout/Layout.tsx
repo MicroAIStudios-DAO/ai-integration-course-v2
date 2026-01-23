@@ -123,8 +123,34 @@ const Layout: React.FC = () => {
       <main className="flex-grow container mx-auto p-4 md:p-8">
         <Outlet />
       </main>
-      <footer className="bg-slate-900 text-white p-4 text-center font-sans">
-        <p>© 2025 MicroAI Studios™ — All rights reserved.</p>
+      <footer className="bg-slate-900 text-white p-6 font-sans">
+        <div className="container mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-sm">© 2025 MicroAI Studios™ — All rights reserved.</p>
+            <div className="flex gap-6 text-sm">
+              <NavLink 
+                to="/terms" 
+                className="hover:text-blue-300 transition-colors underline"
+                aria-label="View Terms of Use"
+              >
+                Terms of Use
+              </NavLink>
+              <NavLink 
+                to="/privacy" 
+                className="hover:text-blue-300 transition-colors underline"
+                aria-label="View Privacy Policy"
+              >
+                Privacy Policy
+              </NavLink>
+            </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-white/20 text-xs text-gray-400 text-center">
+            <p>
+              ⚠️ This platform uses AI systems for personalized tutoring and content recommendations. 
+              AI-generated responses are provided for educational assistance and should be verified independently.
+            </p>
+          </div>
+        </div>
       </footer>
     </div>
   );
