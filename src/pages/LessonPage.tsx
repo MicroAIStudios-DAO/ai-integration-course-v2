@@ -9,6 +9,7 @@ import { useAuth } from "../context/AuthContext"; // For gating logic
 import AnimatedAvatar from "../components/layout/AnimatedAvatar"; // Import AnimatedAvatar
 import AITutor from "../components/AITutor";
 import "../styles/lesson-content.css"; // Import textbook-style CSS
+import { trackLessonStart, trackLessonComplete, trackVideoProgress } from "../utils/analytics";
 
 const LessonPage: React.FC = () => {
   const { courseId, moduleId, lessonId } = useParams<{ courseId: string; moduleId: string; lessonId: string }>();
@@ -124,6 +125,15 @@ The detailed content for this lesson is being prepared. Please check back soon o
           
           setMarkdownContent(contentToDisplay);
           setVideoUrlToPlay(currentLesson.videoUrl);
+
+          // Track lesson_start event
+          trackLessonStart(
+            lessonId,
+            currentLesson.title,
+            moduleId,
+            currentModule.title,
+            courseId
+          );
         } else {
           setError("You do not have access to this premium lesson.");
         }
@@ -143,6 +153,14 @@ The detailed content for this lesson is being prepared. Please check back soon o
     if (currentUser && courseId && lessonId) {
       try {
         await markLessonAsComplete(currentUser.uid, courseId, lessonId);
+        
+        // Track lesson_complete event
+        trackLessonComplete(
+          lessonId,
+          lesson?.title || '',
+          moduleId || '',
+          'button_click'
+        );
         alert("Lesson marked as complete!");
         const progress = await getUserCourseProgress(currentUser.uid, courseId);
         setUserProgress(progress);

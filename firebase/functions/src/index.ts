@@ -529,3 +529,390 @@ export const backfillStripeCustomers = functions
 
   return { processed: results.length, results };
 });
+
+
+// ============================================================================
+// AUDIT REQUIREMENT: Churn Recovery Email System
+// Automated triggers for user retention based on behavior segments:
+// 1. Window Shoppers: Viewed pricing > 0 AND Checkout = 0
+// 2. Cart Abandoners: Checkout > 0 AND Purchase = 0
+// 3. Zombie Users: Purchase > 0 AND Lesson Start = 0 (30d)
+// ============================================================================
+
+interface UserSegment {
+  uid: string;
+  email: string;
+  segment: 'window_shopper' | 'cart_abandoner' | 'zombie_user';
+  lastActivity: Date;
+  daysSinceActivity: number;
+}
+
+// Scheduled function to identify and tag users for churn recovery
+// Runs daily at 9 AM UTC
+export const identifyChurnRiskUsers = functions.pubsub
+  .schedule('0 9 * * *')
+  .timeZone('America/Los_Angeles')
+  .onRun(async (context) => {
+    const db = admin.firestore();
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    const segments: UserSegment[] = [];
+
+    try {
+      // 1. WINDOW SHOPPERS: Users who viewed pricing but never started checkout
+      // Criteria: Has pricingPageViews > 0, no checkoutStartedAt, created > 24h ago
+      const windowShoppers = await db.collection('users')
+        .where('pricingPageViews', '>', 0)
+        .where('checkoutStartedAt', '==', null)
+        .where('createdAt', '<', admin.firestore.Timestamp.fromDate(oneDayAgo))
+        .limit(100)
+        .get();
+
+      for (const doc of windowShoppers.docs) {
+        const data = doc.data();
+        if (!data.email || data.churnEmailSent?.window_shopper) continue;
+        
+        segments.push({
+          uid: doc.id,
+          email: data.email,
+          segment: 'window_shopper',
+          lastActivity: data.lastPricingView?.toDate() || data.createdAt?.toDate() || now,
+          daysSinceActivity: Math.floor((now.getTime() - (data.lastPricingView?.toDate()?.getTime() || data.createdAt?.toDate()?.getTime() || now.getTime())) / (24 * 60 * 60 * 1000)),
+        });
+      }
+
+      // 2. CART ABANDONERS: Users who started checkout but never completed purchase
+      // Criteria: Has checkoutStartedAt, no premium/subscription, checkout > 1 hour ago
+      const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+      const cartAbandoners = await db.collection('users')
+        .where('checkoutStartedAt', '!=', null)
+        .where('premium', '==', false)
+        .limit(100)
+        .get();
+
+      for (const doc of cartAbandoners.docs) {
+        const data = doc.data();
+        if (!data.email || data.churnEmailSent?.cart_abandoner) continue;
+        
+        const checkoutTime = data.checkoutStartedAt?.toDate();
+        if (checkoutTime && checkoutTime < oneHourAgo) {
+          segments.push({
+            uid: doc.id,
+            email: data.email,
+            segment: 'cart_abandoner',
+            lastActivity: checkoutTime,
+            daysSinceActivity: Math.floor((now.getTime() - checkoutTime.getTime()) / (24 * 60 * 60 * 1000)),
+          });
+        }
+      }
+
+      // 3. ZOMBIE USERS: Paid users with no lesson activity in 30 days
+      // Criteria: Has premium = true, lastLessonStartAt < 30 days ago OR null
+      const zombieUsers = await db.collection('users')
+        .where('premium', '==', true)
+        .limit(100)
+        .get();
+
+      for (const doc of zombieUsers.docs) {
+        const data = doc.data();
+        if (!data.email || data.churnEmailSent?.zombie_user) continue;
+        
+        const lastLesson = data.lastLessonStartAt?.toDate();
+        const purchaseDate = data.lastPaymentAt?.toDate() || data.createdAt?.toDate();
+        
+        // If never started a lesson and purchased > 7 days ago
+        // OR last lesson > 30 days ago
+        if ((!lastLesson && purchaseDate && purchaseDate < sevenDaysAgo) ||
+            (lastLesson && lastLesson < thirtyDaysAgo)) {
+          segments.push({
+            uid: doc.id,
+            email: data.email,
+            segment: 'zombie_user',
+            lastActivity: lastLesson || purchaseDate || now,
+            daysSinceActivity: Math.floor((now.getTime() - (lastLesson?.getTime() || purchaseDate?.getTime() || now.getTime())) / (24 * 60 * 60 * 1000)),
+          });
+        }
+      }
+
+      // Store identified segments for email processing
+      const batch = db.batch();
+      
+      for (const segment of segments) {
+        // Create churn recovery record
+        const recoveryRef = db.collection('churn_recovery').doc();
+        batch.set(recoveryRef, {
+          uid: segment.uid,
+          email: segment.email,
+          segment: segment.segment,
+          daysSinceActivity: segment.daysSinceActivity,
+          identifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+          emailSent: false,
+          status: 'pending',
+        });
+
+        // Mark user as identified for this segment (prevent duplicate emails)
+        const userRef = db.doc(`users/${segment.uid}`);
+        batch.update(userRef, {
+          [`churnSegment`]: segment.segment,
+          [`churnIdentifiedAt`]: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+
+      await batch.commit();
+
+      console.log(`Identified ${segments.length} users for churn recovery:`, {
+        window_shoppers: segments.filter(s => s.segment === 'window_shopper').length,
+        cart_abandoners: segments.filter(s => s.segment === 'cart_abandoner').length,
+        zombie_users: segments.filter(s => s.segment === 'zombie_user').length,
+      });
+
+      return { identified: segments.length };
+    } catch (error: any) {
+      console.error('Error identifying churn risk users:', error);
+      throw new functions.https.HttpsError('internal', error.message);
+    }
+  });
+
+// Function to process and send churn recovery emails
+// Triggered when a new churn_recovery document is created
+export const processChurnRecoveryEmail = functions.firestore
+  .document('churn_recovery/{docId}')
+  .onCreate(async (snap, context) => {
+    const data = snap.data();
+    const { uid, email, segment, daysSinceActivity } = data;
+
+    // Email templates based on segment
+    const emailTemplates = {
+      window_shopper: {
+        subject: '🤔 Is it the price? Let\'s talk about your AI journey',
+        body: `Hi there,
+
+I noticed you checked out our AI Integration Course but didn't take the next step. I get it – investing in yourself can feel like a big decision.
+
+Here's the thing: our students typically save 10+ hours per week after implementing just ONE automation from our course. That's 520+ hours per year.
+
+At $49/month, that's less than $1 per hour saved. And with our 14-Day Build-Your-First-Bot Guarantee, you literally can't lose.
+
+**What's holding you back?**
+- Is it the price? Reply and let's discuss options.
+- Not sure if it's right for you? Let me know your use case.
+- Need more info? Check out our free preview lessons.
+
+Your AI-powered future is waiting.
+
+Best,
+The AI Integration Course Team
+
+P.S. Reply to this email – I read every response personally.`,
+      },
+      cart_abandoner: {
+        subject: '⏰ Your checkout is waiting (14-day guarantee inside)',
+        body: `Hi there,
+
+You were SO close to starting your AI integration journey! Your checkout session is still waiting for you.
+
+I know life gets busy, so here's a quick reminder of what you're getting:
+
+✅ Build your first working bot in 14 days (guaranteed)
+✅ Step-by-step tutorials with real business applications
+✅ AI tutor available 24/7 to answer your questions
+✅ Lifetime access to all course materials
+
+**Remember: If you don't build a working bot in 14 days, you get a full refund. No questions asked.**
+
+Ready to continue? Click here to complete your enrollment:
+https://aiintegrationcourse.com/signup
+
+Questions? Just reply to this email.
+
+Best,
+The AI Integration Course Team`,
+      },
+      zombie_user: {
+        subject: '👋 We miss you! Your AI bot is waiting to be built',
+        body: `Hi there,
+
+It's been ${daysSinceActivity} days since we've seen you in the course. Your AI journey doesn't have to end here!
+
+I know getting started can feel overwhelming, so here's a simple challenge:
+
+**This week, spend just 15 minutes on the "Build Your First Bot" lesson.**
+
+That's it. Just 15 minutes. You'll be amazed at what you can accomplish.
+
+Here's your direct link to get started:
+https://aiintegrationcourse.com/courses
+
+Need help? Our AI tutor is available 24/7, and you can always reply to this email.
+
+**Remember:** You have a 14-Day Build-Your-First-Bot Guarantee. Let's make sure you claim it!
+
+Rooting for you,
+The AI Integration Course Team
+
+P.S. What's been the biggest blocker for you? Reply and let me know – I'd love to help.`,
+      },
+    };
+
+    const template = emailTemplates[segment as keyof typeof emailTemplates];
+    if (!template) {
+      console.error(`Unknown segment: ${segment}`);
+      return;
+    }
+
+    try {
+      // Store email for sending (can be processed by external email service or Gmail API)
+      await admin.firestore().collection('email_queue').add({
+        to: email,
+        subject: template.subject,
+        body: template.body,
+        segment: segment,
+        userId: uid,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        status: 'pending',
+        type: 'churn_recovery',
+      });
+
+      // Mark as processed
+      await snap.ref.update({
+        emailSent: true,
+        emailQueuedAt: admin.firestore.FieldValue.serverTimestamp(),
+        status: 'queued',
+      });
+
+      // Update user document to prevent duplicate emails
+      await admin.firestore().doc(`users/${uid}`).update({
+        [`churnEmailSent.${segment}`]: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      console.log(`Queued churn recovery email for ${email} (segment: ${segment})`);
+    } catch (error: any) {
+      console.error(`Error processing churn recovery email for ${uid}:`, error);
+      await snap.ref.update({
+        status: 'error',
+        error: error.message,
+      });
+    }
+  });
+
+// Track pricing page views for Window Shopper identification
+export const trackPricingPageView = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    // Allow anonymous tracking but with limited data
+    return { success: true, anonymous: true };
+  }
+
+  const uid = context.auth.uid;
+  
+  try {
+    await admin.firestore().doc(`users/${uid}`).update({
+      pricingPageViews: admin.firestore.FieldValue.increment(1),
+      lastPricingView: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return { success: true };
+  } catch (error: any) {
+    console.error(`Error tracking pricing view for ${uid}:`, error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Track checkout start for Cart Abandoner identification
+export const trackCheckoutStart = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Login required');
+  }
+
+  const uid = context.auth.uid;
+  
+  try {
+    await admin.firestore().doc(`users/${uid}`).update({
+      checkoutStartedAt: admin.firestore.FieldValue.serverTimestamp(),
+      checkoutAttempts: admin.firestore.FieldValue.increment(1),
+    });
+    return { success: true };
+  } catch (error: any) {
+    console.error(`Error tracking checkout start for ${uid}:`, error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Track lesson start for Zombie User identification
+export const trackLessonStart = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Login required');
+  }
+
+  const uid = context.auth.uid;
+  const { lessonId, lessonTitle, moduleId } = data;
+  
+  try {
+    await admin.firestore().doc(`users/${uid}`).update({
+      lastLessonStartAt: admin.firestore.FieldValue.serverTimestamp(),
+      lastLessonId: lessonId || null,
+      lastLessonTitle: lessonTitle || null,
+      lessonsStarted: admin.firestore.FieldValue.increment(1),
+    });
+
+    // Also log to analytics collection for detailed tracking
+    await admin.firestore().collection(`users/${uid}/lesson_activity`).add({
+      lessonId,
+      lessonTitle,
+      moduleId,
+      action: 'start',
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error(`Error tracking lesson start for ${uid}:`, error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Admin function to manually trigger churn recovery identification
+export const manualChurnRecoveryRun = functions
+  .runWith({ timeoutSeconds: 300 })
+  .https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Login required');
+  }
+
+  // Trigger the scheduled function logic manually
+  const db = admin.firestore();
+  const now = new Date();
+  
+  // Get counts for each segment
+  const windowShoppers = await db.collection('users')
+    .where('pricingPageViews', '>', 0)
+    .where('premium', '==', false)
+    .get();
+
+  const cartAbandoners = await db.collection('users')
+    .where('checkoutStartedAt', '!=', null)
+    .where('premium', '==', false)
+    .get();
+
+  const zombieUsers = await db.collection('users')
+    .where('premium', '==', true)
+    .get();
+
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const actualZombies = zombieUsers.docs.filter(doc => {
+    const data = doc.data();
+    const lastLesson = data.lastLessonStartAt?.toDate();
+    return !lastLesson || lastLesson < thirtyDaysAgo;
+  });
+
+  return {
+    summary: {
+      window_shoppers: windowShoppers.size,
+      cart_abandoners: cartAbandoners.size,
+      zombie_users: actualZombies.length,
+      total_at_risk: windowShoppers.size + cartAbandoners.size + actualZombies.length,
+    },
+    timestamp: now.toISOString(),
+  };
+});

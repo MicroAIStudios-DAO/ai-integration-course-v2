@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Layout from './components/layout/Layout'; // Import the Layout component
 import HomePage from './pages/HomePage';
 import NewLandingPage from './pages/NewLandingPage';
@@ -17,10 +17,29 @@ import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PaymentCancelPage from './pages/PaymentCancelPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import { initGA4, trackPageView } from './utils/analytics';
+
+// Component to track page views on route changes
+const PageViewTracker: React.FC = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    // Track page view on route change
+    trackPageView(location.pathname + location.search);
+  }, [location]);
+
+  return null;
+};
 
 const App: React.FC = () => {
+  // Initialize GA4 on app mount
+  useEffect(() => {
+    initGA4();
+  }, []);
+
   return (
     <Router>
+      <PageViewTracker />
       <Routes>
         {/* HomePage renders without Layout for full-screen landing page */}
         <Route path="/" element={<HomePage />} />

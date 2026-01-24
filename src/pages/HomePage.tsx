@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import AnimatedAvatar from '../components/layout/AnimatedAvatar';
 import { appConfig } from '../config/environment';
+import CourseSchema from '../components/seo/CourseSchema';
 
 type SubmissionState = 'idle' | 'loading' | 'success' | 'error';
 
@@ -67,7 +68,9 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 text-white relative overflow-hidden">
+    <>
+      <CourseSchema />
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 text-white relative overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.05),transparent)]"></div>
@@ -216,8 +219,8 @@ const HomePage: React.FC = () => {
         <p>© {new Date().getFullYear()} AI Integration Course. Guided by humans, built by AI.</p>
       </div>
     </div>
+    </>
   );
 };
-
 export default HomePage;
 

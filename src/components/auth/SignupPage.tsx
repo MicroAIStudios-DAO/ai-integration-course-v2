@@ -4,6 +4,7 @@ import { httpsCallable } from "firebase/functions";
 import { useAuth } from "../../context/AuthContext"; // Corrected path
 import { functions } from "../../config/firebase";
 import { useReCaptcha } from "../../hooks/useReCaptcha";
+import { trackSignUp, trackBeginCheckout } from "../../utils/analytics";
 
 const SignupPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -42,6 +43,8 @@ const SignupPage: React.FC = () => {
 
     try {
       await signup(email, password);
+      // Track sign_up event
+      trackSignUp('Email');
       const origin = window.location.origin;
       const createCheckoutSession = httpsCallable(functions, "createCheckoutSession");
       const result = await createCheckoutSession({
@@ -51,6 +54,8 @@ const SignupPage: React.FC = () => {
       });
       const data = result.data as { url?: string };
       if (data?.url) {
+        // Track begin_checkout event before redirect
+        trackBeginCheckout(49, 'USD', 'Pro Plan', 'pro_monthly');
         window.location.href = data.url;
         return;
       }

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { SubscribeButton } from '../components/payment/SubscribeButton';
+import { trackViewPricing, trackBeginCheckout, trackCTAClick } from '../utils/analytics';
 
 /**
  * PricingPage Component
@@ -23,6 +24,11 @@ const PricingPage: React.FC = () => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
 
   const proMonthlyPrice = 49;
+
+  // Track view_item event when pricing page loads
+  useEffect(() => {
+    trackViewPricing('USD', proMonthlyPrice, 'Pro Plan');
+  }, []);
   const proAnnualPrice = 39; // $39/mo billed annually ($468/year)
   const corporatePrice = 999;
 
