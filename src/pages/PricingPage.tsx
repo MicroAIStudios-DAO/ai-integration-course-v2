@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { SubscribeButton } from '../components/payment/SubscribeButton';
-import { trackViewPricing, trackBeginCheckout, trackCTAClick } from '../utils/analytics';
+import { useAuth } from '../context/AuthContext';
+import SubscribeButton from '../components/payment/SubscribeButton';
+import { trackViewPricing } from '../utils/analytics';
 
 /**
  * PricingPage Component
@@ -20,7 +20,7 @@ import { trackViewPricing, trackBeginCheckout, trackCTAClick } from '../utils/an
  * Resolve competing CTAs to focus on the outcome.
  */
 const PricingPage: React.FC = () => {
-  const { user, loading } = useAuth();
+  const { currentUser } = useAuth();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
 
   const proMonthlyPrice = 49;
@@ -45,7 +45,7 @@ const PricingPage: React.FC = () => {
               <Link to="/courses" className="text-gray-300 hover:text-white transition-colors">
                 Curriculum
               </Link>
-              {user ? (
+              {currentUser ? (
                 <Link to="/profile" className="text-gray-300 hover:text-white transition-colors">
                   Dashboard
                 </Link>
@@ -226,13 +226,12 @@ const PricingPage: React.FC = () => {
             </ul>
 
             {/* AUDIT: Primary CTA - "Start Building Now" */}
-            {user ? (
+            {currentUser ? (
               <SubscribeButton 
                 priceId={billingCycle === 'monthly' ? 'price_pro_monthly' : 'price_pro_annual'}
+                buttonText="Start Building Now"
                 className="w-full py-3 px-6 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors"
-              >
-                Start Building Now
-              </SubscribeButton>
+              />
             ) : (
               <Link
                 to="/signup"
@@ -404,7 +403,7 @@ const PricingPage: React.FC = () => {
             Join thousands of professionals who are already building with AI.
           </p>
           <Link
-            to={user ? "/courses" : "/signup"}
+            to={currentUser ? "/courses" : "/signup"}
             className="inline-flex items-center justify-center px-8 py-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg transition-colors"
           >
             Start Building Now

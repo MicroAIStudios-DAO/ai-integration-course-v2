@@ -916,3 +916,114 @@ export const manualChurnRecoveryRun = functions
     timestamp: now.toISOString(),
   };
 });
+
+
+// ============================================================================
+// ADMIN FUNCTION: Add Lesson to Firestore
+// Callable function to add a new lesson to a course module
+// ============================================================================
+export const addLessonToFirestore = functions.https.onCall(async (data, context) => {
+  // Verify admin access (optional - can be removed for initial setup)
+  // if (!context.auth) {
+  //   throw new functions.https.HttpsError('unauthenticated', 'Must be authenticated');
+  // }
+
+  const { courseId, moduleId, lesson } = data;
+
+  if (!courseId || !moduleId || !lesson) {
+    throw new functions.https.HttpsError('invalid-argument', 'Missing courseId, moduleId, or lesson data');
+  }
+
+  try {
+    const lessonRef = admin.firestore()
+      .collection('courses')
+      .doc(courseId)
+      .collection('modules')
+      .doc(moduleId)
+      .collection('lessons')
+      .doc(lesson.id || `lesson_${Date.now()}`);
+
+    await lessonRef.set({
+      title: lesson.title,
+      order: lesson.order,
+      isFree: lesson.isFree || false,
+      tier: lesson.tier || 'premium',
+      content: lesson.content || null,
+      storagePath: lesson.storagePath || null,
+      videoUrl: lesson.videoUrl || null,
+      durationMinutes: lesson.durationMinutes || 0,
+      description: lesson.description || null,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    console.log(`Added lesson ${lessonRef.id} to ${courseId}/${moduleId}`);
+
+    return { 
+      success: true, 
+      lessonId: lessonRef.id,
+      path: `courses/${courseId}/modules/${moduleId}/lessons/${lessonRef.id}`
+    };
+  } catch (err: any) {
+    console.error('Error adding lesson:', err);
+    throw new functions.https.HttpsError('internal', err.message);
+  }
+});
+
+// ============================================================================
+// ADMIN FUNCTION: List Courses and Modules
+// Callable function to list all courses and their modules for admin purposes
+// ============================================================================
+export const listCoursesAndModules = functions.https.onCall(async () => {
+  try {
+    const coursesSnap = await admin.firestore().collection('courses').get();
+    const result: any[] = [];
+
+    for (const courseDoc of coursesSnap.docs) {
+      const courseData = courseDoc.data();
+      const modulesSnap = await admin.firestore()
+        .collection('courses')
+        .doc(courseDoc.id)
+        .collection('modules')
+        .orderBy('order')
+        .get();
+
+      const modules: any[] = [];
+      for (const moduleDoc of modulesSnap.docs) {
+        const moduleData = moduleDoc.data();
+        const lessonsSnap = await admin.firestore()
+          .collection('courses')
+          .doc(courseDoc.id)
+          .collection('modules')
+          .doc(moduleDoc.id)
+          .collection('lessons')
+          .orderBy('order')
+          .get();
+
+        modules.push({
+          id: moduleDoc.id,
+          title: moduleData.title,
+          order: moduleData.order,
+          lessonCount: lessonsSnap.size,
+          lessons: lessonsSnap.docs.map(l => ({
+            id: l.id,
+            title: l.data().title,
+            order: l.data().order,
+          })),
+        });
+      }
+
+      result.push({
+        id: courseDoc.id,
+        title: courseData.title,
+        moduleCount: modules.length,
+        modules,
+      });
+    }
+
+    return { success: true, courses: result };
+  } catch (err: any) {
+    console.error('Error listing courses:', err);
+    throw new functions.https.HttpsError('internal', err.message);
+  }
+});

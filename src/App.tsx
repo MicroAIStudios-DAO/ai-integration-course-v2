@@ -17,6 +17,7 @@ import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PaymentCancelPage from './pages/PaymentCancelPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import AdminAddLesson from './pages/AdminAddLesson';
 import { initGA4, trackPageView } from './utils/analytics';
 
 // Component to track page views on route changes
@@ -47,6 +48,8 @@ const App: React.FC = () => {
         <Route path="/new-landing" element={<NewLandingPage />} />
         {/* PricingPage renders without Layout for full-screen pricing page */}
         <Route path="/pricing" element={<PricingPage />} />
+        {/* Admin page for adding lessons - hidden route */}
+        <Route path="/admin/add-lesson" element={<AdminAddLesson />} />
 
         {/* All other routes use Layout wrapper */}
         <Route element={<Layout />}>

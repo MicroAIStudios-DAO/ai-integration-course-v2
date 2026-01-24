@@ -9,7 +9,7 @@ import { useAuth } from "../context/AuthContext"; // For gating logic
 import AnimatedAvatar from "../components/layout/AnimatedAvatar"; // Import AnimatedAvatar
 import AITutor from "../components/AITutor";
 import "../styles/lesson-content.css"; // Import textbook-style CSS
-import { trackLessonStart, trackLessonComplete, trackVideoProgress } from "../utils/analytics";
+import { trackLessonStart, trackLessonComplete } from "../utils/analytics";
 
 const LessonPage: React.FC = () => {
   const { courseId, moduleId, lessonId } = useParams<{ courseId: string; moduleId: string; lessonId: string }>();
