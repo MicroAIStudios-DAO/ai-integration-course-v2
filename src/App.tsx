@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout'; // Import the Layout component
 import HomePage from './pages/HomePage';
 import NewLandingPage from './pages/NewLandingPage';
+import PricingPage from './pages/PricingPage';
 import CourseOverviewPage from './pages/CourseOverviewPage';
 import LessonPage from './pages/LessonPage';
 import PersonalizedRecapPage from './pages/PersonalizedRecapPage';
@@ -14,6 +15,8 @@ import SignupPage from './components/auth/SignupPage';
 import ProfilePage from './components/auth/ProfilePage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PaymentCancelPage from './pages/PaymentCancelPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 
 const App: React.FC = () => {
   return (
@@ -23,6 +26,8 @@ const App: React.FC = () => {
         <Route path="/" element={<HomePage />} />
         {/* NewLandingPage renders without Layout for full-screen landing page */}
         <Route path="/new-landing" element={<NewLandingPage />} />
+        {/* PricingPage renders without Layout for full-screen pricing page */}
+        <Route path="/pricing" element={<PricingPage />} />
 
         {/* All other routes use Layout wrapper */}
         <Route element={<Layout />}>
@@ -37,6 +42,8 @@ const App: React.FC = () => {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/payment-success" element={<PaymentSuccessPage />} />
           <Route path="/payment-cancel" element={<PaymentCancelPage />} />
+          <Route path="/terms" element={<TermsOfServicePage />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
         </Route>
       </Routes>
     </Router>

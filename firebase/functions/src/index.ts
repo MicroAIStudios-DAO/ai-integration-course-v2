@@ -17,7 +17,59 @@ function getStripe() {
   return { stripe, secret };
 }
 
+// ============================================================================
+// AUDIT REQUIREMENT: functions.auth.user().onCreate
+// Triggered when a new user is created in Firebase Auth.
+// This is the entry point for identity management.
+// Creates Stripe customer immediately to ensure 1:1 mapping from signup.
+// ============================================================================
+export const onUserCreate = functions.auth.user().onCreate(async (user) => {
+  const { stripe, secret } = getStripe();
+  if (!secret) {
+    console.error('Stripe not configured, skipping customer creation');
+    return;
+  }
+
+  try {
+    // Create Stripe customer with strict mapping
+    // AUDIT: customers.create({ email, metadata: { firebase_uid: user.uid } })
+    const customer = await stripe.customers.create({
+      email: user.email || undefined,
+      metadata: { 
+        firebaseUID: user.uid,
+        firebase_uid: user.uid, // Also include snake_case for compatibility
+      },
+      name: user.displayName || undefined,
+    });
+
+    // AUDIT: Writes `stripeId` to Firestore `users/{uid}`. Ensures 1:1 mapping.
+    await admin.firestore().doc(`users/${user.uid}`).set({
+      email: user.email || null,
+      displayName: user.displayName || null,
+      stripeCustomerId: customer.id,
+      stripeCustomerCreatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      premium: false,
+      subscriptionStatus: 'none',
+    }, { merge: true });
+
+    console.log(`Created Stripe customer ${customer.id} for Firebase user ${user.uid}`);
+  } catch (err: any) {
+    console.error(`Failed to create Stripe customer for user ${user.uid}:`, err.message);
+    // Still create the user document without Stripe ID
+    await admin.firestore().doc(`users/${user.uid}`).set({
+      email: user.email || null,
+      displayName: user.displayName || null,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      premium: false,
+      subscriptionStatus: 'none',
+      stripeError: err.message,
+    }, { merge: true });
+  }
+});
+
 // Helper function to ensure strict ID mapping between Firebase and Stripe
+// Used as fallback if user was created before this system was in place
 async function ensureStrictMapping(uid: string, email?: string): Promise<string> {
   const userRef = admin.firestore().doc(`users/${uid}`);
   const userSnap = await userRef.get();
@@ -35,7 +87,7 @@ async function ensureStrictMapping(uid: string, email?: string): Promise<string>
         // Ensure metadata is set
         if (!customer.metadata?.firebaseUID) {
           await stripe.customers.update(customerId, {
-            metadata: { firebaseUID: uid },
+            metadata: { firebaseUID: uid, firebase_uid: uid },
           });
         }
         return customerId;
@@ -49,7 +101,7 @@ async function ensureStrictMapping(uid: string, email?: string): Promise<string>
   // Create new Stripe customer with strict mapping
   const customer = await stripe.customers.create({
     email: email || userSnap.get('email'),
-    metadata: { firebaseUID: uid },
+    metadata: { firebaseUID: uid, firebase_uid: uid },
   });
   customerId = customer.id;
 
@@ -76,7 +128,11 @@ async function findUidByStripeCustomerId(customerId: string): Promise<string | n
   return null;
 }
 
-// Create a Checkout session for premium upgrade
+// ============================================================================
+// AUDIT REQUIREMENT: createCheckoutSession
+// Generates a Stripe hosted payment link.
+// CRITICAL: Must include `client_reference_id: uid` to track who is paying.
+// ============================================================================
 export const createCheckoutSession = functions
   .runWith({ secrets: [STRIPE_SECRET] })
   .https.onCall(async (data, context) => {
@@ -105,6 +161,8 @@ export const createCheckoutSession = functions
 
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
+    // AUDIT CRITICAL: client_reference_id tracks who is paying
+    client_reference_id: uid,
     mode: 'subscription',
     payment_method_types: ['card'],
     line_items: [{ price: priceId, quantity: 1 }],
@@ -112,10 +170,12 @@ export const createCheckoutSession = functions
     cancel_url: cancelUrl,
     metadata: {
       firebaseUID: uid,
+      firebase_uid: uid,
     },
     subscription_data: {
       metadata: {
         firebaseUID: uid,
+        firebase_uid: uid,
       },
     },
   });
@@ -123,7 +183,17 @@ export const createCheckoutSession = functions
   return { id: session.id, url: session.url };
 });
 
-// Stripe webhook to set premium flag with improved reliability
+// ============================================================================
+// AUDIT REQUIREMENT: handleStripeWebhook
+// Listens for `checkout.session.completed` and `invoice.paid`.
+// Verifies the Stripe signature to prevent spoofing.
+// The ONLY trusted source for granting access.
+// 
+// AUDIT REQUIREMENT: Firestore Update
+// Updates `users/{uid}/subscriptions` subcollection.
+// Sets `status: 'active'`, `plan: 'pro'`, `period_end`.
+// Frontend listens to this doc to unlock UI.
+// ============================================================================
 export const stripeWebhook = functions
   .runWith({ secrets: [STRIPE_SECRET, STRIPE_WEBHOOK_SECRET] })
   .https.onRequest(async (req, res) => {
@@ -140,6 +210,7 @@ export const stripeWebhook = functions
   }
   let event: Stripe.Event;
   try {
+    // AUDIT: Verifies the Stripe signature to prevent spoofing
     event = stripe.webhooks.constructEvent(req.rawBody, sig, endpointSecret);
   } catch (err: any) {
     console.error('Webhook signature verification failed', err.message);
@@ -151,7 +222,10 @@ export const stripeWebhook = functions
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
-        let uid = session.metadata?.firebaseUID;
+        // Try multiple sources for UID (audit requirement: robust identification)
+        let uid = session.metadata?.firebaseUID || 
+                  session.metadata?.firebase_uid ||
+                  session.client_reference_id;
 
         // Fallback: if metadata missing, look up by customer ID
         if (!uid && session.customer) {
@@ -163,18 +237,42 @@ export const stripeWebhook = functions
           if (!uid) {
             const customer = await stripe.customers.retrieve(customerId);
             if (!customer.deleted) {
-              uid = customer.metadata?.firebaseUID;
+              uid = customer.metadata?.firebaseUID || customer.metadata?.firebase_uid;
             }
           }
         }
 
         if (uid) {
+          // Get subscription details for period_end
+          let periodEnd: Date | null = null;
+          let planId = 'pro';
+          if (session.subscription) {
+            const subId = typeof session.subscription === 'string' ? session.subscription : session.subscription.id;
+            const subscription = await stripe.subscriptions.retrieve(subId);
+            periodEnd = new Date(subscription.current_period_end * 1000);
+            planId = subscription.items.data[0]?.price?.lookup_key || 'pro';
+          }
+
+          // AUDIT: Update user document
           await admin.firestore().doc(`users/${uid}`).set({
             premium: true,
             subscriptionStatus: 'active',
             lastPaymentAt: admin.firestore.FieldValue.serverTimestamp(),
           }, { merge: true });
-          console.log(`Premium activated for user ${uid}`);
+
+          // AUDIT: Update subscriptions subcollection with status, plan, period_end
+          await admin.firestore().doc(`users/${uid}/subscriptions/current`).set({
+            status: 'active',
+            plan: planId,
+            period_end: periodEnd ? admin.firestore.Timestamp.fromDate(periodEnd) : null,
+            stripeSubscriptionId: session.subscription,
+            stripeCustomerId: session.customer,
+            checkoutSessionId: session.id,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          }, { merge: true });
+
+          console.log(`Premium activated for user ${uid} with plan ${planId}`);
         } else {
           console.error('Could not find Firebase UID for checkout session', session.id);
         }
@@ -183,7 +281,8 @@ export const stripeWebhook = functions
 
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice;
-        let uid = invoice.subscription_details?.metadata?.firebaseUID;
+        let uid = invoice.subscription_details?.metadata?.firebaseUID ||
+                  invoice.subscription_details?.metadata?.firebase_uid;
 
         // Fallback: look up by customer ID
         if (!uid && invoice.customer) {
@@ -195,17 +294,38 @@ export const stripeWebhook = functions
           if (!uid) {
             const customer = await stripe.customers.retrieve(customerId);
             if (!customer.deleted) {
-              uid = customer.metadata?.firebaseUID;
+              uid = customer.metadata?.firebaseUID || customer.metadata?.firebase_uid;
             }
           }
         }
 
         if (uid) {
+          // Get subscription details
+          let periodEnd: Date | null = null;
+          let planId = 'pro';
+          if (invoice.subscription) {
+            const subId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription.id;
+            const subscription = await stripe.subscriptions.retrieve(subId);
+            periodEnd = new Date(subscription.current_period_end * 1000);
+            planId = subscription.items.data[0]?.price?.lookup_key || 'pro';
+          }
+
+          // Update user document
           await admin.firestore().doc(`users/${uid}`).set({
             premium: true,
             subscriptionStatus: 'active',
             lastPaymentAt: admin.firestore.FieldValue.serverTimestamp(),
           }, { merge: true });
+
+          // AUDIT: Update subscriptions subcollection
+          await admin.firestore().doc(`users/${uid}/subscriptions/current`).set({
+            status: 'active',
+            plan: planId,
+            period_end: periodEnd ? admin.firestore.Timestamp.fromDate(periodEnd) : null,
+            lastPaymentAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          }, { merge: true });
+
           console.log(`Premium renewed for user ${uid}`);
         } else {
           console.error('Could not find Firebase UID for invoice', invoice.id);
@@ -215,7 +335,8 @@ export const stripeWebhook = functions
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
-        let uid: string | undefined = subscription.metadata?.firebaseUID;
+        let uid: string | undefined = subscription.metadata?.firebaseUID || 
+                                       subscription.metadata?.firebase_uid;
 
         // Fallback: look up by customer ID
         if (!uid && subscription.customer) {
@@ -227,17 +348,26 @@ export const stripeWebhook = functions
             // If still not found, try customer metadata
             const customer = await stripe.customers.retrieve(customerId);
             if (!customer.deleted) {
-              uid = customer.metadata?.firebaseUID;
+              uid = customer.metadata?.firebaseUID || customer.metadata?.firebase_uid;
             }
           }
         }
 
         if (uid) {
+          // Update user document
           await admin.firestore().doc(`users/${uid}`).set({
             premium: false,
             subscriptionStatus: 'cancelled',
             subscriptionCancelledAt: admin.firestore.FieldValue.serverTimestamp(),
           }, { merge: true });
+
+          // AUDIT: Update subscriptions subcollection
+          await admin.firestore().doc(`users/${uid}/subscriptions/current`).set({
+            status: 'cancelled',
+            cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          }, { merge: true });
+
           console.log(`Premium cancelled for user ${uid}`);
         } else {
           console.error('Could not find Firebase UID for subscription', subscription.id);
@@ -247,7 +377,8 @@ export const stripeWebhook = functions
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
-        let uid: string | undefined = subscription.metadata?.firebaseUID;
+        let uid: string | undefined = subscription.metadata?.firebaseUID ||
+                                       subscription.metadata?.firebase_uid;
 
         // Fallback: look up by customer ID
         if (!uid && subscription.customer) {
@@ -259,18 +390,31 @@ export const stripeWebhook = functions
             // If still not found, try customer metadata
             const customer = await stripe.customers.retrieve(customerId);
             if (!customer.deleted) {
-              uid = customer.metadata?.firebaseUID;
+              uid = customer.metadata?.firebaseUID || customer.metadata?.firebase_uid;
             }
           }
         }
 
         if (uid) {
-          const status = subscription.status === 'active' || subscription.status === 'trialing';
+          const isActive = subscription.status === 'active' || subscription.status === 'trialing';
+          const periodEnd = new Date(subscription.current_period_end * 1000);
+          const planId = subscription.items.data[0]?.price?.lookup_key || 'pro';
+
+          // Update user document
           await admin.firestore().doc(`users/${uid}`).set({
-            premium: status,
+            premium: isActive,
             subscriptionStatus: subscription.status,
             subscriptionUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
           }, { merge: true });
+
+          // AUDIT: Update subscriptions subcollection with status, plan, period_end
+          await admin.firestore().doc(`users/${uid}/subscriptions/current`).set({
+            status: subscription.status,
+            plan: planId,
+            period_end: admin.firestore.Timestamp.fromDate(periodEnd),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          }, { merge: true });
+
           console.log(`Subscription updated for user ${uid}: ${subscription.status}`);
         } else {
           console.error('Could not find Firebase UID for subscription update', subscription.id);
@@ -327,5 +471,61 @@ export const validateIdMapping = functions
     }
   }
 
+  // Also check subscriptions subcollection
+  const subSnap = await admin.firestore().doc(`users/${uid}/subscriptions/current`).get();
+  if (subSnap.exists) {
+    results.subscription = subSnap.data();
+  }
+
   return results;
+});
+
+// Admin function to backfill Stripe customers for existing users
+export const backfillStripeCustomers = functions
+  .runWith({ secrets: [STRIPE_SECRET], timeoutSeconds: 540 })
+  .https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Login required');
+  }
+
+  const { stripe, secret } = getStripe();
+  if (!secret) {
+    throw new functions.https.HttpsError('failed-precondition', 'Stripe not configured');
+  }
+
+  // Get users without stripeCustomerId
+  const usersSnapshot = await admin.firestore()
+    .collection('users')
+    .where('stripeCustomerId', '==', null)
+    .limit(100)
+    .get();
+
+  const results: any[] = [];
+
+  for (const doc of usersSnapshot.docs) {
+    const userData = doc.data();
+    const uid = doc.id;
+
+    try {
+      const customer = await stripe.customers.create({
+        email: userData.email || undefined,
+        metadata: { 
+          firebaseUID: uid,
+          firebase_uid: uid,
+        },
+        name: userData.displayName || undefined,
+      });
+
+      await admin.firestore().doc(`users/${uid}`).set({
+        stripeCustomerId: customer.id,
+        stripeCustomerCreatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+
+      results.push({ uid, status: 'created', customerId: customer.id });
+    } catch (err: any) {
+      results.push({ uid, status: 'error', error: err.message });
+    }
+  }
+
+  return { processed: results.length, results };
 });
