@@ -321,8 +321,8 @@ export const trackError = (
   }
 };
 
-// Export all functions as default object for convenience
-export default {
+// Export all functions as named object for convenience
+const analytics = {
   initGA4,
   initGA,
   logPageView,
@@ -341,3 +341,5 @@ export default {
   trackAudienceEvent,
   trackError,
 };
+
+export default analytics;
