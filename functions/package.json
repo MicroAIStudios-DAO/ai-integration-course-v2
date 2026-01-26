@@ -28,7 +28,6 @@
   "devDependencies": {
     "@types/handlebars": "^4.0.40",
     "@types/node-fetch": "^2.6.13",
-    "firebase-functions-test": "^3.1.0",
     "typescript": "^5.7.3"
   },
   "private": true

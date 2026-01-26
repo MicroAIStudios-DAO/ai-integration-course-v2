@@ -46,7 +46,7 @@ const SignupPage: React.FC = () => {
       // Track sign_up event
       trackSignUp('Email');
       const origin = window.location.origin;
-      const createCheckoutSession = httpsCallable(functions, "createCheckoutSession");
+      const createCheckoutSession = httpsCallable(functions, "createCheckoutSessionV2");
       const result = await createCheckoutSession({
         priceId,
         successUrl: `${origin}/welcome?session_id={CHECKOUT_SESSION_ID}`,

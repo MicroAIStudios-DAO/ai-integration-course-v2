@@ -19,7 +19,7 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
     try {
       if (!currentUser) { alert('Please log in first.'); return; }
       const origin = window.location.origin;
-      const createCheckoutSession = httpsCallable(functions, 'createCheckoutSession');
+      const createCheckoutSession = httpsCallable(functions, 'createCheckoutSessionV2');
       const result = await createCheckoutSession({
         priceId: priceId || "price_1SmgMKKnsQ10RdBLEWL2w8e4",
         successUrl: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,

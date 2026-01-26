@@ -26,8 +26,8 @@ echo "=== Payload created ==="
 echo "Calling addLessonToFirestore function..."
 
 # Call the function using Firebase CLI
-firebase functions:call addLessonToFirestore --data "$(cat /tmp/lesson-payload.json)" --project ai-integra-course-v2
+firebase functions:call addLessonToFirestoreV2 --data "$(cat /tmp/lesson-payload.json)" --project ai-integra-course-v2
 
 echo ""
 echo "=== Now listing courses to verify ==="
-firebase functions:call listCoursesAndModules --project ai-integra-course-v2
+firebase functions:call listCoursesAndModulesV2 --project ai-integra-course-v2

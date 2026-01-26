@@ -11,7 +11,7 @@ export default function CheckoutButton({ priceId }: Props) {
   async function startCheckout() {
     setLoading(true);
     try {
-      const callable = httpsCallable<any, { url: string }>(functions, 'createCheckoutSession');
+      const callable = httpsCallable<any, { url: string }>(functions, 'createCheckoutSessionV2');
       const res = await callable({ priceId });
       const url = (res.data as any)?.url;
       if (url) window.location.href = url;
@@ -29,4 +29,3 @@ export default function CheckoutButton({ priceId }: Props) {
     </button>
   );
 }
-

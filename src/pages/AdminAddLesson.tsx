@@ -188,7 +188,7 @@ const AdminAddLesson: React.FC = () => {
     setLoading(true);
     setStatus('Fetching courses...');
     try {
-      const listCoursesAndModules = httpsCallable(functions, 'listCoursesAndModules');
+      const listCoursesAndModules = httpsCallable(functions, 'listCoursesAndModulesV2');
       const result = await listCoursesAndModules();
       const data = result.data as any;
       setCourses(data.courses || []);
@@ -203,7 +203,7 @@ const AdminAddLesson: React.FC = () => {
     setLoading(true);
     setStatus('Adding lesson to Firestore...');
     try {
-      const addLessonToFirestore = httpsCallable(functions, 'addLessonToFirestore');
+      const addLessonToFirestore = httpsCallable(functions, 'addLessonToFirestoreV2');
       const result = await addLessonToFirestore({
         courseId: 'course_01_id',
         moduleId: 'module_01_id',
