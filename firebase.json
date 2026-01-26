@@ -2,7 +2,7 @@
     "functions": [
           {
                   "codebase": "default",
-                  "source": "firebase/functions",
+                  "source": "functions",
                   "runtime": "nodejs20",
                   "region": "us-central1",
                   "serviceAccount": "firebase-app-hosting-compute@ai-integra-course-v2.iam.gserviceaccount.com",

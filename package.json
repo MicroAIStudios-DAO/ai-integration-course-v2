@@ -104,7 +104,7 @@
     "vitest": "^3.2.4"
   },
   "engines": {
-    "node": ">=20.0.0 <21.0.0",
+    "node": ">=20.0.0 <23.0.0",
     "npm": ">=11.0.0"
   },
   "description": "A comprehensive platform for learning about AI integration and investment strategies in the age of artificial intelligence.",
@@ -114,13 +114,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Gnoscenti/ai-integration-course.git"
+    "url": "git+https://github.com/MicroAIStudios-DAO/ai-integration-course-v2.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Gnoscenti/ai-integration-course/issues"
+    "url": "https://github.com/MicroAIStudios-DAO/ai-integration-course-v2/issues"
   },
   "packageManager": "npm@latest"
 }
