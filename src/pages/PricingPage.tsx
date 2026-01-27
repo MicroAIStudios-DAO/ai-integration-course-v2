@@ -70,12 +70,12 @@ const PricingPage: React.FC = () => {
             Get your first win in 15 minutes with our hands-on curriculum.
           </p>
 
-          {/* AUDIT: Risk Reversal - 14-Day Build-Your-First-Bot Guarantee */}
+          {/* AUDIT: Risk Reversal - 14-Day Build Guarantee */}
           <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-6 py-3 text-emerald-400">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
-            <span className="font-semibold">14-Day Build-Your-First-Bot Guarantee</span>
+            <span className="font-semibold">14-Day Build Guarantee</span>
           </div>
         </div>
 
@@ -326,16 +326,13 @@ const PricingPage: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-2xl font-bold text-white mb-4">
-                  14-Day Build-Your-First-Bot Guarantee
+                  14-Day Build Guarantee
                 </h3>
                 <p className="text-gray-300 mb-4">
-                  We're so confident in our curriculum that we guarantee you'll build a working AI bot 
-                  within 14 days of starting. Follow our "Build Your First Bot" lesson, and if you 
-                  don't have a functional Customer Service Email Bot by day 14, we'll give you a 
-                  <strong className="text-emerald-400"> full refund</strong>. No questions asked.
+                  Build your first working AI Agent in 14 days, or we refund every penny. You keep the source code.
                 </p>
                 <p className="text-sm text-gray-400">
-                  This isn't just a course—it's a commitment to your success. We only win when you build.
+                  Outcome-based, time-bound, and risk-free. We only win when you ship.
                 </p>
               </div>
             </div>
@@ -351,12 +348,10 @@ const PricingPage: React.FC = () => {
           <div className="space-y-6">
             <div className="bg-slate-800/50 rounded-lg p-6">
               <h4 className="text-lg font-semibold text-white mb-2">
-                What is the "Build Your First Bot" guarantee?
+                What is the 14-day guarantee?
               </h4>
               <p className="text-gray-400">
-                Within 14 days of subscribing, you'll complete our guided project to build a Customer 
-                Service Email Bot. If you follow the lessons and don't have a working bot, contact us 
-                for a full refund. We're that confident in our teaching.
+                Build your first working AI Agent in 14 days, or we refund every penny. You keep the source code.
               </p>
             </div>
 

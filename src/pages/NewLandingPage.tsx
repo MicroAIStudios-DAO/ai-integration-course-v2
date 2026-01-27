@@ -50,7 +50,7 @@ const NewLandingPage: React.FC = () => {
         {/* Main Headline */}
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 max-w-5xl">
           <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Build Your First AI Solution in 15 Minutes
+            Build your first working AI Agent in 14 days
           </span>
         </h1>
 
@@ -143,4 +143,3 @@ const NewLandingPage: React.FC = () => {
 };
 
 export default NewLandingPage;
-

@@ -14,6 +14,12 @@ html, body {
   color: #f3f4f6; /* Tailwind gray-100 as default text color */
 }
 
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
@@ -25,4 +31,3 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Add any other global styles or overrides here */
-

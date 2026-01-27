@@ -1,4 +1,5 @@
 import admin from 'firebase-admin';
+import crypto from 'crypto';
 import Stripe from 'stripe';
 import type { CloudEvent } from 'firebase-functions/v2/core';
 import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
@@ -19,6 +20,10 @@ function getStripe() {
     stripe = new Stripe(secret || '', { apiVersion: '2024-06-20' });
   }
   return { stripe, secret };
+}
+
+function generateUserApiKey(): string {
+  return `ak_${crypto.randomBytes(24).toString('hex')}`;
 }
 
 async function ensureStrictMapping(uid: string, email?: string): Promise<string> {
@@ -75,6 +80,62 @@ async function findUidByStripeCustomerId(customerId: string): Promise<string | n
   return null;
 }
 
+async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
+  let uid = invoice.subscription_details?.metadata?.firebaseUID ||
+    invoice.subscription_details?.metadata?.firebase_uid;
+
+  if (!uid && invoice.customer) {
+    const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer.id;
+    const foundUid = await findUidByStripeCustomerId(customerId);
+    if (foundUid) uid = foundUid;
+
+    if (!uid) {
+      const { stripe } = getStripe();
+      const customer = await stripe.customers.retrieve(customerId);
+      if (!customer.deleted) {
+        uid = customer.metadata?.firebaseUID || customer.metadata?.firebase_uid;
+      }
+    }
+  }
+
+  if (!uid) {
+    console.error('Could not find Firebase UID for invoice', invoice.id);
+    return;
+  }
+
+  let periodEnd: Date | null = null;
+  let planId = 'pro';
+  if (invoice.subscription) {
+    const { stripe } = getStripe();
+    const subId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription.id;
+    const subscription = await stripe.subscriptions.retrieve(subId);
+    periodEnd = new Date(subscription.current_period_end * 1000);
+    planId = subscription.items.data[0]?.price?.lookup_key || 'pro';
+  }
+
+  await admin.firestore().doc(`users/${uid}`).set(
+    {
+      premium: true,
+      subscriptionStatus: 'active',
+      lastPaymentAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  await admin.firestore().doc(`users/${uid}/subscriptions/current`).set(
+    {
+      status: 'active',
+      plan: planId,
+      period_end: periodEnd ? admin.firestore.Timestamp.fromDate(periodEnd) : null,
+      lastPaymentAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  console.log(`Premium renewed for user ${uid}`);
+}
+
 export const onUserCreateV2 = onCustomEventPublished(
   {
     region: 'us-central1',
@@ -89,9 +150,25 @@ export const onUserCreateV2 = onCustomEventPublished(
       return;
     }
 
+    const userRef = admin.firestore().doc(`users/${uid}`);
+    const existingUser = await userRef.get();
+    const apiKey = existingUser.get('apiKey') || generateUserApiKey();
+
     const { stripe, secret } = getStripe();
     if (!secret) {
       console.error('Stripe not configured, skipping customer creation');
+      await userRef.set(
+        {
+          email: user.email || user.emailAddress || null,
+          displayName: user.displayName || user.name || null,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          premium: false,
+          subscriptionStatus: 'none',
+          apiKey,
+          stripeError: 'Stripe not configured',
+        },
+        { merge: true }
+      );
       return;
     }
 
@@ -105,7 +182,7 @@ export const onUserCreateV2 = onCustomEventPublished(
         name: user.displayName || user.name || undefined,
       });
 
-      await admin.firestore().doc(`users/${uid}`).set(
+      await userRef.set(
         {
           email: user.email || user.emailAddress || null,
           displayName: user.displayName || user.name || null,
@@ -114,6 +191,7 @@ export const onUserCreateV2 = onCustomEventPublished(
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           premium: false,
           subscriptionStatus: 'none',
+          apiKey,
         },
         { merge: true }
       );
@@ -121,13 +199,14 @@ export const onUserCreateV2 = onCustomEventPublished(
       console.log(`Created Stripe customer ${customer.id} for Firebase user ${uid}`);
     } catch (err: any) {
       console.error(`Failed to create Stripe customer for user ${uid}:`, err.message);
-      await admin.firestore().doc(`users/${uid}`).set(
+      await userRef.set(
         {
           email: user.email || user.emailAddress || null,
           displayName: user.displayName || user.name || null,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           premium: false,
           subscriptionStatus: 'none',
+          apiKey,
           stripeError: err.message,
         },
         { merge: true }
@@ -273,56 +352,13 @@ export const stripeWebhookV2 = onRequest(
 
         case 'invoice.payment_succeeded': {
           const invoice = event.data.object as Stripe.Invoice;
-          let uid = invoice.subscription_details?.metadata?.firebaseUID ||
-            invoice.subscription_details?.metadata?.firebase_uid;
+          await handleInvoicePaid(invoice);
+          break;
+        }
 
-          if (!uid && invoice.customer) {
-            const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer.id;
-            const foundUid = await findUidByStripeCustomerId(customerId);
-            if (foundUid) uid = foundUid;
-
-            if (!uid) {
-              const customer = await stripe.customers.retrieve(customerId);
-              if (!customer.deleted) {
-                uid = customer.metadata?.firebaseUID || customer.metadata?.firebase_uid;
-              }
-            }
-          }
-
-          if (uid) {
-            let periodEnd: Date | null = null;
-            let planId = 'pro';
-            if (invoice.subscription) {
-              const subId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription.id;
-              const subscription = await stripe.subscriptions.retrieve(subId);
-              periodEnd = new Date(subscription.current_period_end * 1000);
-              planId = subscription.items.data[0]?.price?.lookup_key || 'pro';
-            }
-
-            await admin.firestore().doc(`users/${uid}`).set(
-              {
-                premium: true,
-                subscriptionStatus: 'active',
-                lastPaymentAt: admin.firestore.FieldValue.serverTimestamp(),
-              },
-              { merge: true }
-            );
-
-            await admin.firestore().doc(`users/${uid}/subscriptions/current`).set(
-              {
-                status: 'active',
-                plan: planId,
-                period_end: periodEnd ? admin.firestore.Timestamp.fromDate(periodEnd) : null,
-                lastPaymentAt: admin.firestore.FieldValue.serverTimestamp(),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-              },
-              { merge: true }
-            );
-
-            console.log(`Premium renewed for user ${uid}`);
-          } else {
-            console.error('Could not find Firebase UID for invoice', invoice.id);
-          }
+        case 'invoice.paid': {
+          const invoice = event.data.object as Stripe.Invoice;
+          await handleInvoicePaid(invoice);
           break;
         }
 

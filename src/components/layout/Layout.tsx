@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext'; // Adjusted path
 
 const Header: React.FC = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const hideMenuLinks = location.pathname === '/pricing' || location.pathname.startsWith('/checkout');
 
   const handleLogout = async () => {
     try {
@@ -36,81 +38,83 @@ const Header: React.FC = () => {
         <NavLink to="/" className="text-xl font-headings font-extrabold hover:text-blue-200 transition-colors">
           AI Course Platform
         </NavLink>
-        <div className="relative" ref={menuRef}>
-          <button
-            onClick={() => setMenuOpen(v => !v)}
-            className="inline-flex items-center gap-2 rounded-md border border-white/30 px-3 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-white/10 transition-colors"
-            aria-haspopup="true"
-            aria-expanded={menuOpen}
-          >
-            Menu
-            <span className="text-xs">▾</span>
-          </button>
-          {menuOpen && (
-            <div className="absolute right-0 mt-2 w-48 rounded-md bg-white text-gray-900 shadow-lg ring-1 ring-black/10 z-50">
-              <div className="py-2">
-                <NavLink
-                  to="/"
-                  onClick={() => setMenuOpen(false)}
-                  className={({ isActive }) =>
-                    `block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100 ${isActive ? 'text-blue-700' : ''}`
-                  }
-                >
-                  Home
-                </NavLink>
-                <NavLink
-                  to="/courses"
-                  onClick={() => setMenuOpen(false)}
-                  className={({ isActive }) =>
-                    `block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100 ${isActive ? 'text-blue-700' : ''}`
-                  }
-                >
-                  Courses
-                </NavLink>
-                {currentUser && (
+        {!hideMenuLinks && (
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen(v => !v)}
+              className="inline-flex items-center gap-2 rounded-md border border-white/30 px-3 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-white/10 transition-colors"
+              aria-haspopup="true"
+              aria-expanded={menuOpen}
+            >
+              Menu
+              <span className="text-xs">▾</span>
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 mt-2 w-48 rounded-md bg-white text-gray-900 shadow-lg ring-1 ring-black/10 z-50">
+                <div className="py-2">
                   <NavLink
-                    to="/recap"
+                    to="/"
                     onClick={() => setMenuOpen(false)}
                     className={({ isActive }) =>
                       `block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100 ${isActive ? 'text-blue-700' : ''}`
                     }
                   >
-                    Recaps
+                    Home
                   </NavLink>
-                )}
-                {currentUser ? (
-                  <button
-                    onClick={() => { setMenuOpen(false); handleLogout(); }}
-                    className="block w-full text-left px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100"
+                  <NavLink
+                    to="/courses"
+                    onClick={() => setMenuOpen(false)}
+                    className={({ isActive }) =>
+                      `block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100 ${isActive ? 'text-blue-700' : ''}`
+                    }
                   >
-                    Logout
-                  </button>
-                ) : (
-                  <>
+                    Courses
+                  </NavLink>
+                  {currentUser && (
                     <NavLink
-                      to="/login"
+                      to="/recap"
                       onClick={() => setMenuOpen(false)}
                       className={({ isActive }) =>
                         `block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100 ${isActive ? 'text-blue-700' : ''}`
                       }
                     >
-                      Login
+                      Recaps
                     </NavLink>
-                    <NavLink
-                      to="/signup"
-                      onClick={() => setMenuOpen(false)}
-                      className={({ isActive }) =>
-                        `block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100 ${isActive ? 'text-blue-700' : ''}`
-                      }
+                  )}
+                  {currentUser ? (
+                    <button
+                      onClick={() => { setMenuOpen(false); handleLogout(); }}
+                      className="block w-full text-left px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100"
                     >
-                      Sign Up
-                    </NavLink>
-                  </>
-                )}
+                      Logout
+                    </button>
+                  ) : (
+                    <>
+                      <NavLink
+                        to="/login"
+                        onClick={() => setMenuOpen(false)}
+                        className={({ isActive }) =>
+                          `block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100 ${isActive ? 'text-blue-700' : ''}`
+                        }
+                      >
+                        Login
+                      </NavLink>
+                      <NavLink
+                        to="/signup"
+                        onClick={() => setMenuOpen(false)}
+                        className={({ isActive }) =>
+                          `block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100 ${isActive ? 'text-blue-700' : ''}`
+                        }
+                      >
+                        Sign Up
+                      </NavLink>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </nav>
     </header>
   );

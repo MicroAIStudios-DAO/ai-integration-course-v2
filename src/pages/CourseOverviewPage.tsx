@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getCourses, getUserCourseProgress } from '../firebaseService';
 import { Course, Module, Lesson, UserCourseProgress } from '../types/course';
 import { useAuth } from '../context/AuthContext';
+import CourseSchema from '../components/seo/CourseSchema';
 
 const CourseOverviewPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -92,7 +93,19 @@ const CourseOverviewPage: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-10">
+    <div className="container mx-auto px-4 py-10 text-gray-900">
+      {course && (
+        <CourseSchema
+          courseName={course.title}
+          courseDescription={course.description}
+          courseUrl={typeof window !== 'undefined' ? `${window.location.origin}/courses/${course.id}` : undefined}
+          providerUrl={typeof window !== 'undefined' ? window.location.origin : undefined}
+          modules={course.modules.map((module) => ({
+            name: module.title,
+            description: module.description
+          }))}
+        />
+      )}
       <div className="rounded-2xl border border-slate-200 bg-white/90 backdrop-blur shadow-xl p-6 md:p-10">
         <div className="mb-8">
           <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 text-blue-700 px-3 py-1 text-xs font-headings font-semibold uppercase tracking-wide">
@@ -101,12 +114,12 @@ const CourseOverviewPage: React.FC = () => {
           <h1 className="text-4xl md:text-5xl font-headings font-extrabold mt-4 text-gray-900">
             {course.title}
           </h1>
-          <p className="text-lg text-gray-600 mt-3 max-w-3xl font-sans">{course.description}</p>
+          <p className="text-lg text-gray-800 mt-3 max-w-3xl font-sans">{course.description}</p>
         </div>
         
         {/* Lesson dropdown */}
         <select
-          className="mb-6 px-4 py-3 border border-slate-200 rounded-xl w-full md:w-1/2 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="mb-6 px-4 py-3 border border-slate-200 rounded-xl w-full md:w-1/2 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           defaultValue=""
           onChange={(e) => {
             const value = e.target.value;
@@ -119,13 +132,14 @@ const CourseOverviewPage: React.FC = () => {
             }
           }}
         >
-          <option value="">Select a lesson</option>
+          <option value="" className="text-gray-900">Select a lesson</option>
           {course.modules.map((module) =>
             module.lessons.map((lesson) => (
               <option
                 key={`${module.id}|${lesson.id}`}
                 value={`${module.id}|${lesson.id}`}
                 disabled={lesson.tier !== 'free' && !lesson.isFree && !currentUser}
+                className="text-gray-900"
               >
                 {module.title} - {lesson.title} {(lesson.tier === 'free' || lesson.isFree) ? '(Free)' : ''}
               </option>
@@ -136,7 +150,7 @@ const CourseOverviewPage: React.FC = () => {
         {course.modules.map((module: Module) => (
           <div key={module.id} className="mb-10 p-6 md:p-8 border border-slate-200 rounded-2xl bg-white shadow-sm hover:shadow-md transition-shadow duration-300">
             <h2 className="text-2xl font-headings font-semibold mb-3 text-slate-900">{module.title}</h2>
-            <p className="text-gray-600 mb-6 text-sm font-sans">{module.description}</p>
+            <p className="text-gray-800 mb-6 text-sm font-sans">{module.description}</p>
             <ul className="space-y-3">
               {module.lessons.map((lesson: Lesson) => {
                 // Check if user has access to this lesson (free, subscribed, trial, admin, or master access)
@@ -151,8 +165,8 @@ const CourseOverviewPage: React.FC = () => {
                   onClick={() => handleLessonClick(lesson, module.id)}
                   className={`flex justify-between items-center p-4 rounded-xl transition-all duration-200 ease-in-out cursor-pointer 
                               ${(!isFreeLesson && (!currentUser /* Simplified gating */)) 
-                                ? 'bg-slate-100 text-gray-400 hover:bg-slate-200'
-                                : 'bg-blue-50 hover:bg-blue-100 text-gray-800'}
+                                ? 'bg-slate-100 text-gray-600 hover:bg-slate-200'
+                                : 'bg-blue-50 hover:bg-blue-100 text-gray-900'}
                               ${isFreeLesson ? 'border-l-4 border-green-500' : 'border-l-4 border-slate-300'}
                               ${isLessonCompleted(lesson.id) ? 'opacity-70' : ''}
                             `}
@@ -169,7 +183,7 @@ const CourseOverviewPage: React.FC = () => {
                         </svg>
                       )}
                     </span>
-                    <span className={`font-sans font-medium ${isLessonCompleted(lesson.id) ? 'line-through text-gray-500' : ''}`}>{lesson.title}</span>
+                    <span className={`font-sans font-medium ${isLessonCompleted(lesson.id) ? 'line-through text-gray-600' : ''}`}>{lesson.title}</span>
                   </div>
                   <div className="flex items-center">
                     {isFreeLesson && (
@@ -178,10 +192,10 @@ const CourseOverviewPage: React.FC = () => {
                     {(!isFreeLesson && (!currentUser /* Simplified gating */)) && (
                       <span className="text-xs bg-yellow-200 text-yellow-700 px-2 py-1 rounded-full mr-2 font-sans">Premium</span>
                     )}
-                    <span className="text-gray-400 text-sm font-sans">
+                    <span className="text-gray-600 text-sm font-sans">
                       {(!isFreeLesson && (!currentUser /* Simplified gating */)) ? 'Login to access' : 'View Lesson'}
                     </span>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                     </svg>
                   </div>

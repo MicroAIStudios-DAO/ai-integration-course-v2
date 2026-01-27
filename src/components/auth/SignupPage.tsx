@@ -9,7 +9,6 @@ import { trackSignUp, trackBeginCheckout } from "../../utils/analytics";
 const SignupPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { signup } = useAuth(); // Use AuthContext
@@ -23,10 +22,6 @@ const SignupPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
     setLoading(true);
 
     // Try reCAPTCHA verification but don't block signup if it fails
@@ -49,8 +44,8 @@ const SignupPage: React.FC = () => {
       const createCheckoutSession = httpsCallable(functions, "createCheckoutSessionV2");
       const result = await createCheckoutSession({
         priceId,
-        successUrl: `${origin}/welcome?session_id={CHECKOUT_SESSION_ID}`,
-        cancelUrl: `${origin}/signup?checkout=cancelled`
+        successUrl: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${origin}/payment-cancel`
       });
       const data = result.data as { url?: string };
       if (data?.url) {
@@ -114,26 +109,10 @@ const SignupPage: React.FC = () => {
                 type="password"
                 autoComplete="new-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm font-body"
+                className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm font-body"
                 placeholder="Password (min. 6 characters)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="confirm-password" className="sr-only">
-                Confirm Password
-              </label>
-              <input
-                id="confirm-password"
-                name="confirm-password"
-                type="password"
-                autoComplete="new-password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm font-body"
-                placeholder="Confirm Password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
               />
             </div>
           </div>

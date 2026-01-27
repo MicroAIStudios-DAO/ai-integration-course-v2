@@ -9,7 +9,7 @@ const HeroCTA: React.FC = () => {
 
       {/* Headline */}
       <h1 className="text-4xl md:text-5xl font-extrabold mt-8 leading-tight max-w-3xl">
-        The AI Revolution Will Reward Those Who Think Differently.
+        Build your first working AI Agent in 14 days.
       </h1>
 
       {/* Subheadline */}

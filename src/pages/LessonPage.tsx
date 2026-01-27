@@ -3,11 +3,12 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import ReactPlayer from "react-player";
 import { getCourseById, getLessonMarkdownUrl, markLessonAsComplete, getUserProfile, getUserCourseProgress } from "../firebaseService"; // Import Firestore service
-import { Lesson as LessonType, UserCourseProgress } from "../types/course"; // Import types
+import { Course, Lesson as LessonType, UserCourseProgress } from "../types/course"; // Import types
 import { useAuth } from "../context/AuthContext"; // For gating logic
 // Master access removed for production
 import AnimatedAvatar from "../components/layout/AnimatedAvatar"; // Import AnimatedAvatar
 import AITutor from "../components/AITutor";
+import CourseSchema from "../components/seo/CourseSchema";
 import "../styles/lesson-content.css"; // Import textbook-style CSS
 import { trackLessonStart, trackLessonComplete } from "../utils/analytics";
 
@@ -17,6 +18,7 @@ const LessonPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [lesson, setLesson] = useState<LessonType | null>(null);
+  const [course, setCourse] = useState<Course | null>(null);
   const [moduleTitle, setModuleTitle] = useState<string>("");
   const [courseTitle, setCourseTitle] = useState<string>("");
   const [markdownContent, setMarkdownContent] = useState<string>("");
@@ -45,6 +47,7 @@ const LessonPage: React.FC = () => {
           setLoading(false); 
           return;
         }
+        setCourse(courseData);
         setCourseTitle(courseData.title);
 
         const currentModule = courseData.modules.find(m => m.id === moduleId);
@@ -214,6 +217,18 @@ The detailed content for this lesson is being prepared. Please check back soon o
 
   return (
     <div className="textbook-page">
+      {course && (
+        <CourseSchema
+          courseName={course.title}
+          courseDescription={course.description}
+          courseUrl={typeof window !== "undefined" ? `${window.location.origin}/courses/${courseId}` : undefined}
+          providerUrl={typeof window !== "undefined" ? window.location.origin : undefined}
+          modules={course.modules.map((module) => ({
+            name: module.title,
+            description: module.description
+          }))}
+        />
+      )}
       <div className="textbook-container">
         {/* Master Access Status */}
         {/* Master access UI removed */}
