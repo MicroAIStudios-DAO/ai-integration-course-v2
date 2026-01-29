@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { getCourses } from '../../firebaseService';
+import { Module } from '../../types/course';
 import { useAuth } from '../../context/AuthContext'; // Adjusted path
 
 const Header: React.FC = () => {
@@ -9,6 +11,8 @@ const Header: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const hideMenuLinks = location.pathname === '/pricing' || location.pathname.startsWith('/checkout');
+  const [modules, setModules] = useState<Module[]>([]);
+  const [courseId, setCourseId] = useState<string | null>(null);
 
   const handleLogout = async () => {
     try {
@@ -32,6 +36,27 @@ const Header: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [menuOpen]);
 
+  useEffect(() => {
+    let isActive = true;
+    if (!menuOpen || modules.length > 0) return;
+    getCourses()
+      .then((courses) => {
+        if (!isActive) return;
+        const course = courses[0];
+        if (course) {
+          setCourseId(course.id);
+          setModules(course.modules || []);
+        }
+      })
+      .catch((error) => {
+        console.warn('Failed to load modules for nav:', error);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [menuOpen, modules.length]);
+
   return (
     <header className="bg-gradient-to-r from-slate-900 via-blue-900 to-blue-700 text-white p-4 shadow-md font-sans border-b border-white/10">
       <nav className="container mx-auto flex items-center justify-between">
@@ -40,14 +65,14 @@ const Header: React.FC = () => {
         </NavLink>
         {!hideMenuLinks && (
           <div className="relative" ref={menuRef}>
-            <button
-              onClick={() => setMenuOpen(v => !v)}
-              className="inline-flex items-center gap-2 rounded-md border border-white/30 px-3 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-white/10 transition-colors"
-              aria-haspopup="true"
-              aria-expanded={menuOpen}
-            >
-              Menu
-              <span className="text-xs">▾</span>
+          <button
+            onClick={() => setMenuOpen(v => !v)}
+            className="inline-flex min-w-[140px] items-center justify-center gap-2 rounded-md border border-white/30 px-5 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-white/10 transition-colors"
+            aria-haspopup="true"
+            aria-expanded={menuOpen}
+          >
+            Menu
+            <span className="text-xs">▾</span>
             </button>
             {menuOpen && (
               <div className="absolute right-0 mt-2 w-48 rounded-md bg-white text-gray-900 shadow-lg ring-1 ring-black/10 z-50">
@@ -61,15 +86,50 @@ const Header: React.FC = () => {
                   >
                     Home
                   </NavLink>
-                  <NavLink
-                    to="/courses"
-                    onClick={() => setMenuOpen(false)}
-                    className={({ isActive }) =>
-                      `block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100 ${isActive ? 'text-blue-700' : ''}`
-                    }
-                  >
-                    Courses
-                  </NavLink>
+                <NavLink
+                  to="/courses"
+                  onClick={() => setMenuOpen(false)}
+                  className={({ isActive }) =>
+                    `block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100 ${isActive ? 'text-blue-700' : ''}`
+                  }
+                >
+                  Courses
+                </NavLink>
+                <div className="relative group">
+                  <span className="block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100 cursor-default">
+                    Modules ▸
+                  </span>
+                  <div className="absolute left-full top-0 ml-2 hidden group-hover:block">
+                    <div className="w-64 rounded-md bg-white text-gray-900 shadow-lg ring-1 ring-black/10">
+                      {modules.length === 0 && (
+                        <div className="px-4 py-2 text-sm text-gray-500">
+                          Loading modules...
+                        </div>
+                      )}
+                      {modules.map((module) => (
+                        <div key={module.id} className="relative group/module">
+                          <span className="block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100">
+                            {module.title}
+                          </span>
+                          <div className="absolute left-full top-0 ml-2 hidden group-hover/module:block">
+                            <div className="w-72 rounded-md bg-white text-gray-900 shadow-lg ring-1 ring-black/10">
+                              {module.lessons?.map((lesson) => (
+                                <NavLink
+                                  key={lesson.id}
+                                  to={courseId ? `/courses/${courseId}/modules/${module.id}/lessons/${lesson.id}` : '/courses'}
+                                  onClick={() => setMenuOpen(false)}
+                                  className="block px-4 py-2 text-sm font-sans hover:bg-gray-100"
+                                >
+                                  {lesson.title}
+                                </NavLink>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
                   {currentUser && (
                     <NavLink
                       to="/recap"

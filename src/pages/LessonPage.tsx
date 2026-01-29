@@ -260,12 +260,15 @@ The detailed content for this lesson is being prepared. Please check back soon o
           {/* Video Player */}
           {videoUrlToPlay && (
             <div className="mb-10">
-              <div className="aspect-w-16 aspect-h-9 bg-gray-100 rounded-lg overflow-hidden">
+              <div className="lesson-video">
                 <ReactPlayer
                   url={videoUrlToPlay}
                   width="100%"
                   height="100%"
                   controls
+                  playing
+                  muted
+                  playsinline
                   className="react-player"
                 />
               </div>

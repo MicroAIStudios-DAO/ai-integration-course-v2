@@ -16,6 +16,7 @@ export default function AITutor({ lessonId, premium, hasAccess, supportEmail }: 
   const [messages, setMessages] = useState<Message[]>([]);
   // Remove unused error state as it's set but never displayed
   const scrollRef = useRef<HTMLDivElement>(null);
+  const tutorUrl = process.env.REACT_APP_TUTOR_URL || "https://tutor-z2yrjfoedq-uc.a.run.app";
 
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
@@ -29,7 +30,7 @@ export default function AITutor({ lessonId, premium, hasAccess, supportEmail }: 
     setMessages(m => [...m, { role: "user", content: q }]);
     const question = q; setQ("");
     try {
-      const res = await fetch("/api/tutor", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lessonId, question }) });
+      const res = await fetch(tutorUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lessonId, question }) });
       if (!res.ok || !res.body) throw new Error("Tutor error");
       const reader = res.body.getReader();
       const decoder = new TextDecoder("utf-8");

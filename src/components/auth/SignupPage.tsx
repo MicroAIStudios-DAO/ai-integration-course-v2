@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext"; // Corrected path
 import { functions } from "../../config/firebase";
 import { useReCaptcha } from "../../hooks/useReCaptcha";
 import { trackSignUp, trackBeginCheckout } from "../../utils/analytics";
+import ReactPlayer from "react-player";
 
 const SignupPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -18,6 +19,7 @@ const SignupPage: React.FC = () => {
   const priceId = process.env.REACT_APP_STRIPE_PRICE_ID || "price_1SmgMKKnsQ10RdBLEWL2w8e4";
   const queryParams = new URLSearchParams(location.search);
   const checkoutCancelled = queryParams.get("checkout") === "cancelled";
+  const introVideoUrl = "https://youtu.be/sG9_phBnm40";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +68,17 @@ const SignupPage: React.FC = () => {
       <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
       <div className="absolute -bottom-32 -left-24 h-80 w-80 rounded-full bg-indigo-200/40 blur-3xl" />
       <div className="max-w-md w-full space-y-8 bg-white/90 backdrop-blur p-10 rounded-2xl shadow-xl border border-white/60 form-container">
+        <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-lg bg-slate-900">
+          <ReactPlayer
+            url={introVideoUrl}
+            width="100%"
+            height="100%"
+            playing
+            muted
+            controls
+            playsinline
+          />
+        </div>
         <div>
           <h2 className="mt-6 text-center text-3xl font-headings font-extrabold text-gray-900">
             Create your account

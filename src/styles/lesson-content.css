@@ -1,6 +1,7 @@
 /* Textbook-style lesson content styling */
 .lesson-content {
-  max-width: 800px;
+  width: 89.3%;
+  max-width: none;
   margin: 0 auto;
   background: #ffffff;
   border-radius: 12px;
@@ -89,6 +90,22 @@
   color: inherit;
 }
 
+.lesson-video {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #0f172a;
+  box-shadow: 0 20px 35px rgba(15, 23, 42, 0.2);
+}
+
+.lesson-video .react-player {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
 .lesson-content hr {
   border: none;
   height: 2px;
@@ -125,7 +142,8 @@
 }
 
 .textbook-container {
-  max-width: 900px;
+  width: 80vw;
+  max-width: none;
   margin: 0 auto;
   background: #ffffff;
   border-radius: 16px;
