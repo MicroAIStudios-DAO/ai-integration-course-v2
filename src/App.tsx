@@ -14,10 +14,13 @@ import SignupPage from './components/auth/SignupPage';
 import ProfilePage from './components/auth/ProfilePage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PaymentCancelPage from './pages/PaymentCancelPage';
+import { UserJotWidget } from './components/UserJotWidget';
 
 const App: React.FC = () => {
   return (
     <Router>
+      {/* UserJot feedback widget for beta testers */}
+      <UserJotWidget />
       <Routes>
         {/* HomePage renders without Layout for full-screen landing page */}
         <Route path="/" element={<HomePage />} />
