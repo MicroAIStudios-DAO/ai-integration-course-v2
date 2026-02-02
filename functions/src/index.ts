@@ -27,6 +27,9 @@ export { verifyRecaptcha } from './recaptcha';
 // Import and export Stripe functions
 export { createCheckoutSession, stripeWebhook } from './stripe';
 
+// Import and export Beta Testing functions
+export { userJotToGithub, githubToUserJot, betaTesterSync } from './beta-testing';
+
 // export const helloWorld = onRequest((request, response) => {
 //   logger.info("Hello logs!", {structuredData: true});
 //   response.send("Hello from Firebase!");
