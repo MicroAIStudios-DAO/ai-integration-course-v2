@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import SubscribeButton from '../components/payment/SubscribeButton';
 import { trackViewPricing } from '../utils/analytics';
 import useFoundingAccess from '../hooks/useFoundingAccess';
+import FoundingAccessFloatingButton from '../components/founding/FoundingAccessFloatingButton';
 
 /**
  * PricingPage Component
@@ -447,6 +448,7 @@ const PricingPage: React.FC = () => {
           </Link>
         </div>
       </main>
+      <FoundingAccessFloatingButton />
 
       {/* Footer */}
       <footer className="border-t border-slate-700/50 mt-20">

@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AnimatedAvatar from '../components/layout/AnimatedAvatar';
-import FoundingAccessModal from '../components/founding/FoundingAccessModal';
 import FeedbackDrawer from '../components/feedback/FeedbackDrawer';
-import useFoundingAccess from '../hooks/useFoundingAccess';
+import FoundingAccessFloatingButton from '../components/founding/FoundingAccessFloatingButton';
 
 const NewLandingPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [showFoundingModal, setShowFoundingModal] = useState(false);
-  const { isFounding } = useFoundingAccess();
 
   const handleEmailSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -101,14 +98,6 @@ const NewLandingPage: React.FC = () => {
             Explore Courses
           </Link>
         </div>
-        {!isFounding && (
-          <button
-            onClick={() => setShowFoundingModal(true)}
-            className="text-sm uppercase tracking-[0.2em] text-cyan-200 hover:text-white transition-colors mb-10"
-          >
-            Founding members click here
-          </button>
-        )}
 
         {/* Email Capture */}
         <div className="w-full max-w-md bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
@@ -152,11 +141,7 @@ const NewLandingPage: React.FC = () => {
         <p>© {new Date().getFullYear()} AI Integration Course. Guided by humans, built by AI.</p>
       </div>
 
-      <FoundingAccessModal
-        isOpen={showFoundingModal}
-        onClose={() => setShowFoundingModal(false)}
-        onSuccess={() => setShowFoundingModal(false)}
-      />
+      <FoundingAccessFloatingButton />
       <FeedbackDrawer />
     </div>
   );

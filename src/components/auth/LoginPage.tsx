@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext"; // Corrected path
 import { getAuth, sendPasswordResetEmail } from "firebase/auth";
 import { useReCaptcha } from "../../hooks/useReCaptcha";
 import ReactPlayer from "react-player";
+import FoundingAccessFloatingButton from "../founding/FoundingAccessFloatingButton";
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -180,6 +181,7 @@ const LoginPage: React.FC = () => {
           </p>
         </div>
       </div>
+      <FoundingAccessFloatingButton />
     </div>
   );
 };

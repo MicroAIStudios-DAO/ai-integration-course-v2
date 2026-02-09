@@ -6,6 +6,7 @@ import { functions } from "../../config/firebase";
 import { useReCaptcha } from "../../hooks/useReCaptcha";
 import { trackSignUp, trackBeginCheckout } from "../../utils/analytics";
 import ReactPlayer from "react-player";
+import FoundingAccessFloatingButton from "../founding/FoundingAccessFloatingButton";
 
 const SignupPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -199,6 +200,7 @@ const SignupPage: React.FC = () => {
           </p>
         </div>
       </div>
+      <FoundingAccessFloatingButton />
     </div>
   );
 };
