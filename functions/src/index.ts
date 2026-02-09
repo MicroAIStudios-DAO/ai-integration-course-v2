@@ -46,6 +46,9 @@ export {
 // Import and export admin lesson functions
 export { addLessonToFirestoreV2, listCoursesAndModulesV2 } from './adminLessons';
 
+// Founding member access + feedback
+export { redeemFoundingCodeV2, submitFeedbackV2 } from './founding';
+
 // export const helloWorld = onRequest((request, response) => {
 //   logger.info("Hello logs!", {structuredData: true});
 //   response.send("Hello from Firebase!");

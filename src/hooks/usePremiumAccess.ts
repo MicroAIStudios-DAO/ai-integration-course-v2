@@ -85,7 +85,7 @@ export function usePremiumAccess(): PremiumAccessState & {
       }
 
       const userData = userDoc.data();
-      const isPremium = userData.premium === true;
+      const isPremium = userData.premium === true || userData.foundingMember === true;
       const subscriptionStatus = (userData.subscriptionStatus || 'none') as SubscriptionStatus;
       const isTrialing = subscriptionStatus === 'trialing';
       const isActive = subscriptionStatus === 'active';
@@ -145,7 +145,7 @@ export function usePremiumAccess(): PremiumAccessState & {
         }
 
         const userData = snapshot.data();
-        const isPremium = userData.premium === true;
+        const isPremium = userData.premium === true || userData.foundingMember === true;
         const subscriptionStatus = (userData.subscriptionStatus || 'none') as SubscriptionStatus;
         const isTrialing = subscriptionStatus === 'trialing';
         const isActive = subscriptionStatus === 'active';

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SubscribeButton from '../components/payment/SubscribeButton';
 import { trackViewPricing } from '../utils/analytics';
+import useFoundingAccess from '../hooks/useFoundingAccess';
 
 /**
  * PricingPage Component
@@ -24,6 +25,8 @@ const PricingPage: React.FC = () => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
 
   const proMonthlyPrice = 49;
+  const foundingPrice = 20;
+  const { isFounding } = useFoundingAccess();
 
   // Track view_item event when pricing page loads
   useEffect(() => {
@@ -107,6 +110,42 @@ const PricingPage: React.FC = () => {
 
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {isFounding && (
+            <div className="bg-gradient-to-b from-emerald-900/50 to-slate-800/50 border-2 border-emerald-400 rounded-2xl p-8 relative">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                <span className="bg-emerald-500 text-white text-sm font-semibold px-4 py-1 rounded-full">
+                  Founding Member
+                </span>
+              </div>
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-white mb-2">Lifetime Access</h3>
+                <p className="text-gray-300">Limited to 15 seats</p>
+              </div>
+              <div className="mb-6">
+                <span className="text-4xl font-bold text-white">${foundingPrice}</span>
+                <span className="text-gray-300"> one-time</span>
+              </div>
+              <ul className="space-y-4 mb-8">
+                <li className="flex items-start gap-3 text-gray-200">
+                  <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Full course access forever</span>
+                </li>
+                <li className="flex items-start gap-3 text-gray-200">
+                  <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Priority feedback channel</span>
+                </li>
+              </ul>
+              <button
+                className="w-full py-3 px-6 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-semibold transition-colors"
+              >
+                Founding Access Unlocked
+              </button>
+            </div>
+          )}
           
           {/* Free Tier - View Curriculum */}
           <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-8">

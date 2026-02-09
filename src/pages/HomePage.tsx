@@ -2,6 +2,9 @@ import React, { useMemo, useState } from 'react';
 import AnimatedAvatar from '../components/layout/AnimatedAvatar';
 import { appConfig } from '../config/environment';
 import CourseSchema from '../components/seo/CourseSchema';
+import FoundingAccessModal from '../components/founding/FoundingAccessModal';
+import FeedbackDrawer from '../components/feedback/FeedbackDrawer';
+import useFoundingAccess from '../hooks/useFoundingAccess';
 
 type SubmissionState = 'idle' | 'loading' | 'success' | 'error';
 
@@ -36,6 +39,8 @@ const HomePage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [submissionState, setSubmissionState] = useState<SubmissionState>('idle');
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [showFoundingModal, setShowFoundingModal] = useState(false);
+  const { isFounding } = useFoundingAccess();
 
   const { baseUrl } = appConfig;
   const navigationLinks = useMemo(() => {
@@ -162,6 +167,14 @@ const HomePage: React.FC = () => {
             View Curriculum
           </a>
         </div>
+        {!isFounding && (
+          <button
+            onClick={() => setShowFoundingModal(true)}
+            className="text-sm uppercase tracking-[0.2em] text-cyan-200 hover:text-white transition-colors"
+          >
+            Founding members click here
+          </button>
+        )}
 
         {/* Guarantee Explanation */}
         <p className="text-sm text-slate-400 max-w-xl text-center mb-12">
@@ -218,6 +231,13 @@ const HomePage: React.FC = () => {
       <div className="relative z-10 text-center py-8 text-slate-400 text-sm">
         <p>© {new Date().getFullYear()} AI Integration Course. Guided by humans, built by AI.</p>
       </div>
+
+      <FoundingAccessModal
+        isOpen={showFoundingModal}
+        onClose={() => setShowFoundingModal(false)}
+        onSuccess={() => setShowFoundingModal(false)}
+      />
+      <FeedbackDrawer />
     </div>
     </>
   );

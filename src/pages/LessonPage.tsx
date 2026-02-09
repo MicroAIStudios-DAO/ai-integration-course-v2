@@ -73,7 +73,13 @@ const LessonPage: React.FC = () => {
           // Check subscription status for logged-in users without master access
           const profile = await getUserProfile(currentUser.uid);
           const isAdmin = profile?.role === 'admin' || profile?.isAdmin;
-          canAccess = !!(isFreeLesson || isAdmin || profile?.isSubscribed || profile?.activeTrial);
+          canAccess = !!(
+            isFreeLesson ||
+            isAdmin ||
+            profile?.isSubscribed ||
+            profile?.activeTrial ||
+            (profile as any)?.foundingMember
+          );
           
           const progress = await getUserCourseProgress(currentUser.uid, courseId);
           setUserProgress(progress);

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { getCourses } from '../../firebaseService';
 import { Module } from '../../types/course';
+import FeedbackDrawer from '../feedback/FeedbackDrawer';
 import { useAuth } from '../../context/AuthContext'; // Adjusted path
 
 const Header: React.FC = () => {
@@ -99,7 +100,7 @@ const Header: React.FC = () => {
                   <span className="block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100 cursor-default">
                     Modules ▸
                   </span>
-                  <div className="absolute left-full top-0 ml-2 hidden group-hover:block">
+                  <div className="absolute right-full top-0 mr-2 hidden group-hover:block">
                     <div className="w-64 rounded-md bg-white text-gray-900 shadow-lg ring-1 ring-black/10">
                       {modules.length === 0 && (
                         <div className="px-4 py-2 text-sm text-gray-500">
@@ -111,7 +112,7 @@ const Header: React.FC = () => {
                           <span className="block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100">
                             {module.title}
                           </span>
-                          <div className="absolute left-full top-0 ml-2 hidden group-hover/module:block">
+                          <div className="absolute right-full top-0 mr-2 hidden group-hover/module:block">
                             <div className="w-72 rounded-md bg-white text-gray-900 shadow-lg ring-1 ring-black/10">
                               {module.lessons?.map((lesson) => (
                                 <NavLink
@@ -187,6 +188,7 @@ const Layout: React.FC = () => {
       <main className="flex-grow container mx-auto p-4 md:p-8">
         <Outlet />
       </main>
+      <FeedbackDrawer />
       <footer className="bg-slate-900 text-white p-6 font-sans">
         <div className="container mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
