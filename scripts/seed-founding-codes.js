@@ -34,8 +34,19 @@ const codes = [
 async function main() {
   const batch = db.batch();
   const ref = db.collection('founding_codes');
+  const expiresAt = admin.firestore.Timestamp.fromDate(
+    new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+  );
   codes.forEach((code) => {
-    batch.set(ref.doc(code), { code, createdAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    batch.set(
+      ref.doc(code),
+      {
+        code,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        expiresAt,
+      },
+      { merge: true }
+    );
   });
   await batch.commit();
   console.log('Seeded founding codes:', codes.join(', '));
