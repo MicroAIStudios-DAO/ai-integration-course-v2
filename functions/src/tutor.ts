@@ -103,9 +103,22 @@ async function getLessonText(docPath: string): Promise<string> {
   const snap = await db.doc(docPath).get();
   if (!snap.exists) throw new Error('Lesson not found');
   const d = snap.data() || {} as any;
-  const raw = (d.md || d.html || '').toString();
-  if (!raw) throw new Error('Lesson content empty');
-  return raw;
+  const inline = (d.content || d.md || d.html || '').toString();
+  if (inline) return inline;
+
+  const storagePath = (d.storagePath || '').toString();
+  if (storagePath) {
+    try {
+      const b = admin.storage().bucket();
+      const [buf] = await b.file(storagePath).download();
+      const text = buf.toString('utf-8');
+      if (text) return text;
+    } catch (err) {
+      throw new Error(`Failed to load lesson from storage: ${err instanceof Error ? err.message : 'unknown error'}`);
+    }
+  }
+
+  throw new Error('Lesson content empty');
 }
 
 async function getCachedEmbeddings(bucket: admin.storage.Storage, lessonKey: string): Promise<{ chunks: Chunk[]; vectors: number[][] } | null> {
@@ -253,6 +266,7 @@ export async function tutorHandler(req: any, res: any) {
     // Local-only usage counter (not persisted)
     usageCount += 1;
   } catch (e: any) {
+    console.error('Tutor error:', e?.message || e);
     res.status(500).send(e?.message || 'Tutor error');
   }
 }

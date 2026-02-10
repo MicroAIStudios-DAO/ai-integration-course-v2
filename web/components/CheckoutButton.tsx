@@ -11,8 +11,13 @@ export default function CheckoutButton({ priceId }: Props) {
   async function startCheckout() {
     setLoading(true);
     try {
-      const callable = httpsCallable<any, { url: string }>(functions, 'createCheckoutSession');
-      const res = await callable({ priceId });
+      const origin = window.location.origin;
+      const callable = httpsCallable<any, { url: string }>(functions, 'createCheckoutSessionV2');
+      const res = await callable({
+        priceId,
+        successUrl: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${origin}/payment-cancel`
+      });
       const url = (res.data as any)?.url;
       if (url) window.location.href = url;
     } catch (e) {
@@ -29,4 +34,3 @@ export default function CheckoutButton({ priceId }: Props) {
     </button>
   );
 }
-

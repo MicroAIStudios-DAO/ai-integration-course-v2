@@ -41,7 +41,7 @@ All critical build blockers have been identified and resolved. Your Firebase dep
 **Problem:** Workflow referenced wrong secret name
 
 **Fixed:**
-- Updated to use correct secret: `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE`
+- Updated to use correct secret: `FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2`
 
 ---
 
@@ -51,7 +51,7 @@ All critical build blockers have been identified and resolved. Your Firebase dep
 
 Go to your GitHub repository settings and ensure this secret exists:
 
-**Secret Name:** `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE`
+**Secret Name:** `FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2`
 
 **How to get the value:**
 1. Go to [Google Cloud Console](https://console.cloud.google.com/iam-admin/serviceaccounts?project=ai-integra-course-v2)
@@ -86,12 +86,12 @@ Or manually trigger the workflow:
 1. **firebase-hosting-merge.yml**
    - Triggers on: Push to main branch
    - Action: Deploys to Firebase Hosting (live channel)
-   - Uses: `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE`
+   - Uses: `FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2`
 
 2. **firebase-hosting-pull-request.yml**
    - Triggers on: Pull requests
    - Action: Creates preview deployment
-   - Uses: `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE`
+   - Uses: `FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2`
 
 ### Build Process
 
@@ -130,7 +130,7 @@ All of these have been fixed in this PR.
 ## ✨ Next Steps After Merge
 
 1. **Merge this PR** to main branch
-2. **Verify the secret** `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE` is set
+2. **Verify the secret** `FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2` is set
 3. **Monitor the deployment** in GitHub Actions tab
 4. **Check your site** at https://ai-integra-course-v2.web.app
 
@@ -148,7 +148,7 @@ If you encounter issues after merging:
 4. **Verify Node version** in workflow (should be 20.x)
 
 Common issues:
-- Missing or invalid `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE` secret
+- Missing or invalid `FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2` secret
 - Firebase project permissions (service account needs Firebase Admin role)
 - Build errors (check environment variables are set if needed)
 

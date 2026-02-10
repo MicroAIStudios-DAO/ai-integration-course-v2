@@ -1,6 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import AnimatedAvatar from '../components/layout/AnimatedAvatar';
 import { appConfig } from '../config/environment';
+import CourseSchema from '../components/seo/CourseSchema';
+import FeedbackDrawer from '../components/feedback/FeedbackDrawer';
+import FoundingAccessFloatingButton from '../components/founding/FoundingAccessFloatingButton';
 
 type SubmissionState = 'idle' | 'loading' | 'success' | 'error';
 
@@ -67,7 +70,9 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 text-white relative overflow-hidden">
+    <>
+      <CourseSchema />
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 text-white relative overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.05),transparent)]"></div>
@@ -105,52 +110,65 @@ const HomePage: React.FC = () => {
         {/* Main Headline */}
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 max-w-5xl">
           <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Accelerate Your Future Skills Now
+            Build your first working AI Agent in 14 days
           </span>
         </h1>
 
         {/* Subheadline */}
         <p className="text-lg md:text-xl lg:text-2xl max-w-3xl text-slate-300 mb-4 leading-relaxed">
-          AI built, AI powered. From overwhelm to action, we cut the noise.
+          From overwhelm to action. Stop learning about AI—start building with it.
         </p>
         <p className="text-md md:text-lg max-w-2xl text-slate-400 mb-8">
-          Your roadmap, your outcomes, no BS — everything's guided, simplified, and built to execute.
+          Get your first win in 15 minutes. No fluff, no theory—just practical AI skills that create immediate value.
         </p>
 
         {/* Key Value Props */}
         <div className="grid md:grid-cols-3 gap-6 max-w-4xl mb-12">
           <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-            <div className="text-3xl mb-3">🚀</div>
-            <h3 className="text-lg font-semibold mb-2">AI-Enhanced Learning</h3>
-            <p className="text-sm text-slate-400">Experience AI as your coach, not just a tool. Interactive lessons that think with you.</p>
+            <div className="text-3xl mb-3">⏱️</div>
+            <h3 className="text-lg font-semibold mb-2">First Win in 15 Minutes</h3>
+            <p className="text-sm text-slate-400">No lengthy setup. Complete your first AI project before your coffee gets cold.</p>
           </div>
           <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-            <div className="text-3xl mb-3">🎯</div>
-            <h3 className="text-lg font-semibold mb-2">Immediate Value</h3>
-            <p className="text-sm text-slate-400">Skip the overwhelm. Get skills, strategies, and mindsets that create results today.</p>
+            <div className="text-3xl mb-3">🛠️</div>
+            <h3 className="text-lg font-semibold mb-2">Built for Builders</h3>
+            <p className="text-sm text-slate-400">Skip the theory. Every lesson ends with something you can use immediately.</p>
           </div>
           <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-            <div className="text-3xl mb-3">⚡</div>
-            <h3 className="text-lg font-semibold mb-2">Built for Action</h3>
-            <p className="text-sm text-slate-400">Guided by humans, built 100% by AI for AI era learners. Every lesson pushes you toward mastery.</p>
+            <div className="text-3xl mb-3">🤖</div>
+            <h3 className="text-lg font-semibold mb-2">AI as Your Coach</h3>
+            <p className="text-sm text-slate-400">Not just videos—an AI-enhanced accelerator that thinks with you and pushes you toward mastery.</p>
           </div>
         </div>
 
+        {/* AUDIT: 14-Day Build-Your-First-Bot Guarantee Badge */}
+        <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-6 py-3 text-emerald-400 mb-8">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          <span className="font-semibold">14-Day Build-Your-First-Bot Guarantee</span>
+        </div>
+
         {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-12">
+        <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <a
             href={navigationLinks.signup}
             className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white px-8 py-4 rounded-xl text-lg font-semibold shadow-2xl transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300"
           >
-            Start 7-Day Free Trial
+            Start Building Now
           </a>
           <a
             href={navigationLinks.courses}
             className="border-2 border-white/20 hover:border-white/40 text-white px-8 py-4 rounded-xl text-lg font-semibold backdrop-blur-sm transition-all hover:bg-white/5"
           >
-            Explore Courses
+            View Curriculum
           </a>
         </div>
+
+        {/* Guarantee Explanation */}
+        <p className="text-sm text-slate-400 max-w-xl text-center mb-12">
+          Build a working Customer Service Email Bot in 14 days or get a full refund. No questions asked.
+        </p>
 
         {/* Email Capture */}
         <div className="w-full max-w-md bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
@@ -202,9 +220,11 @@ const HomePage: React.FC = () => {
       <div className="relative z-10 text-center py-8 text-slate-400 text-sm">
         <p>© {new Date().getFullYear()} AI Integration Course. Guided by humans, built by AI.</p>
       </div>
+
+      <FoundingAccessFloatingButton />
+      <FeedbackDrawer />
     </div>
+    </>
   );
 };
-
 export default HomePage;
-

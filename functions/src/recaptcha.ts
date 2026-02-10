@@ -1,8 +1,9 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { RecaptchaEnterpriseServiceClient } from "@google-cloud/recaptcha-enterprise";
+import { defineSecret } from "firebase-functions/params";
 
 const PROJECT_ID = "ai-integra-course-v2";
-const SITE_KEY = "6LfdjDosAAAAANnRKcsZQSQLGYVA188hLY_O_naP";
+const RECAPTCHA_SITE_KEY = defineSecret("RECAPTCHA_ENTERPRISE_SITE_KEY");
 // Minimum score threshold (0.0 to 1.0, higher is more likely human)
 const MIN_SCORE_THRESHOLD = 0.5;
 
@@ -31,7 +32,7 @@ interface VerifyRecaptchaResponse {
  * ```
  */
 export const verifyRecaptcha = onCall(
-  { maxInstances: 10 },
+  { maxInstances: 10, secrets: [RECAPTCHA_SITE_KEY] },
   async (request): Promise<VerifyRecaptchaResponse> => {
     const data = request.data as VerifyRecaptchaData;
     const { token, action } = data;
@@ -45,6 +46,11 @@ export const verifyRecaptcha = onCall(
     }
 
     try {
+      const siteKey = RECAPTCHA_SITE_KEY.value();
+      if (!siteKey) {
+        throw new HttpsError("failed-precondition", "Missing RECAPTCHA_ENTERPRISE_SITE_KEY");
+      }
+
       const client = new RecaptchaEnterpriseServiceClient();
       const projectPath = client.projectPath(PROJECT_ID);
 
@@ -53,7 +59,7 @@ export const verifyRecaptcha = onCall(
         assessment: {
           event: {
             token: token,
-            siteKey: SITE_KEY,
+            siteKey: siteKey,
             expectedAction: action,
           },
         },

@@ -26,6 +26,11 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 const BASE_URL = 'https://aiintegrationcourse.com';
+const EXCLUDED_PATH_PREFIXES = ['/app/'];
+
+function shouldIncludePath(pathname) {
+  return !EXCLUDED_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
 
 async function generateSitemap() {
   console.log('🗺️  Generating sitemap...');
@@ -45,6 +50,9 @@ async function generateSitemap() {
   ];
   
   staticPages.forEach(page => {
+    if (!shouldIncludePath(page.path)) {
+      return;
+    }
     urls.push({
       loc: `${BASE_URL}${page.path}`,
       priority: page.priority,
@@ -61,12 +69,14 @@ async function generateSitemap() {
       const courseData = courseDoc.data();
       
       // Add course page
-      urls.push({
-        loc: `${BASE_URL}/courses/${courseId}`,
-        priority: '0.8',
-        changefreq: 'weekly',
-        lastmod: courseData.updatedAt?.toDate?.()?.toISOString?.() || new Date().toISOString()
-      });
+      if (shouldIncludePath(`/courses/${courseId}`)) {
+        urls.push({
+          loc: `${BASE_URL}/courses/${courseId}`,
+          priority: '0.8',
+          changefreq: 'weekly',
+          lastmod: courseData.updatedAt?.toDate?.()?.toISOString?.() || new Date().toISOString()
+        });
+      }
       
       // Fetch modules
       const modulesSnapshot = await db
@@ -96,13 +106,15 @@ async function generateSitemap() {
           // Only include free lessons in sitemap for public indexing
           // Premium lessons are still indexed but with lower priority
           const isFree = lessonData.tier === 'free' || lessonData.isFree;
-          
-          urls.push({
-            loc: `${BASE_URL}/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`,
-            priority: isFree ? '0.7' : '0.5',
-            changefreq: 'monthly',
-            lastmod: lessonData.updatedAt?.toDate?.()?.toISOString?.() || new Date().toISOString()
-          });
+
+          if (shouldIncludePath(`/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`)) {
+            urls.push({
+              loc: `${BASE_URL}/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`,
+              priority: isFree ? '0.7' : '0.5',
+              changefreq: 'monthly',
+              lastmod: lessonData.updatedAt?.toDate?.()?.toISOString?.() || new Date().toISOString()
+            });
+          }
         }
       }
     }

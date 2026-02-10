@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getCourses, getUserCourseProgress } from '../firebaseService';
 import { Course, Module, Lesson, UserCourseProgress } from '../types/course';
 import { useAuth } from '../context/AuthContext';
+import CourseSchema from '../components/seo/CourseSchema';
 
 const CourseOverviewPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -92,111 +93,140 @@ const CourseOverviewPage: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-10">
-      <div className="rounded-2xl border border-slate-200 bg-white/90 backdrop-blur shadow-xl p-6 md:p-10">
-        <div className="mb-8">
-          <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 text-blue-700 px-3 py-1 text-xs font-headings font-semibold uppercase tracking-wide">
-            Course Overview
-          </div>
-          <h1 className="text-4xl md:text-5xl font-headings font-extrabold mt-4 text-gray-900">
-            {course.title}
-          </h1>
-          <p className="text-lg text-gray-600 mt-3 max-w-3xl font-sans">{course.description}</p>
-        </div>
-        
-        {/* Lesson dropdown */}
-        <select
-          className="mb-6 px-4 py-3 border border-slate-200 rounded-xl w-full md:w-1/2 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          defaultValue=""
-          onChange={(e) => {
-            const value = e.target.value;
-            if (!value) return;
-            const [moduleId, lessonId] = value.split('|');
-            const selectedModule = course.modules.find((m) => m.id === moduleId);
-            const selectedLesson = selectedModule?.lessons.find((l) => l.id === lessonId);
-            if (selectedLesson) {
-              handleLessonClick(selectedLesson, moduleId);
-            }
-          }}
-        >
-          <option value="">Select a lesson</option>
-          {course.modules.map((module) =>
-            module.lessons.map((lesson) => (
-              <option
-                key={`${module.id}|${lesson.id}`}
-                value={`${module.id}|${lesson.id}`}
-                disabled={lesson.tier !== 'free' && !lesson.isFree && !currentUser}
-              >
-                {module.title} - {lesson.title} {(lesson.tier === 'free' || lesson.isFree) ? '(Free)' : ''}
-              </option>
-            ))
-          )}
-        </select>
-
-        {course.modules.map((module: Module) => (
-          <div key={module.id} className="mb-10 p-6 md:p-8 border border-slate-200 rounded-2xl bg-white shadow-sm hover:shadow-md transition-shadow duration-300">
-            <h2 className="text-2xl font-headings font-semibold mb-3 text-slate-900">{module.title}</h2>
-            <p className="text-gray-600 mb-6 text-sm font-sans">{module.description}</p>
-            <ul className="space-y-3">
-              {module.lessons.map((lesson: Lesson) => {
-                // Check if user has access to this lesson (free, subscribed, trial, admin, or master access)
-                // const isAdmin = userProfile?.role === 'admin' || userProfile?.isAdmin || false;
-                // Use hasAccess in the class name for premium lessons
-                // const hasAccess = lesson.isFree || userProfile?.isSubscribed || userProfile?.activeTrial || isAdmin;
-                const isFreeLesson = lesson.tier === 'free' || lesson.isFree === true;
-                
-                return (
-                <li 
-                  key={lesson.id} 
-                  onClick={() => handleLessonClick(lesson, module.id)}
-                  className={`flex justify-between items-center p-4 rounded-xl transition-all duration-200 ease-in-out cursor-pointer 
-                              ${(!isFreeLesson && (!currentUser /* Simplified gating */)) 
-                                ? 'bg-slate-100 text-gray-400 hover:bg-slate-200'
-                                : 'bg-blue-50 hover:bg-blue-100 text-gray-800'}
-                              ${isFreeLesson ? 'border-l-4 border-green-500' : 'border-l-4 border-slate-300'}
-                              ${isLessonCompleted(lesson.id) ? 'opacity-70' : ''}
-                            `}
-                >
-                  <div className="flex items-center">
-                    <span className="mr-3 text-blue-500">
-                      {isLessonCompleted(lesson.id) ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                    </span>
-                    <span className={`font-sans font-medium ${isLessonCompleted(lesson.id) ? 'line-through text-gray-500' : ''}`}>{lesson.title}</span>
-                  </div>
-                  <div className="flex items-center">
-                    {isFreeLesson && (
-                      <span className="text-xs bg-green-200 text-green-700 px-2 py-1 rounded-full mr-2 font-sans">Free</span>
-                    )}
-                    {(!isFreeLesson && (!currentUser /* Simplified gating */)) && (
-                      <span className="text-xs bg-yellow-200 text-yellow-700 px-2 py-1 rounded-full mr-2 font-sans">Premium</span>
-                    )}
-                    <span className="text-gray-400 text-sm font-sans">
-                      {(!isFreeLesson && (!currentUser /* Simplified gating */)) ? 'Login to access' : 'View Lesson'}
-                    </span>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                </li>
-              );
-              })}
-            </ul>
-          </div>
-        ))}
-      </div>
-      {error && course && (
-        <div className="mt-6 text-center text-yellow-600 bg-yellow-100 p-4 rounded">
-          {error}
-        </div>
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100">
+      {course && (
+        <CourseSchema
+          courseName={course.title}
+          courseDescription={course.description}
+          courseUrl={typeof window !== 'undefined' ? `${window.location.origin}/courses/${course.id}` : undefined}
+          providerUrl={typeof window !== 'undefined' ? window.location.origin : undefined}
+          modules={course.modules.map((module) => ({
+            name: module.title,
+            description: module.description
+          }))}
+        />
       )}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 opacity-40">
+          <div className="absolute -top-32 left-10 h-80 w-80 rounded-full bg-cyan-500/20 blur-3xl" />
+          <div className="absolute top-20 right-0 h-96 w-96 rounded-full bg-indigo-500/20 blur-3xl" />
+        </div>
+        <div className="relative max-w-6xl mx-auto px-4 py-14">
+          <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 md:p-12 shadow-2xl">
+            <div className="mb-10">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 text-cyan-200 px-4 py-1 text-xs font-headings font-semibold uppercase tracking-[0.2em]">
+                Course Overview
+              </div>
+              <h1 className="text-4xl md:text-5xl font-headings font-extrabold mt-4 text-white">
+                {course.title}
+              </h1>
+              <p className="text-lg text-slate-200 mt-4 max-w-3xl font-sans">
+                {course.description}
+              </p>
+            </div>
+
+            {/* Lesson dropdown */}
+            <div className="mb-10">
+              <label className="text-sm uppercase tracking-[0.2em] text-slate-300 font-headings font-semibold">
+                Jump to a lesson
+              </label>
+              <select
+                className="mt-3 px-4 py-3 border border-white/10 rounded-xl w-full md:w-2/3 bg-slate-900/70 text-slate-100 shadow-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                defaultValue=""
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (!value) return;
+                  const [moduleId, lessonId] = value.split('|');
+                  const selectedModule = course.modules.find((m) => m.id === moduleId);
+                  const selectedLesson = selectedModule?.lessons.find((l) => l.id === lessonId);
+                  if (selectedLesson) {
+                    handleLessonClick(selectedLesson, moduleId);
+                  }
+                }}
+              >
+                <option value="" className="text-slate-100">Select a lesson</option>
+                {course.modules.map((module) =>
+                  module.lessons.map((lesson) => (
+                    <option
+                      key={`${module.id}|${lesson.id}`}
+                      value={`${module.id}|${lesson.id}`}
+                      disabled={lesson.tier !== 'free' && !lesson.isFree && !currentUser}
+                      className="text-slate-100"
+                    >
+                      {module.title} - {lesson.title} {(lesson.tier === 'free' || lesson.isFree) ? '(Free)' : ''}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            {course.modules.map((module: Module) => (
+              <div key={module.id} className="mb-10 p-6 md:p-8 border border-white/10 rounded-2xl bg-white/5 shadow-xl">
+                <div className="flex items-center justify-between gap-4 mb-5">
+                  <h2 className="text-2xl font-headings font-semibold text-white">{module.title}</h2>
+                  <span className="text-xs uppercase tracking-[0.2em] text-slate-300 font-headings">
+                    Module {module.order}
+                  </span>
+                </div>
+                <p className="text-slate-200 mb-6 text-sm font-sans">{module.description}</p>
+                <ul className="space-y-3">
+                  {module.lessons.map((lesson: Lesson) => {
+                    const isFreeLesson = lesson.tier === 'free' || lesson.isFree === true;
+                    
+                    return (
+                    <li 
+                      key={lesson.id} 
+                      onClick={() => handleLessonClick(lesson, module.id)}
+                      className={`flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-4 rounded-xl transition-all duration-200 ease-in-out cursor-pointer 
+                                  ${(!isFreeLesson && (!currentUser)) 
+                                    ? 'bg-white/5 text-slate-300 hover:bg-white/10'
+                                    : 'bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 hover:from-cyan-500/20 hover:to-indigo-500/20 text-white'}
+                                  ${isFreeLesson ? 'border border-emerald-400/30' : 'border border-white/10'}
+                                  ${isLessonCompleted(lesson.id) ? 'opacity-70' : ''}
+                                `}
+                    >
+                      <div className="flex items-center">
+                        <span className="mr-3 text-cyan-300">
+                          {isLessonCompleted(lesson.id) ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-emerald-400" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </span>
+                        <span className={`font-sans font-medium ${isLessonCompleted(lesson.id) ? 'line-through text-slate-300' : ''}`}>{lesson.title}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {isFreeLesson && (
+                          <span className="text-xs bg-emerald-400/20 text-emerald-200 px-2 py-1 rounded-full font-sans">Free</span>
+                        )}
+                        {(!isFreeLesson && (!currentUser)) && (
+                          <span className="text-xs bg-amber-400/20 text-amber-200 px-2 py-1 rounded-full font-sans">Premium</span>
+                        )}
+                        <span className="text-slate-300 text-sm font-sans">
+                          {(!isFreeLesson && (!currentUser)) ? 'Login to access' : 'View Lesson'}
+                        </span>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    </li>
+                  );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
+          {error && course && (
+            <div className="mt-6 text-center text-amber-200 bg-amber-500/10 border border-amber-400/20 p-4 rounded-xl">
+              {error}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

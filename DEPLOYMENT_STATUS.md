@@ -114,7 +114,7 @@ GitHub Actions will automatically:
 2. Build the application
 3. Deploy to Firebase Hosting
 
-**Current status**: Requires `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE` secret in GitHub
+**Current status**: Requires `FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2` secret in GitHub
 
 ### Option 2: Manual Firebase CLI
 
@@ -150,7 +150,7 @@ firebase deploy --project ai-integra-course-v2
 ```
 Repository → Settings → Secrets and variables → Actions → New repository secret
 
-Name: FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE
+Name: FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2
 Value: (Firebase service account JSON from Firebase Console)
 ```
 
@@ -314,7 +314,7 @@ git push origin main  # Auto-deploy reverted version
 
 ## Next Steps
 
-1. **Configure GitHub Secret** (FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE)
+1. **Configure GitHub Secret** (FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2)
 2. **Set Firebase Function Secrets** (OPENAI_API_KEY)
 3. **Deploy Firestore Security Rules**
 4. **Run Firestore Migration** (optional but recommended)
@@ -348,7 +348,7 @@ Deployment is considered successful when:
 **Security**: ✅ Configured  
 
 **Blocking Items**: 
-1. GitHub Secret: FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE (must be added by repository owner)
+1. GitHub Secret: FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2 (must be added by repository owner)
 2. Firebase Function Secrets: OPENAI_API_KEY (must be set via Firebase CLI)
 3. Firestore Rules: Must be deployed via Firebase CLI
 

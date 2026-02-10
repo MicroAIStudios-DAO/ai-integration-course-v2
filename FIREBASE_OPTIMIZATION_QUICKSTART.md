@@ -205,7 +205,7 @@ npm run build
    ```
 
 4. **Set Up CI/CD**
-   - Ensure GitHub secret `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE` is set
+   - Ensure GitHub secret `FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2` is set
    - Test automated deployment by pushing to `main` branch
 
 5. **Security Review**

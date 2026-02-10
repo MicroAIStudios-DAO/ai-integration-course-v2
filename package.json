@@ -22,7 +22,6 @@
     "dotenv-expand": "^12.0.3",
     "express": "^5.1.0",
     "firebase": "^11.10.0",
-    "firebase-admin": "^13.5.0",
     "googleapis": "^162.0.0",
     "micromark-core-commonmark": "^2.0.3",
     "next": "^16.0.10",
@@ -93,6 +92,7 @@
     "@types/react-router-dom": "^5.3.3",
     "autoprefixer": "^10.4.21",
     "babel-plugin-react-compiler": "^1.0.0",
+    "firebase-admin": "^13.6.0",
     "firebase-functions": "^6.5.0",
     "firebase-tools": "^13.35.1",
     "google-artifactregistry-auth": "^3.5.0",
@@ -104,7 +104,7 @@
     "vitest": "^3.2.4"
   },
   "engines": {
-    "node": ">=20.0.0 <21.0.0",
+    "node": ">=20.0.0 <23.0.0",
     "npm": ">=11.0.0"
   },
   "description": "A comprehensive platform for learning about AI integration and investment strategies in the age of artificial intelligence.",
@@ -114,13 +114,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Gnoscenti/ai-integration-course.git"
+    "url": "git+https://github.com/MicroAIStudios-DAO/ai-integration-course-v2.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Gnoscenti/ai-integration-course/issues"
+    "url": "https://github.com/MicroAIStudios-DAO/ai-integration-course-v2/issues"
   },
   "packageManager": "npm@latest"
 }

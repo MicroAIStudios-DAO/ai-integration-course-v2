@@ -7,7 +7,7 @@ The AI Integration Course now supports multiple ways to add lesson content. Here
 ### Method 1: Direct Content in Firestore (Recommended)
 
 1. **Go to Firebase Console**: https://console.firebase.google.com
-2. **Select your project**: GOLDENAIGE
+2. **Select your project**: AI-INTEGRA-COURSE-V2
 3. **Navigate to Firestore Database**
 4. **Find your lesson**: `courses/{courseId}/modules/{moduleId}/lessons/{lessonId}`
 5. **Add a `content` field** with your lesson text in Markdown format

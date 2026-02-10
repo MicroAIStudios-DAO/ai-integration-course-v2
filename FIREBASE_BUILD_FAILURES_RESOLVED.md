@@ -101,7 +101,7 @@ firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
 
 **After:**
 ```yaml
-firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE }}'
+firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2 }}'
 ```
 
 **Impact:** Deployment would fail due to missing credentials.
@@ -127,7 +127,7 @@ firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE }}'
 **You MUST set this secret for deployment to work:**
 
 ### Secret Details:
-- **Name:** `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE`
+- **Name:** `FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2`
 - **Type:** Repository secret
 - **Value:** Full Firebase service account JSON
 
@@ -149,7 +149,7 @@ firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE }}'
 1. Go to your GitHub repository
 2. Click **Settings** → **Secrets and variables** → **Actions**
 3. Click **New repository secret**
-4. Name: `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE`
+4. Name: `FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2`
 5. Value: Paste the entire JSON content
 6. Click **Add secret**
 
@@ -232,7 +232,7 @@ To verify everything works:
 ### If deployment still fails:
 
 **Check 1: Secret is Set**
-- GitHub → Settings → Secrets → Check `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE` exists
+- GitHub → Settings → Secrets → Check `FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2` exists
 
 **Check 2: Secret is Valid JSON**
 - The value should start with `{` and end with `}`
@@ -292,7 +292,7 @@ These are all out of scope for a build fix PR.
 ## ✨ Next Steps
 
 1. **Review this PR** - All changes are documented
-2. **Set the GitHub secret** - `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE`
+2. **Set the GitHub secret** - `FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2`
 3. **Merge this PR** - To main branch
 4. **Monitor deployment** - GitHub Actions tab
 5. **Verify site is live** - https://ai-integra-course-v2.web.app
@@ -316,6 +316,6 @@ If you encounter any issues after merging:
 
 Your Firebase deployment will work once you:
 1. Merge this PR
-2. Set the `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE` secret
+2. Set the `FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2` secret
 
 The repository is now in a clean, deployable state.

@@ -255,7 +255,7 @@ on:
 
 For automated deployments to work, ensure these secrets are set:
 
-1. **FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE**
+1. **FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2**
    - Service account JSON key
    - Get from Google Cloud Console
    - Required for all deployments
@@ -263,7 +263,7 @@ For automated deployments to work, ensure these secrets are set:
 **How to add:**
 1. Go to GitHub repository → Settings → Secrets and variables → Actions
 2. Click "New repository secret"
-3. Name: `FIREBASE_SERVICE_ACCOUNT_GOLDENAIGE`
+3. Name: `FIREBASE_SERVICE_ACCOUNT_AI-INTEGRA-COURSE-V2`
 4. Value: Paste entire JSON key from service account
 
 ## Validation & Testing

@@ -61,3 +61,15 @@ venv/
 .env.production.local
 service-account-key.json
 .firebase/
+
+# Credentials
+*.json
+gha-creds-*.json
+
+# Credentials / secrets
+*.pem
+*.key
+*.p12
+*.pfx
+*service-account*.json
+gha-creds-*.json

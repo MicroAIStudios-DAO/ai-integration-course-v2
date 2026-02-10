@@ -81,7 +81,8 @@ const validateEnvironmentVariables = (): void => {
     'REACT_APP_FIREBASE_STORAGE_BUCKET',
     'REACT_APP_FIREBASE_MESSAGING_SENDER_ID',
     'REACT_APP_FIREBASE_APP_ID',
-    'REACT_APP_FIREBASE_MEASUREMENT_ID'
+    'REACT_APP_FIREBASE_MEASUREMENT_ID',
+    'REACT_APP_RECAPTCHA_ENTERPRISE_KEY'
   ];
 
   const missingVars = requiredVars.filter(varName => {
@@ -199,8 +200,7 @@ export const config: EnvironmentConfig = createEnvironmentConfig();
 // Export individual configurations for convenience
 export const firebaseConfig = config.firebase;
 export const recaptchaEnterpriseSiteKey = getEnvVar(
-  'REACT_APP_RECAPTCHA_ENTERPRISE_KEY',
-  '6LfdjDosAAAAANnRKcsZQSQLGYVA188hLY_O_naP'
+  'REACT_APP_RECAPTCHA_ENTERPRISE_KEY'
 );
 export const appConfig = config.app;
 

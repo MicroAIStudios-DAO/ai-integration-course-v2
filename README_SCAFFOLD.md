@@ -22,7 +22,7 @@ Quickstart (local)
 
 Stripe + Firebase
 - Deploy functions from `firebase/functions` and configure `STRIPE_SECRET` and webhook secret.
-- Use callable `createCheckoutSession` from your client to start checkout; webhook marks `premium: true`.
+- Use callable `createCheckoutSessionV2` from your client to start checkout; webhook marks `premium: true`.
 
 Notes
 - Adjust embedding vector dimension in `allie/sql/schema.sql` to match your model.

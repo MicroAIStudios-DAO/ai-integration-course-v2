@@ -25,7 +25,29 @@ export { tutor } from './tutor';
 export { verifyRecaptcha } from './recaptcha';
 
 // Import and export Stripe functions
-export { createCheckoutSession, stripeWebhook } from './stripe';
+export {
+  onUserCreateV2,
+  createCheckoutSessionV2,
+  stripeWebhookV2,
+  validateIdMappingV2,
+  backfillStripeCustomersV2,
+} from './stripe';
+
+// Import and export churn recovery functions
+export {
+  identifyChurnRiskUsersV2,
+  processChurnRecoveryEmailV2,
+  trackPricingPageViewV2,
+  trackCheckoutStartV2,
+  trackLessonStartV2,
+  manualChurnRecoveryRunV2,
+} from './churn';
+
+// Import and export admin lesson functions
+export { addLessonToFirestoreV2, listCoursesAndModulesV2 } from './adminLessons';
+
+// Founding member access + feedback
+export { redeemFoundingCodeV2, submitFeedbackV2 } from './founding';
 
 // Import and export Beta Testing functions
 export { userJotToGithub, githubToUserJot, betaTesterSync } from './beta-testing';

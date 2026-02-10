@@ -4,6 +4,7 @@
     { "slug": "setup", "title": "Setup: Supabase, Firebase", "path": "free/setup.md", "videoId": "YOUR_SETUP_VIDEO_ID", "thumbnailUrl": "" }
   ],
   "premium": [
+    { "slug": "build-your-first-bot", "title": "Build Your First Bot: Customer Service Email Automation", "path": "premium/build-your-first-bot.md", "thumbnailUrl": "", "featured": true, "guarantee": true },
     { "slug": "embeddings", "title": "Building the Embed Pipeline", "path": "premium/embeddings.md", "thumbnailUrl": "" },
     { "slug": "stripe", "title": "Stripe Integration End-to-End", "path": "premium/stripe.md", "thumbnailUrl": "" }
   ]

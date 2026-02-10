@@ -3,12 +3,14 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import ReactPlayer from "react-player";
 import { getCourseById, getLessonMarkdownUrl, markLessonAsComplete, getUserProfile, getUserCourseProgress } from "../firebaseService"; // Import Firestore service
-import { Lesson as LessonType, UserCourseProgress } from "../types/course"; // Import types
+import { Course, Lesson as LessonType, UserCourseProgress } from "../types/course"; // Import types
 import { useAuth } from "../context/AuthContext"; // For gating logic
 // Master access removed for production
 import AnimatedAvatar from "../components/layout/AnimatedAvatar"; // Import AnimatedAvatar
 import AITutor from "../components/AITutor";
+import CourseSchema from "../components/seo/CourseSchema";
 import "../styles/lesson-content.css"; // Import textbook-style CSS
+import { trackLessonStart, trackLessonComplete } from "../utils/analytics";
 
 const LessonPage: React.FC = () => {
   const { courseId, moduleId, lessonId } = useParams<{ courseId: string; moduleId: string; lessonId: string }>();
@@ -16,6 +18,7 @@ const LessonPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [lesson, setLesson] = useState<LessonType | null>(null);
+  const [course, setCourse] = useState<Course | null>(null);
   const [moduleTitle, setModuleTitle] = useState<string>("");
   const [courseTitle, setCourseTitle] = useState<string>("");
   const [markdownContent, setMarkdownContent] = useState<string>("");
@@ -44,6 +47,7 @@ const LessonPage: React.FC = () => {
           setLoading(false); 
           return;
         }
+        setCourse(courseData);
         setCourseTitle(courseData.title);
 
         const currentModule = courseData.modules.find(m => m.id === moduleId);
@@ -69,7 +73,13 @@ const LessonPage: React.FC = () => {
           // Check subscription status for logged-in users without master access
           const profile = await getUserProfile(currentUser.uid);
           const isAdmin = profile?.role === 'admin' || profile?.isAdmin;
-          canAccess = !!(isFreeLesson || isAdmin || profile?.isSubscribed || profile?.activeTrial);
+          canAccess = !!(
+            isFreeLesson ||
+            isAdmin ||
+            profile?.isSubscribed ||
+            profile?.activeTrial ||
+            (profile as any)?.foundingMember
+          );
           
           const progress = await getUserCourseProgress(currentUser.uid, courseId);
           setUserProgress(progress);
@@ -124,6 +134,15 @@ The detailed content for this lesson is being prepared. Please check back soon o
           
           setMarkdownContent(contentToDisplay);
           setVideoUrlToPlay(currentLesson.videoUrl);
+
+          // Track lesson_start event
+          trackLessonStart(
+            lessonId,
+            currentLesson.title,
+            moduleId,
+            currentModule.title,
+            courseId
+          );
         } else {
           setError("You do not have access to this premium lesson.");
         }
@@ -143,6 +162,14 @@ The detailed content for this lesson is being prepared. Please check back soon o
     if (currentUser && courseId && lessonId) {
       try {
         await markLessonAsComplete(currentUser.uid, courseId, lessonId);
+        
+        // Track lesson_complete event
+        trackLessonComplete(
+          lessonId,
+          lesson?.title || '',
+          moduleId || '',
+          'button_click'
+        );
         alert("Lesson marked as complete!");
         const progress = await getUserCourseProgress(currentUser.uid, courseId);
         setUserProgress(progress);
@@ -196,6 +223,18 @@ The detailed content for this lesson is being prepared. Please check back soon o
 
   return (
     <div className="textbook-page">
+      {course && (
+        <CourseSchema
+          courseName={course.title}
+          courseDescription={course.description}
+          courseUrl={typeof window !== "undefined" ? `${window.location.origin}/courses/${courseId}` : undefined}
+          providerUrl={typeof window !== "undefined" ? window.location.origin : undefined}
+          modules={course.modules.map((module) => ({
+            name: module.title,
+            description: module.description
+          }))}
+        />
+      )}
       <div className="textbook-container">
         {/* Master Access Status */}
         {/* Master access UI removed */}
@@ -227,12 +266,15 @@ The detailed content for this lesson is being prepared. Please check back soon o
           {/* Video Player */}
           {videoUrlToPlay && (
             <div className="mb-10">
-              <div className="aspect-w-16 aspect-h-9 bg-gray-100 rounded-lg overflow-hidden">
+              <div className="lesson-video">
                 <ReactPlayer
                   url={videoUrlToPlay}
                   width="100%"
                   height="100%"
                   controls
+                  playing
+                  muted
+                  playsinline
                   className="react-player"
                 />
               </div>
