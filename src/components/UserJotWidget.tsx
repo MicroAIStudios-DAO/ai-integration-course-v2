@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../context/AuthContext';
 
 /**
  * UserJot Feedback Widget for Beta Testers
