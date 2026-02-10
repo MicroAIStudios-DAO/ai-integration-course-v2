@@ -15,6 +15,7 @@ import SignupPage from './components/auth/SignupPage';
 import ProfilePage from './components/auth/ProfilePage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PaymentCancelPage from './pages/PaymentCancelPage';
+import { UserJotWidget } from './components/UserJotWidget';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import AdminAddLesson from './pages/AdminAddLesson';
@@ -40,6 +41,8 @@ const App: React.FC = () => {
 
   return (
     <Router>
+      {/* UserJot feedback widget for beta testers */}
+      <UserJotWidget />
       <PageViewTracker />
       <Routes>
         {/* HomePage renders without Layout for full-screen landing page */}
