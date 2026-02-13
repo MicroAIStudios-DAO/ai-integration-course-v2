@@ -12,21 +12,31 @@
  * 3. Configure webhooks in UserJot and GitHub with the deployed function URLs
  */
 
-import * as functions from 'firebase-functions';
+import { onRequest } from 'firebase-functions/v2/https';
+import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
+import { defineSecret } from 'firebase-functions/params';
 import * as admin from 'firebase-admin';
 import axios from 'axios';
 
 // Initialize Firestore
+try { admin.initializeApp(); } catch { /* noop */ }
 const db = admin.firestore();
+const GITHUB_TOKEN = defineSecret('GITHUB_TOKEN');
+const GITHUB_OWNER = process.env.GITHUB_OWNER || 'MicroAIStudios-DAO';
+const GITHUB_REPO = process.env.GITHUB_REPO || 'ai-integration-course-v2';
+const ZAPIER_CRITICAL_BUG_WEBHOOK_URL = process.env.ZAPIER_CRITICAL_BUG_WEBHOOK_URL;
+const ZAPIER_ISSUE_CLOSED_WEBHOOK_URL = process.env.ZAPIER_ISSUE_CLOSED_WEBHOOK_URL;
+const ZAPIER_BETA_WEBHOOK_URL = process.env.ZAPIER_BETA_WEBHOOK_URL;
 
 /**
  * UserJot to GitHub Integration
  * Receives feedback from UserJot webhook and creates GitHub issues
  */
-export const userJotToGithub = functions.https.onRequest(async (req, res) => {
+export const userJotToGithub = onRequest({ secrets: [GITHUB_TOKEN] }, async (req, res) => {
   // Only accept POST requests
   if (req.method !== 'POST') {
-    return res.status(405).send('Method Not Allowed');
+    res.status(405).send('Method Not Allowed');
+    return;
   }
 
   try {
@@ -49,7 +59,8 @@ export const userJotToGithub = functions.https.onRequest(async (req, res) => {
 
     // Validate required fields
     if (!feedbackId || !title) {
-      return res.status(400).json({ error: 'Missing required fields: id, title' });
+      res.status(400).json({ error: 'Missing required fields: id, title' });
+      return;
     }
 
     // Check if we've already created an issue for this feedback
@@ -60,11 +71,12 @@ export const userJotToGithub = functions.https.onRequest(async (req, res) => {
 
     if (existingMapping.exists) {
       const githubIssueNumber = existingMapping.data()?.githubIssueNumber;
-      return res.status(200).json({
+      res.status(200).json({
         message: 'Issue already exists',
         githubIssueNumber,
-        githubUrl: `https://github.com/${functions.config().github.owner}/${functions.config().github.repo}/issues/${githubIssueNumber}`
+        githubUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/issues/${githubIssueNumber}`
       });
+      return;
     }
 
     // Determine priority based on votes and keywords
@@ -147,9 +159,13 @@ export const userJotToGithub = functions.https.onRequest(async (req, res) => {
     issueBody += `*Automatically created from beta feedback*`;
 
     // Create GitHub issue
-    const githubToken = functions.config().github.token;
-    const githubOwner = functions.config().github.owner;
-    const githubRepo = functions.config().github.repo;
+    const githubToken = process.env.GITHUB_TOKEN || GITHUB_TOKEN.value();
+    const githubOwner = GITHUB_OWNER;
+    const githubRepo = GITHUB_REPO;
+    if (!githubToken || !githubOwner || !githubRepo) {
+      res.status(500).json({ error: 'Missing GitHub configuration (GITHUB_TOKEN/OWNER/REPO)' });
+      return;
+    }
 
     const githubResponse = await axios.post(
       `https://api.github.com/repos/${githubOwner}/${githubRepo}/issues`,
@@ -183,7 +199,7 @@ export const userJotToGithub = functions.https.onRequest(async (req, res) => {
 
     // If critical, send alert via Zapier
     if (priority === 'priority-high') {
-      const zapierWebhook = functions.config().zapier?.critical_bug_webhook_url;
+      const zapierWebhook = ZAPIER_CRITICAL_BUG_WEBHOOK_URL;
       if (zapierWebhook) {
         await axios.post(zapierWebhook, {
           title,
@@ -196,12 +212,13 @@ export const userJotToGithub = functions.https.onRequest(async (req, res) => {
       }
     }
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       githubIssueNumber,
       githubIssueUrl,
       priority
     });
+    return;
 
   } catch (error: any) {
     console.error('Error processing UserJot webhook:', error);
@@ -215,10 +232,11 @@ export const userJotToGithub = functions.https.onRequest(async (req, res) => {
       timestamp: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    return res.status(500).json({
+    res.status(500).json({
       error: 'Internal server error',
       message: error.message
     });
+    return;
   }
 });
 
@@ -226,9 +244,10 @@ export const userJotToGithub = functions.https.onRequest(async (req, res) => {
  * GitHub to UserJot Integration
  * Receives GitHub webhooks when issues are closed and notifies submitter
  */
-export const githubToUserJot = functions.https.onRequest(async (req, res) => {
+export const githubToUserJot = onRequest(async (req, res) => {
   if (req.method !== 'POST') {
-    return res.status(405).send('Method Not Allowed');
+    res.status(405).send('Method Not Allowed');
+    return;
   }
 
   try {
@@ -236,13 +255,15 @@ export const githubToUserJot = functions.https.onRequest(async (req, res) => {
 
     // Only process when issues are closed
     if (action !== 'closed') {
-      return res.status(200).json({ message: 'Not a close event, ignoring' });
+      res.status(200).json({ message: 'Not a close event, ignoring' });
+      return;
     }
 
     // Check if this is a beta feedback issue
     const isBetaFeedback = issue.labels.some((label: any) => label.name === 'beta-feedback');
     if (!isBetaFeedback) {
-      return res.status(200).json({ message: 'Not a beta feedback issue, ignoring' });
+      res.status(200).json({ message: 'Not a beta feedback issue, ignoring' });
+      return;
     }
 
     // Find the original feedback in our mapping
@@ -253,13 +274,14 @@ export const githubToUserJot = functions.https.onRequest(async (req, res) => {
       .get();
 
     if (mappingSnapshot.empty) {
-      return res.status(404).json({ error: 'No mapping found for this issue' });
+      res.status(404).json({ error: 'No mapping found for this issue' });
+      return;
     }
 
     const mapping = mappingSnapshot.docs[0].data();
 
     // Trigger Zapier workflow to send notification email
-    const zapierWebhook = functions.config().zapier?.issue_closed_webhook_url;
+    const zapierWebhook = ZAPIER_ISSUE_CLOSED_WEBHOOK_URL;
     if (zapierWebhook) {
       await axios.post(zapierWebhook, {
         issueTitle: issue.title,
@@ -277,10 +299,11 @@ export const githubToUserJot = functions.https.onRequest(async (req, res) => {
       notificationSent: true
     });
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       message: 'Notification sent to submitter'
     });
+    return;
 
   } catch (error: any) {
     console.error('Error processing GitHub webhook:', error);
@@ -293,10 +316,11 @@ export const githubToUserJot = functions.https.onRequest(async (req, res) => {
       timestamp: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    return res.status(500).json({
+    res.status(500).json({
       error: 'Internal server error',
       message: error.message
     });
+    return;
   }
 });
 
@@ -304,16 +328,17 @@ export const githubToUserJot = functions.https.onRequest(async (req, res) => {
  * Beta Tester Sync to HubSpot
  * Triggered when a user document is updated with isBetaTester: true
  */
-export const betaTesterSync = functions.firestore
-  .document('users/{userId}')
-  .onUpdate(async (change, context) => {
-    const before = change.before.data();
-    const after = change.after.data();
+export const betaTesterSync = onDocumentUpdated('users/{userId}', async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    if (!before || !after) {
+      return;
+    }
 
     // Only process if user just became a beta tester
     if (!before.isBetaTester && after.isBetaTester) {
       try {
-        const zapierWebhook = functions.config().zapier?.beta_webhook_url;
+        const zapierWebhook = ZAPIER_BETA_WEBHOOK_URL;
         
         if (!zapierWebhook) {
           console.warn('Zapier beta webhook URL not configured');
@@ -327,7 +352,7 @@ export const betaTesterSync = functions.firestore
           lastName: after.lastName || after.displayName?.split(' ').slice(1).join(' ') || '',
           betaCohort: after.betaCohort || 'Pioneer',
           signupDate: after.betaSignupDate || new Date().toISOString(),
-          userId: context.params.userId
+          userId: event.params.userId
         });
 
         console.log(`Beta tester synced to HubSpot: ${after.email}`);

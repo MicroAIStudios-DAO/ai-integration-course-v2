@@ -27,6 +27,7 @@
         "rules": "storage.rules"
     },
     "hosting": {
+        "target": "main",
         "public": "build",
         "ignore": [
             "firebase.json",
