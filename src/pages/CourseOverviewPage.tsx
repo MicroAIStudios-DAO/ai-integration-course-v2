@@ -1,9 +1,34 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCourses, getUserCourseProgress } from '../firebaseService';
 import { Course, Module, Lesson, UserCourseProgress } from '../types/course';
 import { useAuth } from '../context/AuthContext';
 import CourseSchema from '../components/seo/CourseSchema';
+
+const UNTITLED_TITLE_PATTERN = /^untitled lesson$/i;
+const LESSON_PREFIX_PATTERN = /^lesson\s+\d+(\.\d+)?\s*:/i;
+
+const getLessonTitle = (lesson: Lesson, fallbackOrder: number): string => {
+  const rawTitle = typeof lesson.title === 'string' ? lesson.title.trim() : '';
+  if (!rawTitle || UNTITLED_TITLE_PATTERN.test(rawTitle)) {
+    return '';
+  }
+
+  if (LESSON_PREFIX_PATTERN.test(rawTitle)) {
+    return rawTitle;
+  }
+
+  const order = Number.isFinite(lesson.order) ? lesson.order : fallbackOrder;
+  return `Lesson ${order}: ${rawTitle}`;
+};
+
+const hasYoutubeVideo = (lesson: Lesson): boolean => {
+  return typeof lesson.videoUrl === 'string' && lesson.videoUrl.trim().length > 0;
+};
+
+type DisplayModule = Module & {
+  displayLessons: Array<Lesson & { displayTitle: string }>;
+};
 
 const CourseOverviewPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -12,6 +37,28 @@ const CourseOverviewPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [userProgress, setUserProgress] = useState<UserCourseProgress | null>(null);
+
+  const modulesWithDisplayLessons = useMemo<DisplayModule[]>(() => {
+    if (!course) return [];
+
+    return [...course.modules]
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      .map((module) => {
+        const sortedLessons = [...module.lessons].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        const displayLessons = sortedLessons
+          .map((lesson, index) => ({
+            ...lesson,
+            displayTitle: getLessonTitle(lesson, index + 1)
+          }))
+          .filter((lesson) => lesson.displayTitle.length > 0);
+
+        return {
+          ...module,
+          displayLessons
+        };
+      })
+      .filter((module) => module.displayLessons.length > 0);
+  }, [course]);
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -145,23 +192,23 @@ const CourseOverviewPage: React.FC = () => {
                 }}
               >
                 <option value="" className="text-slate-100">Select a lesson</option>
-                {course.modules.map((module) =>
-                  module.lessons.map((lesson) => (
+                {modulesWithDisplayLessons.map((module) =>
+                  module.displayLessons.map((lesson) => (
                     <option
                       key={`${module.id}|${lesson.id}`}
                       value={`${module.id}|${lesson.id}`}
                       disabled={lesson.tier !== 'free' && !lesson.isFree && !currentUser}
                       className="text-slate-100"
                     >
-                      {module.title} - {lesson.title} {(lesson.tier === 'free' || lesson.isFree) ? '(Free)' : ''}
+                      {module.title} - {lesson.displayTitle} {(lesson.tier === 'free' || lesson.isFree) ? '(Free)' : ''}
                     </option>
                   ))
                 )}
               </select>
             </div>
 
-            {course.modules.map((module: Module) => (
-              <div key={module.id} className="mb-10 p-6 md:p-8 border border-white/10 rounded-2xl bg-white/5 shadow-xl">
+            {modulesWithDisplayLessons.map((module: DisplayModule) => (
+              <div key={module.id} className="mb-10 w-[98%] mx-auto p-6 md:p-8 border border-white/10 rounded-2xl bg-white/5 shadow-xl">
                 <div className="flex items-center justify-between gap-4 mb-5">
                   <h2 className="text-2xl font-headings font-semibold text-white">{module.title}</h2>
                   <span className="text-xs uppercase tracking-[0.2em] text-slate-300 font-headings">
@@ -170,14 +217,15 @@ const CourseOverviewPage: React.FC = () => {
                 </div>
                 <p className="text-slate-200 mb-6 text-sm font-sans">{module.description}</p>
                 <ul className="space-y-3">
-                  {module.lessons.map((lesson: Lesson) => {
+                  {module.displayLessons.map((lesson) => {
                     const isFreeLesson = lesson.tier === 'free' || lesson.isFree === true;
+                    const hasVideo = hasYoutubeVideo(lesson);
                     
                     return (
                     <li 
                       key={lesson.id} 
                       onClick={() => handleLessonClick(lesson, module.id)}
-                      className={`flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-4 rounded-xl transition-all duration-200 ease-in-out cursor-pointer 
+                      className={`w-[98%] mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-4 rounded-xl transition-all duration-200 ease-in-out cursor-pointer 
                                   ${(!isFreeLesson && (!currentUser)) 
                                     ? 'bg-white/5 text-slate-300 hover:bg-white/10'
                                     : 'bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 hover:from-cyan-500/20 hover:to-indigo-500/20 text-white'}
@@ -197,7 +245,9 @@ const CourseOverviewPage: React.FC = () => {
                             </svg>
                           )}
                         </span>
-                        <span className={`font-sans font-medium ${isLessonCompleted(lesson.id) ? 'line-through text-slate-300' : ''}`}>{lesson.title}</span>
+                        <span className={`font-headings font-semibold tracking-[0.01em] ${isLessonCompleted(lesson.id) ? 'line-through text-slate-300' : ''}`}>
+                          {lesson.displayTitle}
+                        </span>
                       </div>
                       <div className="flex items-center gap-3">
                         {isFreeLesson && (
@@ -205,6 +255,11 @@ const CourseOverviewPage: React.FC = () => {
                         )}
                         {(!isFreeLesson && (!currentUser)) && (
                           <span className="text-xs bg-amber-400/20 text-amber-200 px-2 py-1 rounded-full font-sans">Premium</span>
+                        )}
+                        {!hasVideo && (
+                          <span className="text-xs bg-red-400/20 text-red-200 px-2 py-1 rounded-full font-sans">
+                            YouTube Placeholder
+                          </span>
                         )}
                         <span className="text-slate-300 text-sm font-sans">
                           {(!isFreeLesson && (!currentUser)) ? 'Login to access' : 'View Lesson'}

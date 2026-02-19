@@ -264,7 +264,7 @@ The detailed content for this lesson is being prepared. Please check back soon o
           </nav>
 
           {/* Video Player */}
-          {videoUrlToPlay && (
+          {videoUrlToPlay ? (
             <div className="mb-10">
               <div className="lesson-video">
                 <ReactPlayer
@@ -277,6 +277,15 @@ The detailed content for this lesson is being prepared. Please check back soon o
                   playsinline
                   className="react-player"
                 />
+              </div>
+            </div>
+          ) : (
+            <div className="mb-10">
+              <div className="lesson-video flex items-center justify-center bg-slate-900/80 border border-slate-700 rounded-xl">
+                <div className="text-center px-6">
+                  <p className="text-lg font-headings font-semibold text-slate-100">YouTube Placeholder</p>
+                  <p className="text-sm text-slate-300 mt-2">Video is being prepared for this lesson.</p>
+                </div>
               </div>
             </div>
           )}
