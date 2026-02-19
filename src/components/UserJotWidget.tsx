@@ -1,97 +1,111 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from '../context/AuthContext';
 
 /**
- * UserJot Feedback Widget for Beta Testers
+ * CSP-safe beta feedback entrypoint.
  *
- * This component loads the UserJot feedback widget only for users
- * who are marked as beta testers in Firestore (isBetaTester: true).
- *
- * The widget will appear as a floating button on the right side of the screen
- * for beta testers only.
+ * Instead of injecting third-party widget scripts (which may use inline handlers
+ * blocked by nonce-based CSP), we open feedback in an isolated iframe modal.
  */
-
 export function UserJotWidget() {
-    const { currentUser } = useAuth();
-    const [isBetaTester, setIsBetaTester] = useState(false);
-    const [betaCohort, setBetaCohort] = useState<string | null>(null);
+  const { currentUser } = useAuth();
+  const [isBetaTester, setIsBetaTester] = useState(false);
+  const [betaCohort, setBetaCohort] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
-  // Listen for beta tester status from Firestore user document
   useEffect(() => {
-        if (!currentUser) {
-                setIsBetaTester(false);
-                setBetaCohort(null);
-                return;
+    if (!currentUser) {
+      setIsBetaTester(false);
+      setBetaCohort(null);
+      return;
+    }
+
+    const unsubscribe = onSnapshot(
+      doc(db, 'users', currentUser.uid),
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const userData = snapshot.data();
+          setIsBetaTester(userData.isBetaTester === true);
+          setBetaCohort(userData.betaCohort || null);
+        } else {
+          setIsBetaTester(false);
+          setBetaCohort(null);
         }
+      },
+      (error) => {
+        console.error('Error fetching beta tester status:', error);
+        setIsBetaTester(false);
+      }
+    );
 
-                const unsubscribe = onSnapshot(
-                        doc(db, 'users', currentUser.uid),
-                        (snapshot) => {
-                                  if (snapshot.exists()) {
-                                              const userData = snapshot.data();
-                                              setIsBetaTester(userData.isBetaTester === true);
-                                              setBetaCohort(userData.betaCohort || null);
-                                  } else {
-                                              setIsBetaTester(false);
-                                              setBetaCohort(null);
-                                  }
-                        },
-                        (error) => {
-                                  console.error('Error fetching beta tester status:', error);
-                                  setIsBetaTester(false);
-                        }
-                      );
-
-                return () => unsubscribe();
+    return () => unsubscribe();
   }, [currentUser]);
 
-  // Load or remove UserJot widget script based on beta tester status
-  useEffect(() => {
-        if (!isBetaTester || !currentUser) {
-                return;
-        }
+  const feedbackUrl = useMemo(() => {
+    const base = process.env.REACT_APP_USERJOT_FEEDBACK_URL;
+    if (!base || !currentUser) {
+      return null;
+    }
 
-                // Check if script already exists
-                const existingScript = document.querySelector('script[data-userjot-widget]');
-        if (existingScript) {
-                return;
-        }
+    try {
+      const url = new URL(base);
+      if (currentUser.email) {
+        url.searchParams.set('email', currentUser.email);
+      }
+      if (currentUser.displayName) {
+        url.searchParams.set('name', currentUser.displayName);
+      }
+      if (betaCohort) {
+        url.searchParams.set('cohort', betaCohort);
+      }
+      return url.toString();
+    } catch (error) {
+      console.error('Invalid REACT_APP_USERJOT_FEEDBACK_URL:', error);
+      return null;
+    }
+  }, [currentUser, betaCohort]);
 
-                // Create and configure the UserJot script
-                const script = document.createElement('script');
-        script.src = 'https://widget.userjot.com/widget.js';
-        script.async = true;
-        script.setAttribute('data-userjot-widget', 'true');
-        script.setAttribute('data-userjot-id', 'cml2vs82h15p516ml2chcrzin');
+  if (!isBetaTester || !currentUser || !feedbackUrl) {
+    return null;
+  }
 
-                // Pass user information to UserJot for better tracking
-                if (currentUser.email) {
-                        script.setAttribute('data-userjot-email', currentUser.email);
-                }
+  return (
+    <>
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          type="button"
+          className="rounded-full bg-cyan-600 px-5 py-3 text-sm font-semibold text-white shadow-lg hover:bg-cyan-700"
+          onClick={() => setIsOpen(true)}
+        >
+          Beta Feedback
+        </button>
+      </div>
 
-                if (currentUser.displayName) {
-                        script.setAttribute('data-userjot-name', currentUser.displayName);
-                }
-
-                // Add beta cohort information if available
-                if (betaCohort) {
-                        script.setAttribute('data-userjot-cohort', betaCohort);
-                }
-
-                // Append script to body
-                document.body.appendChild(script);
-
-                // Cleanup function to remove script when component unmounts
-                return () => {
-                        const scriptToRemove = document.querySelector('script[data-userjot-widget]');
-                        if (scriptToRemove) {
-                                  document.body.removeChild(scriptToRemove);
-                        }
-                };
-  }, [isBetaTester, currentUser, betaCohort]);
-
-  // This component doesn't render anything visible
-  return null;
+      {isOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-4xl overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+              <h2 className="text-sm font-semibold text-slate-900">Beta Feedback</h2>
+              <button
+                type="button"
+                className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-100"
+                onClick={() => setIsOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+            <iframe
+              src={feedbackUrl}
+              title="Beta Feedback Form"
+              className="h-[75vh] w-full"
+              sandbox="allow-forms allow-scripts allow-same-origin allow-popups"
+              referrerPolicy="strict-origin-when-cross-origin"
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
 }

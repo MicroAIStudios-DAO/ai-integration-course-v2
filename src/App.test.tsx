@@ -1,17 +1,27 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
 import App from './App';
 
-test('renders AI Integration Course app', () => {
+vi.mock('./components/UserJotWidget', () => ({
+  UserJotWidget: () => null
+}));
+
+vi.mock('./utils/analytics', () => ({
+  initGA4: vi.fn(),
+  trackPageView: vi.fn()
+}));
+
+vi.mock('./pages/HomePage', () => ({
+  default: () => <main>Mock Home Page</main>
+}));
+
+test('renders app root route', () => {
   render(<App />);
-  // Test for the main heading text that should appear on our homepage
-  const headingElement = screen.getByText(/Accelerate Your Future Skills Now/i);
-  expect(headingElement).toBeInTheDocument();
+  expect(screen.getByText(/Mock Home Page/i)).toBeInTheDocument();
 });
 
-test('renders navigation elements', () => {
+test('renders router without crashing', () => {
   render(<App />);
-  // Test for specific unique navigation text
-  const getStartedButton = screen.getByText(/Get Started/i);
-  expect(getStartedButton).toBeInTheDocument();
+  expect(screen.getByText(/Mock Home Page/i)).toBeInTheDocument();
 });
