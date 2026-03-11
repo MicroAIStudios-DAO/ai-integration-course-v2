@@ -34,6 +34,21 @@ const isMobileDevice = (): boolean => {
 };
 
 /**
+ * Hardcoded production fallback values for Firebase configuration.
+ * These ensure the app never crashes due to missing environment variables
+ * in the production build. The values are public Firebase client-side keys.
+ */
+const PRODUCTION_FIREBASE_FALLBACKS: Record<string, string> = {
+  'REACT_APP_FIREBASE_API_KEY': 'AIzaSyDbkztazekIxE8KUB2MydZXLVW7p52CUOQ',
+  'REACT_APP_FIREBASE_AUTH_DOMAIN': 'ai-integra-course-v2.firebaseapp.com',
+  'REACT_APP_FIREBASE_PROJECT_ID': 'ai-integra-course-v2',
+  'REACT_APP_FIREBASE_STORAGE_BUCKET': 'ai-integra-course-v2.firebasestorage.app',
+  'REACT_APP_FIREBASE_MESSAGING_SENDER_ID': '313115890482',
+  'REACT_APP_FIREBASE_APP_ID': '1:313115890482:web:cca32371be86c0863cbd2b',
+  'REACT_APP_FIREBASE_MEASUREMENT_ID': 'G-15SDDF1S5S',
+};
+
+/**
  * Mobile-specific environment variable getter with enhanced error handling
  */
 const getMobileEnvVar = (key: string, fallback?: string): string => {
@@ -55,6 +70,12 @@ const getMobileEnvVar = (key: string, fallback?: string): string => {
     }
   }
   
+  // Use hardcoded production fallback if still not found
+  if (!value && PRODUCTION_FIREBASE_FALLBACKS[key]) {
+    value = PRODUCTION_FIREBASE_FALLBACKS[key];
+    console.warn(`Using production fallback for ${key}. Set REACT_APP environment variables in your hosting provider.`);
+  }
+
   if (!value && fallback === undefined) {
     const errorMsg = `Environment variable ${key} is required but not set. Device: ${isMobileDevice() ? 'Mobile' : 'Desktop'}`;
     console.error(errorMsg);
@@ -96,19 +117,17 @@ const validateEnvironmentVariables = (): void => {
 
   if (missingVars.length > 0) {
     const deviceType = isMobileDevice() ? 'Mobile' : 'Desktop';
-    const errorMsg = `[${deviceType}] Missing required environment variables: ${missingVars.join(', ')}. Please check your Firebase environment variable configuration.`;
-    console.error(errorMsg);
+    // Check if all missing vars have production fallbacks
+    const missingWithoutFallback = missingVars.filter(v => !PRODUCTION_FIREBASE_FALLBACKS[v]);
     
-    // For mobile devices, provide additional debugging info
-    if (isMobileDevice()) {
-      console.error('Mobile debugging info:', {
-        userAgent: navigator.userAgent,
-        availableEnvVars: Object.keys(process.env).filter(key => key.startsWith('REACT_APP_')),
-        windowEnv: typeof window !== 'undefined' ? (window as any).__ENV__ : 'undefined'
-      });
+    if (missingWithoutFallback.length > 0) {
+      const errorMsg = `[${deviceType}] Missing required environment variables with no fallback: ${missingWithoutFallback.join(', ')}. Please check your hosting provider environment variable configuration.`;
+      console.error(errorMsg);
+      throw new Error(errorMsg);
+    } else {
+      // All missing vars have fallbacks - warn but don't crash
+      console.warn(`[${deviceType}] Some environment variables are using production fallbacks: ${missingVars.join(', ')}. For best practice, set these in your hosting provider (Firebase Hosting / Vercel).`);
     }
-    
-    throw new Error(errorMsg);
   }
 };
 
