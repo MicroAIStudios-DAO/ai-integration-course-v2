@@ -103,7 +103,7 @@ const validateEnvironmentVariables = (): void => {
     'REACT_APP_FIREBASE_MESSAGING_SENDER_ID',
     'REACT_APP_FIREBASE_APP_ID',
     'REACT_APP_FIREBASE_MEASUREMENT_ID',
-    'REACT_APP_RECAPTCHA_ENTERPRISE_KEY'
+    // REACT_APP_RECAPTCHA_ENTERPRISE_KEY is optional - app works without it
   ];
 
   const missingVars = requiredVars.filter(varName => {
@@ -218,8 +218,10 @@ export const config: EnvironmentConfig = createEnvironmentConfig();
 
 // Export individual configurations for convenience
 export const firebaseConfig = config.firebase;
+// reCAPTCHA Enterprise key is optional - app functions without it (auth forms will skip reCAPTCHA)
 export const recaptchaEnterpriseSiteKey = getEnvVar(
-  'REACT_APP_RECAPTCHA_ENTERPRISE_KEY'
+  'REACT_APP_RECAPTCHA_ENTERPRISE_KEY',
+  '' // empty string fallback - reCAPTCHA will be disabled if not set
 );
 export const appConfig = config.app;
 

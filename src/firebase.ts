@@ -17,13 +17,18 @@ if (typeof window !== "undefined") {
     (globalThis as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
   }
 
-  try {
-    initializeAppCheck(app, {
-      provider: new ReCaptchaEnterpriseProvider(recaptchaEnterpriseSiteKey),
-      isTokenAutoRefreshEnabled: true
-    });
-  } catch (error) {
-    console.warn("App Check initialization skipped:", error);
+  // Only initialize App Check if a valid reCAPTCHA Enterprise key is provided
+  if (recaptchaEnterpriseSiteKey && recaptchaEnterpriseSiteKey.trim() !== '') {
+    try {
+      initializeAppCheck(app, {
+        provider: new ReCaptchaEnterpriseProvider(recaptchaEnterpriseSiteKey),
+        isTokenAutoRefreshEnabled: true
+      });
+    } catch (error) {
+      console.warn("App Check initialization skipped:", error);
+    }
+  } else {
+    console.warn("App Check disabled: REACT_APP_RECAPTCHA_ENTERPRISE_KEY not set. Add this key to enable App Check.");
   }
 
   isSupported().then((supported) => {
