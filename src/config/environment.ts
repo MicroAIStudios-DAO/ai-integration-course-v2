@@ -5,212 +5,214 @@
  */
 
 interface EnvironmentConfig {
-  firebase: {
-    apiKey: string;
-    authDomain: string;
-    projectId: string;
-    storageBucket: string;
-    messagingSenderId: string;
-    appId: string;
-    measurementId: string;
-  };
-  app: {
-    environment: 'development' | 'production' | 'test';
-    version: string;
-    isMobile: boolean;
-    baseUrl: string;
-  };
+    firebase: {
+          apiKey: string;
+          authDomain: string;
+          projectId: string;
+          storageBucket: string;
+          messagingSenderId: string;
+          appId: string;
+          measurementId: string;
+    };
+    app: {
+      environment: 'development' | 'production' | 'test';
+      version: string;
+      isMobile: boolean;
+      baseUrl: string;
+    };
 }
 
 /**
  * Detects if the current device is mobile
  */
 const isMobileDevice = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  
-  const userAgent = window.navigator.userAgent;
-  const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
-  return mobileRegex.test(userAgent);
+    if (typeof window === 'undefined') return false;
+    const userAgent = window.navigator.userAgent;
+    const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+    return mobileRegex.test(userAgent);
 };
 
 /**
  * Hardcoded production fallback values for Firebase configuration.
- * These ensure the app never crashes due to missing environment variables
- * in the production build. The values are public Firebase client-side keys.
+ * These help ensure Firebase initialization does not fail due to missing
+ * Firebase-related environment variables in the production build.
+ * The values are public Firebase client-side keys.
+ * NOTE: Only applied when NODE_ENV === 'production' to prevent
+ * dev/staging environments from silently connecting to production.
  */
 const PRODUCTION_FIREBASE_FALLBACKS: Record<string, string> = {
-  'REACT_APP_FIREBASE_API_KEY': 'AIzaSyDbkztazekIxE8KUB2MydZXLVW7p52CUOQ',
-  'REACT_APP_FIREBASE_AUTH_DOMAIN': 'ai-integra-course-v2.firebaseapp.com',
-  'REACT_APP_FIREBASE_PROJECT_ID': 'ai-integra-course-v2',
-  'REACT_APP_FIREBASE_STORAGE_BUCKET': 'ai-integra-course-v2.firebasestorage.app',
-  'REACT_APP_FIREBASE_MESSAGING_SENDER_ID': '313115890482',
-  'REACT_APP_FIREBASE_APP_ID': '1:313115890482:web:cca32371be86c0863cbd2b',
-  'REACT_APP_FIREBASE_MEASUREMENT_ID': 'G-15SDDF1S5S',
+    'REACT_APP_FIREBASE_API_KEY': 'AIzaSyDbkztazekIxE8KUB2MydZXLVW7p52CUOQ',
+    'REACT_APP_FIREBASE_AUTH_DOMAIN': 'ai-integra-course-v2.firebaseapp.com',
+    'REACT_APP_FIREBASE_PROJECT_ID': 'ai-integra-course-v2',
+    'REACT_APP_FIREBASE_STORAGE_BUCKET': 'ai-integra-course-v2.firebasestorage.app',
+    'REACT_APP_FIREBASE_MESSAGING_SENDER_ID': '313115890482',
+    'REACT_APP_FIREBASE_APP_ID': '1:313115890482:web:cca32371be86c0863cbd2b',
+    'REACT_APP_FIREBASE_MEASUREMENT_ID': 'G-15SDDF1S5S',
 };
 
 /**
  * Mobile-specific environment variable getter with enhanced error handling
  */
 const getMobileEnvVar = (key: string, fallback?: string): string => {
-  // Try to get the environment variable
-  let value = process.env[key];
-  
-  // Mobile-specific fallback handling
-  if (!value && isMobileDevice()) {
-    console.warn(`Mobile device detected: Environment variable ${key} not found, checking fallbacks...`);
-    
-    // For mobile devices, try alternative approaches
-    if (typeof window !== 'undefined') {
-      // Check if variables are available on window object (some mobile browsers)
-      const windowEnv = (window as any).__ENV__;
-      if (windowEnv && windowEnv[key]) {
-        value = windowEnv[key];
-        console.log(`Mobile fallback: Found ${key} on window.__ENV__`);
+    // Try to get the environment variable
+    let value = process.env[key];
+
+    // Mobile-specific fallback handling
+    if (!value && isMobileDevice()) {
+          console.warn(`Mobile device detected: Environment variable ${key} not found, checking fallbacks...`);
+
+      // For mobile devices, try alternative approaches
+      if (typeof window !== 'undefined') {
+              // Check if variables are available on window object (some mobile browsers)
+            const windowEnv = (window as any).__ENV__;
+              if (windowEnv && windowEnv[key]) {
+                        value = windowEnv[key];
+                        console.log(`Mobile fallback: Found ${key} on window.__ENV__`);
+              }
       }
     }
-  }
-  
-  // Use hardcoded production fallback if still not found
-  if (!value && PRODUCTION_FIREBASE_FALLBACKS[key]) {
-    value = PRODUCTION_FIREBASE_FALLBACKS[key];
-    console.warn(`Using production fallback for ${key}. Set REACT_APP environment variables in your hosting provider.`);
-  }
 
-  if (!value && fallback === undefined) {
-    const errorMsg = `Environment variable ${key} is required but not set. Device: ${isMobileDevice() ? 'Mobile' : 'Desktop'}`;
-    console.error(errorMsg);
-    throw new Error(errorMsg);
-  }
-  
-  return value || fallback || '';
+    // Use hardcoded production fallback if still not found
+    // ONLY in production builds to prevent dev/staging from hitting prod Firebase
+    if (!value && process.env.NODE_ENV === 'production' && PRODUCTION_FIREBASE_FALLBACKS[key]) {
+          value = PRODUCTION_FIREBASE_FALLBACKS[key];
+          console.warn(`Using production fallback for ${key}. Set REACT_APP environment variables in your hosting provider.`);
+    }
+
+    if (!value && fallback === undefined) {
+          const errorMsg = `Environment variable ${key} is required but not set. Device: ${isMobileDevice() ? 'Mobile' : 'Desktop'}`;
+          console.error(errorMsg);
+          throw new Error(errorMsg);
+    }
+
+    return value || fallback || '';
 };
 
 /**
  * Validates that all required environment variables are present with mobile-specific handling
  */
 const validateEnvironmentVariables = (): void => {
-  // Skip validation in test environment with fallback values
-  if (process.env.NODE_ENV === 'test') {
-    console.log('Test environment detected - skipping strict environment validation');
-    return;
-  }
-
-  const requiredVars = [
-    'REACT_APP_FIREBASE_API_KEY',
-    'REACT_APP_FIREBASE_AUTH_DOMAIN',
-    'REACT_APP_FIREBASE_PROJECT_ID',
-    'REACT_APP_FIREBASE_STORAGE_BUCKET',
-    'REACT_APP_FIREBASE_MESSAGING_SENDER_ID',
-    'REACT_APP_FIREBASE_APP_ID',
-    'REACT_APP_FIREBASE_MEASUREMENT_ID',
-    // REACT_APP_RECAPTCHA_ENTERPRISE_KEY is optional - app works without it
-  ];
-
-  const missingVars = requiredVars.filter(varName => {
-    try {
-      getMobileEnvVar(varName);
-      return false;
-    } catch {
-      return true;
+    // Skip validation in test environment with fallback values
+    if (process.env.NODE_ENV === 'test') {
+          console.log('Test environment detected - skipping strict environment validation');
+          return;
     }
-  });
 
-  if (missingVars.length > 0) {
-    const deviceType = isMobileDevice() ? 'Mobile' : 'Desktop';
-    // Check if all missing vars have production fallbacks
-    const missingWithoutFallback = missingVars.filter(v => !PRODUCTION_FIREBASE_FALLBACKS[v]);
-    
-    if (missingWithoutFallback.length > 0) {
-      const errorMsg = `[${deviceType}] Missing required environment variables with no fallback: ${missingWithoutFallback.join(', ')}. Please check your hosting provider environment variable configuration.`;
-      console.error(errorMsg);
-      throw new Error(errorMsg);
-    } else {
-      // All missing vars have fallbacks - warn but don't crash
-      console.warn(`[${deviceType}] Some environment variables are using production fallbacks: ${missingVars.join(', ')}. For best practice, set these in your hosting provider (Firebase Hosting / Vercel).`);
+    const requiredVars = [
+          'REACT_APP_FIREBASE_API_KEY',
+          'REACT_APP_FIREBASE_AUTH_DOMAIN',
+          'REACT_APP_FIREBASE_PROJECT_ID',
+          'REACT_APP_FIREBASE_STORAGE_BUCKET',
+          'REACT_APP_FIREBASE_MESSAGING_SENDER_ID',
+          'REACT_APP_FIREBASE_APP_ID',
+          'REACT_APP_FIREBASE_MEASUREMENT_ID',
+          // REACT_APP_RECAPTCHA_ENTERPRISE_KEY is optional - app works without it
+        ];
+
+    const missingVars = requiredVars.filter(varName => {
+          try {
+                  getMobileEnvVar(varName);
+                  return false;
+          } catch {
+                  return true;
+          }
+    });
+
+    if (missingVars.length > 0) {
+          const deviceType = isMobileDevice() ? 'Mobile' : 'Desktop';
+
+      // Check if all missing vars have production fallbacks
+      // (only relevant in production where fallbacks are active)
+      const missingWithoutFallback = missingVars.filter(v => !PRODUCTION_FIREBASE_FALLBACKS[v]);
+
+      if (missingWithoutFallback.length > 0) {
+              const errorMsg = `[${deviceType}] Missing required environment variables with no fallback: ${missingWithoutFallback.join(', ')}. Please check your hosting provider environment variable configuration.`;
+              console.error(errorMsg);
+              throw new Error(errorMsg);
+      } else {
+              // All missing vars have fallbacks - warn but don't crash
+            console.warn(`[${deviceType}] Some environment variables are using production fallbacks: ${missingVars.join(', ')}. For best practice, set these in your hosting provider (Firebase Hosting / Vercel).`);
+      }
     }
-  }
 };
 
 /**
  * Safely retrieves environment variable with mobile-specific fallback
  */
 const getEnvVar = (key: string, fallback?: string): string => {
-  // In test environment, provide sensible fallbacks for Firebase variables
-  if (process.env.NODE_ENV === 'test') {
-    const testFallbacks: Record<string, string> = {
-      'REACT_APP_FIREBASE_API_KEY': 'test_api_key',
-      'REACT_APP_FIREBASE_AUTH_DOMAIN': 'test-project.firebaseapp.com',
-      'REACT_APP_FIREBASE_PROJECT_ID': 'test-project',
-      'REACT_APP_FIREBASE_STORAGE_BUCKET': 'test-project.appspot.com',
-      'REACT_APP_FIREBASE_MESSAGING_SENDER_ID': '123456789',
-      'REACT_APP_FIREBASE_APP_ID': '1:123456789:web:abcdefg',
-      'REACT_APP_FIREBASE_MEASUREMENT_ID': 'G-ABCDEFG',
-      'REACT_APP_VERSION': '1.0.0',
-      'REACT_APP_NAME': 'AI Integration Course',
-      'REACT_APP_DEFAULT_LANGUAGE': 'en'
-    };
-    
-    return process.env[key] || testFallbacks[key] || fallback || '';
-  }
-  
-  return getMobileEnvVar(key, fallback);
+    // In test environment, provide sensible fallbacks for Firebase variables
+    if (process.env.NODE_ENV === 'test') {
+          const testFallbacks: Record<string, string> = {
+                  'REACT_APP_FIREBASE_API_KEY': 'test_api_key',
+                  'REACT_APP_FIREBASE_AUTH_DOMAIN': 'test-project.firebaseapp.com',
+                  'REACT_APP_FIREBASE_PROJECT_ID': 'test-project',
+                  'REACT_APP_FIREBASE_STORAGE_BUCKET': 'test-project.appspot.com',
+                  'REACT_APP_FIREBASE_MESSAGING_SENDER_ID': '123456789',
+                  'REACT_APP_FIREBASE_APP_ID': '1:123456789:web:abcdefg',
+                  'REACT_APP_FIREBASE_MEASUREMENT_ID': 'G-ABCDEFG',
+                  'REACT_APP_VERSION': '1.0.0',
+                  'REACT_APP_NAME': 'AI Integration Course',
+                  'REACT_APP_DEFAULT_LANGUAGE': 'en'
+          };
+          return process.env[key] || testFallbacks[key] || fallback || '';
+    }
+
+    return getMobileEnvVar(key, fallback);
 };
 
 /**
  * Determines the preferred application base URL with sensible fallbacks
  */
 const resolveBaseUrl = (): string => {
-  const envBaseUrl = getEnvVar('REACT_APP_BASE_URL', '');
+    const envBaseUrl = getEnvVar('REACT_APP_BASE_URL', '');
+    if (envBaseUrl) {
+          return envBaseUrl;
+    }
 
-  if (envBaseUrl) {
-    return envBaseUrl;
-  }
+    if (typeof window !== 'undefined' && window.location) {
+          return window.location.origin;
+    }
 
-  if (typeof window !== 'undefined' && window.location) {
-    return window.location.origin;
-  }
-
-  // Default fallback for server-side or build-time execution
-  return 'http://localhost:3000';
+    // Default fallback for server-side or build-time execution
+    return 'http://localhost:3000';
 };
 
 /**
  * Creates the environment configuration object with mobile support
  */
 const createEnvironmentConfig = (): EnvironmentConfig => {
-  const mobile = isMobileDevice();
+    const mobile = isMobileDevice();
+    console.log(`Initializing environment config for ${mobile ? 'mobile' : 'desktop'} device`);
 
-  console.log(`Initializing environment config for ${mobile ? 'mobile' : 'desktop'} device`);
-  
-  // Validate all required variables are present
-  validateEnvironmentVariables();
+    // Validate all required variables are present
+    validateEnvironmentVariables();
 
-  const config = {
-    firebase: {
-      apiKey: getEnvVar('REACT_APP_FIREBASE_API_KEY'),
-      authDomain: getEnvVar('REACT_APP_FIREBASE_AUTH_DOMAIN'),
-      projectId: getEnvVar('REACT_APP_FIREBASE_PROJECT_ID'),
-      storageBucket: getEnvVar('REACT_APP_FIREBASE_STORAGE_BUCKET'),
-      messagingSenderId: getEnvVar('REACT_APP_FIREBASE_MESSAGING_SENDER_ID'),
-      appId: getEnvVar('REACT_APP_FIREBASE_APP_ID'),
-      measurementId: getEnvVar('REACT_APP_FIREBASE_MEASUREMENT_ID')
-    },
-    app: {
-      environment: (getEnvVar('NODE_ENV', 'development') as 'development' | 'production' | 'test'),
-      version: getEnvVar('REACT_APP_VERSION', '1.0.0'),
-      isMobile: mobile,
-      baseUrl: resolveBaseUrl()
+    const config = {
+          firebase: {
+                  apiKey: getEnvVar('REACT_APP_FIREBASE_API_KEY'),
+                  authDomain: getEnvVar('REACT_APP_FIREBASE_AUTH_DOMAIN'),
+                  projectId: getEnvVar('REACT_APP_FIREBASE_PROJECT_ID'),
+                  storageBucket: getEnvVar('REACT_APP_FIREBASE_STORAGE_BUCKET'),
+                  messagingSenderId: getEnvVar('REACT_APP_FIREBASE_MESSAGING_SENDER_ID'),
+                  appId: getEnvVar('REACT_APP_FIREBASE_APP_ID'),
+                  measurementId: getEnvVar('REACT_APP_FIREBASE_MEASUREMENT_ID')
+          },
+          app: {
+                  environment: (getEnvVar('NODE_ENV', 'development') as 'development' | 'production' | 'test'),
+                  version: getEnvVar('REACT_APP_VERSION', '1.0.0'),
+                  isMobile: mobile,
+                  baseUrl: resolveBaseUrl()
+          }
+    };
+
+    // Mobile-specific logging
+    if (mobile) {
+          console.log('Mobile environment configuration loaded successfully');
+          console.log('Firebase project (mobile):', config.firebase.projectId);
+          console.log('User agent:', navigator.userAgent);
     }
-  };
-  
-  // Mobile-specific logging
-  if (mobile) {
-    console.log('Mobile environment configuration loaded successfully');
-    console.log('Firebase project (mobile):', config.firebase.projectId);
-    console.log('User agent:', navigator.userAgent);
-  }
-  
-  return config;
+
+    return config;
 };
 
 // Export the configuration object
@@ -220,9 +222,9 @@ export const config: EnvironmentConfig = createEnvironmentConfig();
 export const firebaseConfig = config.firebase;
 // reCAPTCHA Enterprise key is optional - app functions without it (auth forms will skip reCAPTCHA)
 export const recaptchaEnterpriseSiteKey = getEnvVar(
-  'REACT_APP_RECAPTCHA_ENTERPRISE_KEY',
-  '' // empty string fallback - reCAPTCHA will be disabled if not set
-);
+    'REACT_APP_RECAPTCHA_ENTERPRISE_KEY',
+    '' // empty string fallback - reCAPTCHA will be disabled if not set
+  );
 export const appConfig = config.app;
 
 // Export utility functions for testing
@@ -230,10 +232,8 @@ export { validateEnvironmentVariables, getEnvVar, isMobileDevice };
 
 // Development helper - only log in development mode
 if (process.env.NODE_ENV === 'development') {
-  console.log('Environment configuration loaded successfully');
-  console.log('Firebase project:', config.firebase.projectId);
-  console.log('App environment:', config.app.environment);
-  console.log('Device type:', config.app.isMobile ? 'Mobile' : 'Desktop');
+    console.log('Environment configuration loaded successfully');
+    console.log('Firebase project:', config.firebase.projectId);
+    console.log('App environment:', config.app.environment);
+    console.log('Device type:', config.app.isMobile ? 'Mobile' : 'Desktop');
 }
-
-// Force deployment with mobile fixes Fri Aug  9 15:10:00 EDT 2025
