@@ -1,313 +1,434 @@
-# Practical Build Framework: GitHub + Starter Repo (Do This Once)
+# Build 5.1: GitHub Setup + Your First Module Repo
 
-You're going to create a single GitHub repo that holds all course builds (Modules 2-7).
-Each module becomes its own little folder + app you can run locally.
+This build is intentionally simple.
 
----
+You are not building an AI app yet.
+You are building the system you will use for every future module project.
 
-## Slide 1 - What you're building
+By the end of this lesson, you will have:
 
-```
-+------------------------------------------------------------------+
-|                 AI INTEGRATION COURSE - BUILDS REPO              |
-|                                                                  |
-|  One repo. Six mini-apps. Each module gets a practical build.     |
-|                                                                  |
-|  Modules:                                                        |
-|   - M2 Finance: risk snapshot + memo                              |
-|   - M3 Startups: lean canvas + experiments                        |
-|   - M4 Small Biz: FAQ/SOP assistant (tiny RAG)                    |
-|   - M5 Real Estate: underwriting + listing optimizer              |
-|   - M6 Exec Leadership: strategy brief generator                  |
-|   - M7 Creative: creative brief + shot list generator             |
-+------------------------------------------------------------------+
-```
+- a GitHub account
+- Git installed on your computer
+- VS Code installed
+- one practice repo on GitHub
+- one local project folder on your computer
+- your first commit pushed online
 
----
+## Why this matters
 
-## Slide 2 - Repo layout
+For this course, the cleanest workflow is:
 
-```
-ai-integration-builds/
-  common/                 # shared utilities (LLM wrapper)
-  modules/
-    module_2_finance/
-    module_3_startups/
-    module_4_small_business/
-    module_5_real_estate/
-    module_6_exec_leadership/
-    module_7_creative/
-  .env.example
-  requirements.txt
-  hello_ai.py             # sanity test (LLM call)
-  hello_app.py            # sanity test (Streamlit UI)
-```
+- one GitHub repo per module project
+- one clear README per repo
+- regular commits as checkpoints
 
----
+That gives you three advantages:
 
-## Slide 3 - Git workflow (the "muscle memory")
+1. Your work is backed up.
+2. Your projects stay organized.
+3. You build a portfolio while you learn.
 
-```
-+-------------------+     +------------------+     +------------------+
-| edit files locally | --> | git commit       | --> | git push          |
-| (code + markdown)  |     | (checkpoint)     |     | (backup + share)  |
-+-------------------+     +------------------+     +------------------+
-```
+## Repo naming pattern for the course
 
----
+Use a simple naming pattern like this:
 
-# Part A - Create a GitHub account (first-timers)
+- `ai-course-module-02-finance`
+- `ai-course-module-03-startup`
+- `ai-course-module-04-small-business`
+- `ai-course-module-05-real-estate`
+- `ai-course-module-06-executive`
+- `ai-course-module-07-creative`
 
-1. Go to GitHub and create an account.
-2. Verify your email.
-3. (Optional but smart) Turn on 2FA (Two-Factor Authentication).
+For this lesson, you will make one practice repo called:
 
----
+- `ai-course-starter`
 
-# Part B - Create your course repo on GitHub
+Later, each real module build should get its own repo.
 
-1. In GitHub: **New repository**
-2. Name it: `ai-integration-builds`
-3. Set visibility: Public or Private (your choice)
-4. Check **Add a README** (recommended)
-5. Create repository
+## Part 1: Create your GitHub account
 
----
+1. Go to `https://github.com/signup`
+2. Create your account.
+3. Verify your email.
+4. Turn on two-factor authentication if GitHub asks. Do it.
+5. Sign in and make sure you can see the GitHub dashboard.
 
-# Part C - Clone the repo to your computer
+## Part 2: Create your practice repo
 
-## Option 1 (recommended): Git + terminal
+1. In GitHub, click `New repository`.
+2. Repository name: `ai-course-starter`
+3. Visibility: `Public` or `Private`
+4. Check `Add a README file`
+5. Click `Create repository`
 
-```bash
-cd ~/Desktop
-git clone https://github.com/YOUR_USERNAME/ai-integration-builds.git
-cd ai-integration-builds
-```
+When the repo is created, leave that browser tab open.
 
-## Option 2: GitHub Desktop (GUI)
-- Install GitHub Desktop
-- "Clone repository"
-- Choose your new repo
+## Part 3: Choose your setup path
 
----
+Pick one path only:
 
-# Part D - Create a Python environment (clean + repeatable)
+- Windows
+- macOS
+- Linux
 
-From the repo root:
+## Windows Setup
 
-```bash
-python -m venv .venv
-```
+### 1. Install Git
 
-Activate it:
+Open PowerShell and run:
 
-**macOS/Linux**
-```bash
-source .venv/bin/activate
-```
-
-**Windows PowerShell**
 ```powershell
-.\.venv\Scripts\Activate.ps1
+winget install --id Git.Git -e
 ```
 
----
+Check that Git works:
 
-# Part E - Add the starter files (copy/paste)
-
-Create folders:
-
-```bash
-mkdir -p common modules
-mkdir -p modules/module_2_finance modules/module_3_startups modules/module_4_small_business
-mkdir -p modules/module_5_real_estate modules/module_6_exec_leadership modules/module_7_creative
+```powershell
+git --version
 ```
 
-## 1) `.gitignore`
+### 2. Install VS Code
 
-Create `.gitignore`:
+In PowerShell:
 
-```gitignore
-# secrets
-.env
-
-# python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.venv/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# streamlit
-.streamlit/
-
-# local outputs
-outputs/
+```powershell
+winget install --id Microsoft.VisualStudioCode -e
 ```
 
-## 2) `.env.example`
+If `code` does not work later, close PowerShell and open it again.
 
-Create `.env.example`:
+### 3. Clone your repo
 
-```env
-# Copy this file to .env and fill in values.
-OPENAI_API_KEY="YOUR_KEY_HERE"
+In PowerShell:
 
-# Optional: choose a model your account has access to
-OPENAI_MODEL="gpt-5.2"
+```powershell
+cd $HOME\Desktop
+git clone https://github.com/YOUR_USERNAME/ai-course-starter.git
+cd ai-course-starter
+code .
 ```
 
-Important:
-- Create your real `.env` locally (never commit it).
-- Your code reads `OPENAI_API_KEY` from the environment. This matches OpenAI's current quickstart pattern.
+Replace `YOUR_USERNAME` with your actual GitHub username.
 
-## 3) `requirements.txt`
+### 4. Add one simple project note
 
-Create `requirements.txt`:
+Create a notes folder and a progress file:
 
-```txt
-openai
-python-dotenv
-streamlit
-pandas
-numpy
-yfinance
-scikit-learn
-tabulate
+```powershell
+New-Item -ItemType Directory -Path notes -Force | Out-Null
+"GitHub setup complete. Ready for future module repos." | Set-Content notes\progress.txt
 ```
 
-Install dependencies:
+### 5. Update README
 
-```bash
-pip install -r requirements.txt
+Replace the README with this:
+
+```powershell
+@"
+# AI Course Starter
+
+This repo is my practice repo for the AI Integration Course.
+
+## What I completed
+- GitHub account created
+- Git installed
+- VS Code installed
+- Local repo cloned
+- First commit pushed
+
+## Repo rule for this course
+Each module project gets its own GitHub repo.
+"@ | Set-Content README.md
 ```
 
-## 4) `common/__init__.py`
+### 6. Make your first commit
 
-Create an empty file:
+If Git asks who you are, run this first:
 
-```py
-# common package
+```powershell
+git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
 ```
 
-## 5) `common/llm.py` (shared OpenAI wrapper)
+Then commit and push:
 
-Create `common/llm.py`:
-
-```py
-from __future__ import annotations
-
-import os
-from dotenv import load_dotenv
-from openai import OpenAI
-
-load_dotenv()
-
-DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.2")
-
-
-def _require_api_key() -> None:
-    if not os.getenv("OPENAI_API_KEY"):
-        raise RuntimeError(
-            "Missing OPENAI_API_KEY. Copy .env.example to .env and set your key."
-        )
-
-
-def client() -> OpenAI:
-    _require_api_key()
-    return OpenAI()
-
-
-def generate_text(*, prompt: str, instructions: str = "", model: str = DEFAULT_MODEL) -> str:
-    """
-    Minimal wrapper around the OpenAI Responses API.
-
-    - prompt: user input / task
-    - instructions: higher-priority system/developer instruction (optional)
-    - model: defaults to env OPENAI_MODEL or 'gpt-5.2'
-    """
-    c = client()
-    kwargs = {}
-    if instructions:
-        kwargs["instructions"] = instructions
-
-    resp = c.responses.create(
-        model=model,
-        input=prompt,
-        **kwargs,
-    )
-    return resp.output_text
-```
-
-## 6) `hello_ai.py` (sanity test)
-
-Create `hello_ai.py`:
-
-```py
-from common.llm import generate_text
-
-print(
-    generate_text(
-        prompt="Write a 1-sentence bedtime story about a unicorn who learns Git.",
-        instructions="Be whimsical but short."
-    )
-)
-```
-
-Run it:
-
-```bash
-cp .env.example .env
-# edit .env and set OPENAI_API_KEY
-python hello_ai.py
-```
-
-## 7) `hello_app.py` (Streamlit sanity test)
-
-Create `hello_app.py`:
-
-```py
-import streamlit as st
-from common.llm import generate_text
-
-st.set_page_config(page_title="Hello AI", layout="centered")
-st.title("Hello AI (Repo sanity test)")
-
-prompt = st.text_area("Prompt", "Give me a 5-bullet cheat sheet for Git commits.")
-if st.button("Generate", type="primary"):
-    out = generate_text(prompt=prompt, instructions="Be practical and concise.")
-    st.markdown(out)
-```
-
-Run it:
-
-```bash
-streamlit run hello_app.py
-```
-
----
-
-# Part F - Your first commit + push (checkpoint)
-
-```bash
-git status
+```powershell
 git add .
-git commit -m "Add starter repo scaffold + OpenAI wrapper"
+git commit -m "Set up starter repo"
 git push origin main
 ```
 
----
+## macOS Setup
 
-# You're done. Now build modules 2-7
+### 1. Install Git
 
-Next practical builds:
-- Module 2: `module-2-practical-build-finance.md`
-- Module 3: `module-3-practical-build-startups.md`
-- Module 4: `module-4-practical-build-small-business.md`
-- Module 5: `module-5-practical-build-real-estate.md`
-- Module 6: `module-6-practical-build-exec-leadership.md`
-- Module 7: `module-7-practical-build-creative-industries.md`
+Open Terminal and run:
+
+```bash
+xcode-select --install
+```
+
+Then check Git:
+
+```bash
+git --version
+```
+
+### 2. Install VS Code
+
+If you use Homebrew:
+
+```bash
+brew install --cask visual-studio-code
+```
+
+If you do not use Homebrew, install VS Code from `https://code.visualstudio.com/`.
+
+### 3. Clone your repo
+
+In Terminal:
+
+```bash
+cd ~/Desktop
+git clone https://github.com/YOUR_USERNAME/ai-course-starter.git
+cd ai-course-starter
+code .
+```
+
+If `code` is not found, open VS Code once and install the shell command from VS Code's Command Palette.
+
+### 4. Add one simple project note
+
+```bash
+mkdir -p notes
+echo "GitHub setup complete. Ready for future module repos." > notes/progress.txt
+```
+
+### 5. Update README
+
+```bash
+cat > README.md <<'EOF'
+# AI Course Starter
+
+This repo is my practice repo for the AI Integration Course.
+
+## What I completed
+- GitHub account created
+- Git installed
+- VS Code installed
+- Local repo cloned
+- First commit pushed
+
+## Repo rule for this course
+Each module project gets its own GitHub repo.
+EOF
+```
+
+### 6. Make your first commit
+
+If Git asks who you are, run this first:
+
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
+```
+
+Then commit and push:
+
+```bash
+git add .
+git commit -m "Set up starter repo"
+git push origin main
+```
+
+## Linux Setup
+
+Use the package manager that matches your distribution.
+
+### 1. Install Git
+
+Ubuntu or Debian:
+
+```bash
+sudo apt update
+sudo apt install -y git
+```
+
+Fedora:
+
+```bash
+sudo dnf install -y git
+```
+
+Arch:
+
+```bash
+sudo pacman -S git
+```
+
+Check Git:
+
+```bash
+git --version
+```
+
+### 2. Install VS Code
+
+Install VS Code from `https://code.visualstudio.com/` or your distro package manager.
+
+If you use Ubuntu with Snap:
+
+```bash
+sudo snap install code --classic
+```
+
+### 3. Clone your repo
+
+```bash
+cd ~/Desktop
+git clone https://github.com/YOUR_USERNAME/ai-course-starter.git
+cd ai-course-starter
+code .
+```
+
+If your system does not have a `Desktop` folder, use any folder you like, such as `~/projects`.
+
+### 4. Add one simple project note
+
+```bash
+mkdir -p notes
+echo "GitHub setup complete. Ready for future module repos." > notes/progress.txt
+```
+
+### 5. Update README
+
+```bash
+cat > README.md <<'EOF'
+# AI Course Starter
+
+This repo is my practice repo for the AI Integration Course.
+
+## What I completed
+- GitHub account created
+- Git installed
+- VS Code installed
+- Local repo cloned
+- First commit pushed
+
+## Repo rule for this course
+Each module project gets its own GitHub repo.
+EOF
+```
+
+### 6. Make your first commit
+
+If Git asks who you are, run this first:
+
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
+```
+
+Then commit and push:
+
+```bash
+git add .
+git commit -m "Set up starter repo"
+git push origin main
+```
+
+## Part 4: Verify that it worked
+
+You are done when all of these are true:
+
+- your GitHub repo shows the updated `README.md`
+- your repo has a `notes/progress.txt` file
+- you can see your latest commit on GitHub
+- you know where the local repo folder lives on your computer
+
+## Part 5: How to use this in future modules
+
+From Module 2 onward, repeat the same flow:
+
+1. Create a new GitHub repo for that module.
+2. Clone it to your computer.
+3. Build the project inside that repo.
+4. Commit after each working milestone.
+5. Push at the end of each session.
+
+Example future repo names:
+
+- `ai-course-module-02-finance`
+- `ai-course-module-03-startup`
+- `ai-course-module-04-small-business`
+
+## Part 6: Use an LLM when you get stuck
+
+If you hit an error, do not guess.
+Paste the exact command and the exact error into an LLM.
+
+Good prompt:
+
+```text
+I am on Windows/macOS/Linux.
+I am following a GitHub setup lesson.
+I ran this command:
+
+[paste command]
+
+And got this error:
+
+[paste full error]
+
+Explain what it means in plain English and tell me the exact next step.
+```
+
+Good prompt for Git issues:
+
+```text
+I am new to Git.
+I want one GitHub repo per course module.
+Suggest a clean repo name, a short README, and the next 3 commands I should run.
+```
+
+Rule:
+
+- include your operating system
+- include the exact command
+- include the full error message
+
+## Common fixes
+
+If `git push origin main` fails because there is no `main` branch yet, run:
+
+```bash
+git branch -M main
+git push -u origin main
+```
+
+If Git says `Author identity unknown`, run:
+
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
+```
+
+If `code` does not work:
+
+- reopen your terminal
+- or open the folder directly in VS Code using the app
+
+## Build Complete
+
+Once this lesson is done, you are ready for the real project builds.
+
+The goal here was not complexity.
+The goal was to give you a repeatable workflow:
+
+- create repo
+- clone repo
+- make changes
+- commit
+- push
+
+You will use that pattern for the rest of the course.
