@@ -1,5 +1,10 @@
 # Build 5.1: GitHub Setup + Your First Module Repo
 
+**Duration:** 30 minutes
+**Availability:** Premium
+
+---
+
 This build is intentionally simple.
 
 You are not building an AI app yet.

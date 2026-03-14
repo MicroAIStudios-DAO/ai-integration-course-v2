@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import ReactPlayer from "react-player";
+import remarkGfm from "remark-gfm";
 import { getCourseById, getLessonMarkdownUrl, markLessonAsComplete, getUserProfile, getUserCourseProgress, userHasPaidAccess } from "../firebaseService"; // Import Firestore service
 import { Course, Lesson as LessonType, UserCourseProgress } from "../types/course"; // Import types
 import { useAuth } from "../context/AuthContext"; // For gating logic
@@ -293,7 +294,7 @@ The detailed content for this lesson is being prepared. Please check back soon o
               {/* Lesson Content with Textbook Styling */}
               {markdownContent && (
                 <div className="lesson-content">
-                  <ReactMarkdown>{markdownContent}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm as any]}>{markdownContent}</ReactMarkdown>
                 </div>
               )}
 
