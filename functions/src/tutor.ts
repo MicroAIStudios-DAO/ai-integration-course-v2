@@ -89,6 +89,57 @@ async function streamChat(key: string, model: string, messages: any, maxTokens: 
   return r;
 }
 
+async function streamOpenAIResponse(
+  body: any,
+  onDelta: (delta: string) => void
+): Promise<boolean> {
+  const decoder = new TextDecoder('utf-8');
+  let buffered = '';
+  let streamed = false;
+
+  const consumeText = (text: string) => {
+    buffered += text;
+    const lines = buffered.split(/\r?\n/);
+    buffered = lines.pop() ?? '';
+
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const payload = line.slice(6).trim();
+      if (!payload || payload === '[DONE]') continue;
+      try {
+        const json = JSON.parse(payload);
+        const delta = json.choices?.[0]?.delta?.content;
+        if (delta) {
+          onDelta(delta);
+          streamed = true;
+        }
+      } catch {
+        // Ignore partial/non-JSON SSE lines.
+      }
+    }
+  };
+
+  if (body && typeof body.getReader === 'function') {
+    const reader = body.getReader();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      consumeText(decoder.decode(value, { stream: true }));
+    }
+    consumeText(decoder.decode());
+  } else if (body && typeof body[Symbol.asyncIterator] === 'function') {
+    for await (const chunk of body) {
+      const text = typeof chunk === 'string' ? chunk : Buffer.from(chunk).toString('utf-8');
+      consumeText(text);
+    }
+  } else {
+    return false;
+  }
+
+  if (buffered) consumeText('\n');
+  return streamed;
+}
+
 function loadSystemPrompt(): string {
   try {
     const p = path.join(process.cwd(), '..', 'prompts', 'tutor_system.txt');
@@ -251,28 +302,16 @@ export async function tutorHandler(req: any, res: any) {
     for (const model of MODEL_FALLBACKS) {
       try {
         const r = await streamChat(key, model, messages, maxOutputTokens);
-        if (!r.ok || !r.body) continue;
-        const reader = (r.body as any).getReader?.();
-        if (!reader) continue;
-        const decoder = new TextDecoder('utf-8');
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const text = decoder.decode(value, { stream: true });
-          // SSE lines, extract delta
-          for (const line of text.split('\n')) {
-            if (!line.startsWith('data: ')) continue;
-            const payload = line.slice(6).trim();
-            if (payload === '[DONE]') break;
-            try {
-              const j = JSON.parse(payload);
-              const delta = j.choices?.[0]?.delta?.content;
-              if (delta) res.write(delta);
-              streamed = true;
-            } catch { /* ignore parse */ }
-          }
+        if (!r.ok || !r.body) {
+          const errorText = await r.text().catch(() => '');
+          console.error(`Tutor model ${model} failed: ${r.status} ${errorText}`.trim());
+          continue;
         }
-        if (streamed) break;
+        const modelStreamed = await streamOpenAIResponse(r.body, (delta) => res.write(delta));
+        if (modelStreamed) {
+          streamed = true;
+          break;
+        }
       } catch { /* try next model */ }
     }
     if (!streamed) res.write('Sorry, the tutor is temporarily unavailable.');
@@ -287,7 +326,7 @@ export async function tutorHandler(req: any, res: any) {
 }
 
 // Export helpers for tests
-export const __internals = { cosine, chunkText, estTokensFromChars };
+export const __internals = { cosine, chunkText, estTokensFromChars, streamOpenAIResponse };
 
 // Export the Firebase Function
 export const tutor = onRequest({
