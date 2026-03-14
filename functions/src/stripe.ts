@@ -12,6 +12,8 @@ if (!admin.apps.length) {
 
 const STRIPE_SECRET = defineSecret('STRIPE_SECRET');
 const STRIPE_WEBHOOK_SECRET = defineSecret('STRIPE_WEBHOOK_SECRET');
+const PLAYBOOK_DOWNLOAD_URL = 'https://aiintegrationcourse.com/assets/AI_Prompt_Engineering_Automation_Playbook_FULL.pdf';
+const PLAYBOOK_FALLBACK_URL = 'https://ai-integra-course-v2.web.app/assets/AI_Prompt_Engineering_Automation_Playbook_FULL.pdf';
 let stripe: Stripe | null = null;
 
 function getStripe() {
@@ -134,6 +136,75 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
   );
 
   console.log(`Premium renewed for user ${uid}`);
+}
+
+async function queuePlaybookDeliveryEmail(uid: string): Promise<void> {
+  const db = admin.firestore();
+  const userRef = db.doc(`users/${uid}`);
+  let queued = false;
+
+  await db.runTransaction(async (tx) => {
+    const userSnap = await tx.get(userRef);
+    if (!userSnap.exists) {
+      return;
+    }
+
+    const alreadyQueued = Boolean(userSnap.get('playbookEmailQueuedAt'));
+    if (alreadyQueued) {
+      return;
+    }
+
+    const email = (userSnap.get('email') || '').toString().trim();
+    if (!email) {
+      return;
+    }
+
+    const displayName = (userSnap.get('displayName') || '').toString().trim();
+    const firstName = displayName ? displayName.split(' ')[0] : 'there';
+    const subject = 'Your AI Prompt Engineering Automation Playbook (PDF)';
+    const body = `Hi ${firstName},
+
+Welcome to AI Integration Course.
+
+Here is your playbook download:
+${PLAYBOOK_DOWNLOAD_URL}
+
+Backup link:
+${PLAYBOOK_FALLBACK_URL}
+
+Keep this PDF handy as you go through the modules. It pairs directly with your practical lessons.
+
+If you need help, reply to this email and we will support you.
+
+The AI Integration Course Team`;
+
+    const queueRef = db.collection('email_queue').doc();
+    tx.set(queueRef, {
+      to: email,
+      subject,
+      body,
+      userId: uid,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      status: 'pending',
+      type: 'playbook_delivery',
+      playbookUrl: PLAYBOOK_DOWNLOAD_URL,
+      playbookFallbackUrl: PLAYBOOK_FALLBACK_URL,
+    });
+
+    tx.set(userRef, {
+      playbookEmailQueuedAt: admin.firestore.FieldValue.serverTimestamp(),
+      playbookEmailStatus: 'queued',
+      playbookEmailType: 'playbook_delivery',
+    }, { merge: true });
+
+    queued = true;
+  });
+
+  if (queued) {
+    console.log(`Queued playbook delivery email for user ${uid}`);
+  } else {
+    console.log(`Skipped playbook email queue for user ${uid} (already queued or missing email/user)`);
+  }
 }
 
 export const onUserCreateV2 = onCustomEventPublished(
@@ -342,6 +413,12 @@ export const stripeWebhookV2 = onRequest(
               },
               { merge: true }
             );
+
+            try {
+              await queuePlaybookDeliveryEmail(uid);
+            } catch (emailQueueErr) {
+              console.error(`Failed to queue playbook email for user ${uid}:`, emailQueueErr);
+            }
 
             console.log(`Premium activated for user ${uid} with plan ${planId}`);
           } else {

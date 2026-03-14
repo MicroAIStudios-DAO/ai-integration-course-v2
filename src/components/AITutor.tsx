@@ -14,6 +14,7 @@ export default function AITutor({ lessonId, premium, hasAccess, supportEmail }: 
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [error, setError] = useState<string | null>(null);
   // Remove unused error state as it's set but never displayed
   const scrollRef = useRef<HTMLDivElement>(null);
   const tutorUrl = process.env.REACT_APP_TUTOR_URL || "https://tutor-z2yrjfoedq-uc.a.run.app";
@@ -26,12 +27,17 @@ export default function AITutor({ lessonId, premium, hasAccess, supportEmail }: 
       console.error("Subscribe to access premium tutor."); 
       return; 
     }
+    setError(null);
     setLoading(true);
     setMessages(m => [...m, { role: "user", content: q }]);
     const question = q; setQ("");
     try {
       const res = await fetch(tutorUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lessonId, question }) });
-      if (!res.ok || !res.body) throw new Error("Tutor error");
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `Tutor error (${res.status})`);
+      }
+      if (!res.body) throw new Error("Tutor returned no response body");
       const reader = res.body.getReader();
       const decoder = new TextDecoder("utf-8");
       let accumulatedContent = "";
@@ -51,7 +57,10 @@ export default function AITutor({ lessonId, premium, hasAccess, supportEmail }: 
         processChunk();
       }
     } catch (e:any) {
-      console.error(e?.message || "Unknown error");
+      const message = e?.message || "Unknown error";
+      console.error(message);
+      setError(message);
+      setMessages(m => [...m, { role: "assistant", content: `Tutor is temporarily unavailable: ${message}` }]);
     } finally {
       setLoading(false);
     }
@@ -120,6 +129,7 @@ export default function AITutor({ lessonId, premium, hasAccess, supportEmail }: 
         />
         <button onClick={ask} disabled={loading || (premium && !hasAccess)} aria-label="Submit question">Ask</button>
       </div>
+      {error && <div className="typing" role="alert">{error}</div>}
       {loading && <div className="typing">Thinking…</div>}
       <div className="actions">
         <button onClick={copyLast}>Copy answer</button>

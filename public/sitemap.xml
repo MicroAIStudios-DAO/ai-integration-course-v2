@@ -44,6 +44,51 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://aiintegrationcourse.com/library</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/library/rag-for-small-business</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/library/function-calling-with-gemini-1-5-pro</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/library/openai-vs-anthropic-for-automation</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/solutions</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/solutions/real-estate</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/solutions/e-commerce</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/solutions/law-firms</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/ai-workshops-san-diego</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id</loc>
     <lastmod>2026-01-26</lastmod>
     <changefreq>weekly</changefreq>

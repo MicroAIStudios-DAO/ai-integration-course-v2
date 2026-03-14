@@ -118,7 +118,22 @@ async function getLessonText(docPath: string): Promise<string> {
     }
   }
 
-  throw new Error('Lesson content empty');
+  // Graceful fallback for lessons that have metadata but no long-form content yet.
+  // This keeps AI Tutor responsive instead of failing hard.
+  const title = (d.title || 'Untitled Lesson').toString();
+  const description = (d.description || '').toString().trim();
+  const objectives = Array.isArray(d.learningObjectives)
+    ? d.learningObjectives.map((x: any) => String(x).trim()).filter(Boolean)
+    : [];
+
+  let fallback = `Lesson Title: ${title}\n`;
+  if (description) fallback += `Lesson Description: ${description}\n`;
+  if (objectives.length > 0) {
+    fallback += `Learning Objectives:\n${objectives.map((x: string) => `- ${x}`).join('\n')}\n`;
+  }
+  fallback +=
+    '\nThis lesson does not yet have full transcript content. Answer with general guidance, clearly mark assumptions, and suggest next practical steps.';
+  return fallback;
 }
 
 async function getCachedEmbeddings(bucket: admin.storage.Storage, lessonKey: string): Promise<{ chunks: Chunk[]; vectors: number[][] } | null> {

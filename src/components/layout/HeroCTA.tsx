@@ -14,8 +14,8 @@ const HeroCTA: React.FC = () => {
 
       {/* Subheadline */}
       <p className="text-lg md:text-xl mt-6 max-w-2xl text-gray-300">
-        Golden Age Mindset gives you the tools, insights, and strategies to outthink the hype and invest with confidence in the age of AI.
-        Join today and unlock your 7-day free trial.
+        Learn practical AI automation with implementation-first lessons, guided projects, and a build path designed for business owners and developers.
+        Start with the curriculum and move toward a real deployed workflow.
       </p>
 
       {/* CTA Buttons */}
@@ -24,7 +24,7 @@ const HeroCTA: React.FC = () => {
           href="/signup"
           className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3 rounded-full text-lg font-bold shadow-lg transition"
         >
-          Start Free Trial
+          Start Building Now
         </a>
         <a
           href="#free-lesson"

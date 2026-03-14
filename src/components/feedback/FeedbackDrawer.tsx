@@ -1,11 +1,12 @@
 import React, { useRef, useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
-import { getAuth, signInAnonymously } from 'firebase/auth';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { functions, storage } from '../../config/firebase';
+import { useAuth } from '../../context/AuthContext';
 import useFoundingAccess from '../../hooks/useFoundingAccess';
 
 const FeedbackDrawer: React.FC = () => {
+  const { currentUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
@@ -18,6 +19,10 @@ const FeedbackDrawer: React.FC = () => {
 
   const sendFeedback = async () => {
     if (!message.trim()) return;
+    if (!currentUser) {
+      setStatus('error');
+      return;
+    }
     setStatus('sending');
     try {
       const submit = httpsCallable(functions, 'submitFeedbackV2');
@@ -33,12 +38,10 @@ const FeedbackDrawer: React.FC = () => {
   const handleScreenshot = async (file: File) => {
     setUploading(true);
     try {
-      const auth = getAuth();
-      if (!auth.currentUser) {
-        await signInAnonymously(auth);
+      if (!currentUser) {
+        throw new Error('Login required to attach a screenshot');
       }
-      const uid = auth.currentUser?.uid || 'anonymous';
-      const storageRef = ref(storage, `feedback/${uid}/${Date.now()}-${file.name}`);
+      const storageRef = ref(storage, `feedback/${currentUser.uid}/${Date.now()}-${file.name}`);
       await uploadBytes(storageRef, file);
       const url = await getDownloadURL(storageRef);
       setScreenshotUrl(url);

@@ -106,6 +106,17 @@
   left: 0;
 }
 
+/* Normalize embedded videos inside markdown to match the top lesson player size */
+.lesson-content iframe,
+.lesson-content video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  margin: 1.5rem auto;
+  border-radius: 12px;
+}
+
 .lesson-content hr {
   border: none;
   height: 2px;

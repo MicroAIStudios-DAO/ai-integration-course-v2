@@ -64,6 +64,36 @@ const NewLandingPage: React.FC = () => {
           Get your first win in 15 minutes. No fluff, no theory—just practical AI skills that create immediate value.
         </p>
 
+        {/* Premium Hero Visual */}
+        <div className="w-full max-w-6xl mb-12">
+          <div className="relative overflow-hidden rounded-3xl border border-white/20 bg-slate-950/40 shadow-[0_20px_80px_rgba(15,23,42,0.55)]">
+            <img
+              src="/assets/hero_background_neural_network.png/hero_background_neural_network.png"
+              alt="Premium AI systems and automation visual for AI Integration Course"
+              className="h-[260px] w-full object-cover object-center md:h-[360px]"
+              loading="eager"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-900/40 to-transparent" />
+            <div className="absolute inset-0 flex items-end justify-between p-5 md:p-8">
+              <div className="max-w-2xl text-left">
+                <p className="mb-2 inline-flex items-center rounded-full border border-cyan-300/40 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
+                  Premium Training Experience
+                </p>
+                <h2 className="text-xl font-bold text-white md:text-3xl">
+                  AI Integration Course Blueprint
+                </h2>
+                <p className="mt-2 text-sm text-slate-200 md:text-base">
+                  Structured modules, practical workflows, and deployable automation systems.
+                </p>
+              </div>
+              <div className="hidden rounded-2xl border border-white/20 bg-slate-900/65 px-4 py-3 text-right backdrop-blur md:block">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-300">Guarantee</p>
+                <p className="text-lg font-bold text-white">14-Day Build Window</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Key Value Props */}
         <div className="grid md:grid-cols-3 gap-6 max-w-4xl mb-12">
           <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">

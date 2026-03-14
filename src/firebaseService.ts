@@ -87,14 +87,50 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
   return null;
 };
 
+const toDate = (value: UserProfile['trialEndsAt'] | UserProfile['trialEndDate']): Date | null => {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (typeof (value as any)?.toDate === 'function') return (value as any).toDate();
+  if (typeof value === 'string') {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+  return null;
+};
+
+export const userHasPaidAccess = (profile: UserProfile | null | undefined): boolean => {
+  if (!profile) return false;
+  if (profile.foundingMember === true) return true;
+  if (profile.premium === true) return true;
+  if (profile.isSubscribed === true) return true;
+
+  const trialEndsAt = toDate(profile.trialEndsAt) || toDate(profile.trialEndDate);
+  if (profile.activeTrial === true) {
+    return !trialEndsAt || trialEndsAt > new Date();
+  }
+
+  if (profile.subscriptionStatus === 'active') {
+    return true;
+  }
+
+  if (profile.subscriptionStatus === 'trialing') {
+    return !!trialEndsAt && trialEndsAt > new Date();
+  }
+
+  return false;
+};
+
 export const createUserProfile = async (user: User, additionalData?: Partial<UserProfile>): Promise<void> => {
   const userRef = doc(db, 'users', user.uid);
   const profileData: UserProfile = {
     email: user.email || undefined,
     displayName: user.displayName || undefined,
     photoURL: user.photoURL || undefined,
-    isSubscribed: false, // Default value
-    activeTrial: false, // Default value
+    premium: false,
+    subscriptionStatus: 'none',
+    foundingMember: false,
+    isSubscribed: false,
+    activeTrial: false,
     ...additionalData,
   };
   await setDoc(userRef, profileData, { merge: true });
@@ -128,8 +164,7 @@ export const markLessonAsComplete = async (userId: string, courseId: string, les
     await setDoc(progressRef, {
       courseId: courseId,
       completedLessons: [lessonId],
-      lastAccessedLessonId: lessonId,
-      overallProgressPercent: undefined
+      lastAccessedLessonId: lessonId
     });
   }
 };
@@ -137,9 +172,14 @@ export const markLessonAsComplete = async (userId: string, courseId: string, les
 // Helper to update user subscription status (simplified for now)
 export const updateUserSubscriptionStatus = async (userId: string, isSubscribed: boolean, activeTrial?: boolean, trialEndDate?: Date) => {
     const userRef = doc(db, 'users', userId);
-    const updateData: Partial<UserProfile> = { isSubscribed };
+    const updateData: Partial<UserProfile> = {
+      isSubscribed,
+      premium: isSubscribed,
+      subscriptionStatus: isSubscribed ? 'active' : 'none',
+    };
     if (activeTrial !== undefined) updateData.activeTrial = activeTrial;
     if (trialEndDate !== undefined) updateData.trialEndDate = trialEndDate;
+    if (trialEndDate !== undefined) updateData.trialEndsAt = trialEndDate;
     await updateDoc(userRef, updateData);
 };
 
@@ -151,7 +191,10 @@ export const createAdminUserProfile = async (user: User): Promise<void> => {
     email: user.email || undefined,
     displayName: user.displayName || undefined,
     photoURL: user.photoURL || undefined,
-    isSubscribed: true, // Admin has full access
+    premium: true,
+    subscriptionStatus: 'active',
+    foundingMember: false,
+    isSubscribed: true,
     activeTrial: false,
     isAdmin: true, // Admin flag
     role: 'admin', // Admin role

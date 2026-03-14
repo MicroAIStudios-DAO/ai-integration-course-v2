@@ -23,9 +23,10 @@ interface SEOProps {
 }
 
 const BASE_URL = 'https://aiintegrationcourse.com';
-const DEFAULT_IMAGE = `${BASE_URL}/images/og-default.png`;
+const DEFAULT_IMAGE = `${BASE_URL}/assets/hero_background_neural_network.png/hero_background_neural_network.png`;
 const SITE_NAME = 'AI Integration Course';
-const DEFAULT_DESCRIPTION = 'Unlock your potential in the age of AI. Tools, insights, and strategies to outthink the hype and invest with confidence.';
+const DEFAULT_DESCRIPTION =
+  'Practical AI automation training for business owners and developers. Learn Gemini API integration, workflow automation, and real deployment patterns.';
 
 export const SEO: React.FC<SEOProps> = ({
   title,
@@ -35,12 +36,18 @@ export const SEO: React.FC<SEOProps> = ({
   type = 'website',
   publishedTime,
   modifiedTime,
-  author = 'Golden Age Mindset',
-  keywords = ['AI', 'artificial intelligence', 'machine learning', 'investment', 'course', 'education'],
+  author = 'Blaine Casey',
+  keywords = [
+    'AI integration course',
+    'Gemini API with Python',
+    'AI business automation',
+    'AI workflow automation',
+    'AI course for non-coders'
+  ],
   noindex = false,
   course
 }) => {
-  const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} | Outthink the AI Hype`;
+  const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} | Practical AI Automation Training`;
   const fullUrl = url ? `${BASE_URL}${url}` : BASE_URL;
   const fullImage = image.startsWith('http') ? image : `${BASE_URL}${image}`;
 
@@ -53,16 +60,11 @@ export const SEO: React.FC<SEOProps> = ({
     description: DEFAULT_DESCRIPTION,
     publisher: {
       '@type': 'Organization',
-      name: 'Golden Age Mindset',
+      name: 'MicroAI Studios',
       logo: {
         '@type': 'ImageObject',
-        url: `${BASE_URL}/images/logo.png`
+        url: `${BASE_URL}/logo192.png`
       }
-    },
-    potentialAction: {
-      '@type': 'SearchAction',
-      target: `${BASE_URL}/search?q={search_term_string}`,
-      'query-input': 'required name=search_term_string'
     }
   };
 
@@ -111,7 +113,7 @@ export const SEO: React.FC<SEOProps> = ({
       name: SITE_NAME,
       logo: {
         '@type': 'ImageObject',
-        url: `${BASE_URL}/images/logo.png`
+        url: `${BASE_URL}/logo192.png`
       }
     },
     datePublished: publishedTime,
@@ -152,7 +154,7 @@ export const SEO: React.FC<SEOProps> = ({
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={fullImage} />
-      <meta name="twitter:creator" content="@GoldenAgeMindset" />
+      <meta name="twitter:creator" content="@aiintegrationco" />
       
       {/* Article specific */}
       {publishedTime && <meta property="article:published_time" content={publishedTime} />}

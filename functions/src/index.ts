@@ -47,7 +47,7 @@ export {
 export { addLessonToFirestoreV2, listCoursesAndModulesV2 } from './adminLessons';
 
 // Founding member access + feedback
-export { redeemFoundingCodeV2, submitFeedbackV2 } from './founding';
+export { claimBetaTesterV2, redeemFoundingCodeV2, submitFeedbackV2 } from './founding';
 
 // Import and export Beta Testing functions
 export { userJotToGithub, githubToUserJot, betaTesterSync } from './beta-testing';

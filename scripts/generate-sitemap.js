@@ -27,6 +27,16 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 const BASE_URL = 'https://aiintegrationcourse.com';
 const EXCLUDED_PATH_PREFIXES = ['/app/'];
+const RESOURCE_PAGE_SLUGS = [
+  'rag-for-small-business',
+  'function-calling-with-gemini-1-5-pro',
+  'openai-vs-anthropic-for-automation'
+];
+const INDUSTRY_PAGE_SLUGS = [
+  'real-estate',
+  'e-commerce',
+  'law-firms'
+];
 
 function shouldIncludePath(pathname) {
   return !EXCLUDED_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
@@ -43,6 +53,9 @@ async function generateSitemap() {
     { path: '/courses', priority: '0.9', changefreq: 'weekly' },
     { path: '/pricing', priority: '0.8', changefreq: 'monthly' },
     { path: '/about', priority: '0.7', changefreq: 'monthly' },
+    { path: '/library', priority: '0.8', changefreq: 'weekly' },
+    { path: '/solutions', priority: '0.8', changefreq: 'weekly' },
+    { path: '/ai-workshops-san-diego', priority: '0.7', changefreq: 'monthly' },
     { path: '/login', priority: '0.5', changefreq: 'monthly' },
     { path: '/signup', priority: '0.6', changefreq: 'monthly' },
     { path: '/contact', priority: '0.6', changefreq: 'monthly' },
@@ -57,6 +70,22 @@ async function generateSitemap() {
       loc: `${BASE_URL}${page.path}`,
       priority: page.priority,
       changefreq: page.changefreq
+    });
+  });
+
+  RESOURCE_PAGE_SLUGS.forEach((slug) => {
+    urls.push({
+      loc: `${BASE_URL}/library/${slug}`,
+      priority: '0.7',
+      changefreq: 'monthly'
+    });
+  });
+
+  INDUSTRY_PAGE_SLUGS.forEach((slug) => {
+    urls.push({
+      loc: `${BASE_URL}/solutions/${slug}`,
+      priority: '0.7',
+      changefreq: 'monthly'
     });
   });
   

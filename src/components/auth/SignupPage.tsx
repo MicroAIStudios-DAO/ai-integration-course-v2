@@ -7,11 +7,16 @@ import { useReCaptcha } from "../../hooks/useReCaptcha";
 import { trackSignUp, trackBeginCheckout } from "../../utils/analytics";
 import ReactPlayer from "react-player";
 import FoundingAccessFloatingButton from "../founding/FoundingAccessFloatingButton";
+import FoundingAccessModal from "../founding/FoundingAccessModal";
+import SEO from "../SEO";
 
 const SignupPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [offerCode, setOfferCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showFoundingModal, setShowFoundingModal] = useState(false);
+  const [autoCheckoutOnFoundingClose, setAutoCheckoutOnFoundingClose] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { signup } = useAuth(); // Use AuthContext
@@ -23,10 +28,34 @@ const SignupPage: React.FC = () => {
   const checkoutCancelled = queryParams.get("checkout") === "cancelled";
   const introVideoUrl = "https://youtu.be/sG9_phBnm40";
 
+  const startStandardCheckout = async () => {
+    const origin = window.location.origin;
+    const createCheckoutSession = httpsCallable(functions, "createCheckoutSessionV2");
+    const result = await createCheckoutSession({
+      priceId,
+      successUrl: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: `${origin}/payment-cancel`
+    });
+    const data = result.data as { url?: string };
+    if (data?.url) {
+      trackBeginCheckout(49, 'USD', 'Pro Plan', 'pro_monthly');
+      window.location.href = data.url;
+      return;
+    }
+    navigate("/welcome");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    const normalizedOfferCode = offerCode.trim().toUpperCase();
+
+    if (normalizedOfferCode && normalizedOfferCode !== "PIONEER") {
+      setError("Invalid offer code. Use PIONEER or leave blank.");
+      setLoading(false);
+      return;
+    }
 
     // Try reCAPTCHA verification but don't block signup if it fails
     try {
@@ -42,23 +71,33 @@ const SignupPage: React.FC = () => {
 
     try {
       await signup(email, password);
+
+      // Offer-code based beta enrollment (best practice: separate from password).
+      if (normalizedOfferCode === "PIONEER") {
+        try {
+          const claimBetaTester = httpsCallable(functions, "claimBetaTesterV2");
+          await claimBetaTester({ code: normalizedOfferCode, cohort: "Pioneer" });
+          setAutoCheckoutOnFoundingClose(true);
+          setShowFoundingModal(true);
+          setLoading(false);
+          trackSignUp('Email');
+          return;
+        } catch (betaErr) {
+          console.error("Beta enrollment failed after signup:", betaErr);
+          setAutoCheckoutOnFoundingClose(false);
+          setShowFoundingModal(true);
+          setError(
+            "Your account was created, but beta activation did not complete. You can still redeem a founding code now, or contact support before starting checkout."
+          );
+          setLoading(false);
+          trackSignUp('Email');
+          return;
+        }
+      }
+
       // Track sign_up event
       trackSignUp('Email');
-      const origin = window.location.origin;
-      const createCheckoutSession = httpsCallable(functions, "createCheckoutSessionV2");
-      const result = await createCheckoutSession({
-        priceId,
-        successUrl: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-        cancelUrl: `${origin}/payment-cancel`
-      });
-      const data = result.data as { url?: string };
-      if (data?.url) {
-        // Track begin_checkout event before redirect
-        trackBeginCheckout(49, 'USD', 'Pro Plan', 'pro_monthly');
-        window.location.href = data.url;
-        return;
-      }
-      navigate("/welcome");
+      await startStandardCheckout();
     } catch (err: any) {
       setError(err.message || "Failed to create an account. Please try again.");
     }
@@ -67,6 +106,18 @@ const SignupPage: React.FC = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50 py-12 px-4 sm:px-6 lg:px-8 font-body">
+      <SEO
+        title="Sign Up"
+        description="Create your AI Integration Course account. Beta invitees can use PIONEER during signup, and founding members can redeem access after account creation."
+        url="/signup"
+        keywords={[
+          'AI Integration Course signup',
+          'PIONEER beta signup',
+          'founding member access',
+          'AI course account creation'
+        ]}
+        author="Blaine Casey"
+      />
       <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
       <div className="absolute -bottom-32 -left-24 h-80 w-80 rounded-full bg-indigo-200/40 blur-3xl" />
       <div className="max-w-2xl w-full space-y-8 bg-white/90 backdrop-blur p-10 rounded-3xl shadow-xl border border-white/60 form-container">
@@ -85,8 +136,16 @@ const SignupPage: React.FC = () => {
             Create your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 font-body">
-            You will be redirected to secure checkout via Stripe.
+            `PIONEER` is for beta invite onboarding. Founding access codes are redeemed after the account is created.
           </p>
+        </div>
+        <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5 text-sm text-blue-900">
+          <p className="font-semibold">Choose the right path:</p>
+          <ul className="mt-3 space-y-2">
+            <li>1. Standard signup: create your account, then continue to checkout.</li>
+            <li>2. Beta invite: enter `PIONEER` during signup to trigger beta onboarding.</li>
+            <li>3. Founding member: create your account first, then redeem the founding code in the next step.</li>
+          </ul>
         </div>
         {checkoutCancelled && (
           <div className="rounded-md bg-yellow-50 p-4 mt-4">
@@ -117,16 +176,16 @@ const SignupPage: React.FC = () => {
               <label htmlFor="password" className="sr-only">
                 Password
               </label>
-              <input
-                id="password"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="new-password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm font-body pr-12"
-                placeholder="Password (min. 6 characters)"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  required
+                  className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm font-body pr-12"
+                  placeholder="Password (min. 6 characters)"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
               />
               <button
                 type="button"
@@ -149,6 +208,24 @@ const SignupPage: React.FC = () => {
                 )}
               </button>
             </div>
+            <div>
+              <label htmlFor="offer-code" className="sr-only">
+                Offer Code
+              </label>
+              <input
+                id="offer-code"
+                name="offerCode"
+                type="text"
+                autoComplete="off"
+                className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm font-body"
+                placeholder="Offer code (optional) - e.g. PIONEER"
+                value={offerCode}
+                onChange={(e) => setOfferCode(e.target.value.toUpperCase())}
+              />
+              <p className="mt-2 text-xs text-gray-500">
+                Only use `PIONEER` if you were explicitly invited to the beta. Founding codes are redeemed after signup.
+              </p>
+            </div>
           </div>
 
           {error && (
@@ -167,7 +244,7 @@ const SignupPage: React.FC = () => {
               disabled={loading}
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-headings font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 form-button"
             >
-              {loading ? "Creating account..." : "Continue to secure checkout"}
+              {loading ? "Creating account..." : "Create account"}
             </button>
             <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-500 font-body">
               <span className="inline-flex items-center gap-1">
@@ -189,6 +266,14 @@ const SignupPage: React.FC = () => {
               <span className="h-3 w-px bg-gray-200" />
               <span>Powered by Stripe</span>
             </div>
+            <div className="mt-4 flex flex-col items-center gap-2 text-sm">
+              <Link to="/pricing" className="font-medium text-blue-600 hover:text-blue-500">
+                Compare plans first
+              </Link>
+              <Link to="/courses" className="font-medium text-slate-600 hover:text-slate-900">
+                Preview the free curriculum
+              </Link>
+            </div>
           </div>
         </form>
         <div className="mt-6">
@@ -200,6 +285,19 @@ const SignupPage: React.FC = () => {
           </p>
         </div>
       </div>
+      <FoundingAccessModal
+        isOpen={showFoundingModal}
+        onClose={() => {
+          setShowFoundingModal(false);
+          if (autoCheckoutOnFoundingClose) {
+            void startStandardCheckout();
+          }
+        }}
+        onSuccess={() => {
+          setShowFoundingModal(false);
+          navigate("/courses");
+        }}
+      />
       <FoundingAccessFloatingButton />
     </div>
   );

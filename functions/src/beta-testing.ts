@@ -13,7 +13,7 @@
  */
 
 import { onRequest } from 'firebase-functions/v2/https';
-import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
+import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { defineSecret } from 'firebase-functions/params';
 import * as admin from 'firebase-admin';
 import axios from 'axios';
@@ -22,17 +22,22 @@ import axios from 'axios';
 try { admin.initializeApp(); } catch { /* noop */ }
 const db = admin.firestore();
 const GITHUB_TOKEN = defineSecret('GITHUB_TOKEN');
+const ZAPIER_CRITICAL_BUG_WEBHOOK = defineSecret('ZAPIER_CRITICAL_BUG_WEBHOOK_URL');
+const ZAPIER_ISSUE_CLOSED_WEBHOOK = defineSecret('ZAPIER_ISSUE_CLOSED_WEBHOOK_URL');
+const ZAPIER_BETA_WEBHOOK = defineSecret('ZAPIER_BETA_WEBHOOK_URL');
 const GITHUB_OWNER = process.env.GITHUB_OWNER || 'MicroAIStudios-DAO';
 const GITHUB_REPO = process.env.GITHUB_REPO || 'ai-integration-course-v2';
-const ZAPIER_CRITICAL_BUG_WEBHOOK_URL = process.env.ZAPIER_CRITICAL_BUG_WEBHOOK_URL;
-const ZAPIER_ISSUE_CLOSED_WEBHOOK_URL = process.env.ZAPIER_ISSUE_CLOSED_WEBHOOK_URL;
-const ZAPIER_BETA_WEBHOOK_URL = process.env.ZAPIER_BETA_WEBHOOK_URL;
+
+const resolveSecret = (secret: ReturnType<typeof defineSecret>, fallbackEnv?: string) =>
+  secret.value() || fallbackEnv || '';
 
 /**
  * UserJot to GitHub Integration
  * Receives feedback from UserJot webhook and creates GitHub issues
  */
-export const userJotToGithub = onRequest({ secrets: [GITHUB_TOKEN] }, async (req, res) => {
+export const userJotToGithub = onRequest(
+  { secrets: [GITHUB_TOKEN, ZAPIER_CRITICAL_BUG_WEBHOOK] },
+  async (req, res) => {
   // Only accept POST requests
   if (req.method !== 'POST') {
     res.status(405).send('Method Not Allowed');
@@ -199,7 +204,10 @@ export const userJotToGithub = onRequest({ secrets: [GITHUB_TOKEN] }, async (req
 
     // If critical, send alert via Zapier
     if (priority === 'priority-high') {
-      const zapierWebhook = ZAPIER_CRITICAL_BUG_WEBHOOK_URL;
+      const zapierWebhook = resolveSecret(
+        ZAPIER_CRITICAL_BUG_WEBHOOK,
+        process.env.ZAPIER_CRITICAL_BUG_WEBHOOK_URL
+      );
       if (zapierWebhook) {
         await axios.post(zapierWebhook, {
           title,
@@ -244,7 +252,9 @@ export const userJotToGithub = onRequest({ secrets: [GITHUB_TOKEN] }, async (req
  * GitHub to UserJot Integration
  * Receives GitHub webhooks when issues are closed and notifies submitter
  */
-export const githubToUserJot = onRequest(async (req, res) => {
+export const githubToUserJot = onRequest(
+  { secrets: [ZAPIER_ISSUE_CLOSED_WEBHOOK] },
+  async (req, res) => {
   if (req.method !== 'POST') {
     res.status(405).send('Method Not Allowed');
     return;
@@ -281,7 +291,10 @@ export const githubToUserJot = onRequest(async (req, res) => {
     const mapping = mappingSnapshot.docs[0].data();
 
     // Trigger Zapier workflow to send notification email
-    const zapierWebhook = ZAPIER_ISSUE_CLOSED_WEBHOOK_URL;
+    const zapierWebhook = resolveSecret(
+      ZAPIER_ISSUE_CLOSED_WEBHOOK,
+      process.env.ZAPIER_ISSUE_CLOSED_WEBHOOK_URL
+    );
     if (zapierWebhook) {
       await axios.post(zapierWebhook, {
         issueTitle: issue.title,
@@ -328,37 +341,76 @@ export const githubToUserJot = onRequest(async (req, res) => {
  * Beta Tester Sync to HubSpot
  * Triggered when a user document is updated with isBetaTester: true
  */
-export const betaTesterSync = onDocumentUpdated('users/{userId}', async (event) => {
-    const before = event.data?.before.data();
-    const after = event.data?.after.data();
-    if (!before || !after) {
+export const betaTesterSync = onDocumentWritten(
+  { document: 'users/{userId}', secrets: [ZAPIER_BETA_WEBHOOK] },
+  async (event) => {
+    const before = event.data?.before.data() || null;
+    const after = event.data?.after.data() || null;
+    if (!after) {
       return;
     }
 
-    // Only process if user just became a beta tester
-    if (!before.isBetaTester && after.isBetaTester) {
-      try {
-        const zapierWebhook = ZAPIER_BETA_WEBHOOK_URL;
-        
-        if (!zapierWebhook) {
-          console.warn('Zapier beta webhook URL not configured');
-          return;
-        }
-
-        // Send to Zapier → HubSpot
-        await axios.post(zapierWebhook, {
-          email: after.email,
-          firstName: after.firstName || after.displayName?.split(' ')[0] || '',
-          lastName: after.lastName || after.displayName?.split(' ').slice(1).join(' ') || '',
-          betaCohort: after.betaCohort || 'Pioneer',
-          signupDate: after.betaSignupDate || new Date().toISOString(),
-          userId: event.params.userId
-        });
-
-        console.log(`Beta tester synced to HubSpot: ${after.email}`);
-
-      } catch (error) {
-        console.error('Error syncing beta tester to HubSpot:', error);
-      }
+    // Only process the first transition into beta tester status.
+    if ((before?.isBetaTester === true) || after.isBetaTester !== true) {
+      return;
     }
-  });
+
+    try {
+      const zapierWebhook = resolveSecret(
+        ZAPIER_BETA_WEBHOOK,
+        process.env.ZAPIER_BETA_WEBHOOK_URL
+      );
+      if (!zapierWebhook) {
+        console.warn('Zapier beta webhook URL not configured');
+        return;
+      }
+
+      let email = after.email || '';
+      let displayName = after.displayName || '';
+
+      if (!email || !displayName) {
+        try {
+          const authUser = await admin.auth().getUser(event.params.userId);
+          email = email || authUser.email || '';
+          displayName = displayName || authUser.displayName || '';
+        } catch (error) {
+          console.warn('Unable to hydrate beta tester profile from Auth:', error);
+        }
+      }
+
+      if (!email) {
+        console.warn(`Skipping beta tester sync for ${event.params.userId}: missing email`);
+        return;
+      }
+
+      const [firstName = '', ...restName] = displayName.split(' ').filter(Boolean);
+      const lastName = restName.join(' ');
+      const signupDate =
+        typeof after.betaSignupDate?.toDate === 'function'
+          ? after.betaSignupDate.toDate().toISOString()
+          : after.betaSignupDate || new Date().toISOString();
+
+      await axios.post(zapierWebhook, {
+        email,
+        firstName: after.firstName || firstName,
+        lastName: after.lastName || lastName,
+        betaCohort: after.betaCohort || 'Pioneer',
+        signupDate,
+        userId: event.params.userId,
+      });
+
+      await event.data?.after.ref.set(
+        {
+          email: after.email || email,
+          displayName: after.displayName || displayName || null,
+          betaSyncedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      console.log(`Beta tester synced to HubSpot: ${email}`);
+    } catch (error) {
+      console.error('Error syncing beta tester to HubSpot:', error);
+    }
+  }
+);

@@ -6,6 +6,14 @@ import NewLandingPage from './pages/NewLandingPage';
 import PricingPage from './pages/PricingPage';
 import CourseOverviewPage from './pages/CourseOverviewPage';
 import LessonPage from './pages/LessonPage';
+import ResourceLibraryPage from './pages/ResourceLibraryPage';
+import ResourceDetailPage from './pages/ResourceDetailPage';
+import IndustrySolutionsPage from './pages/IndustrySolutionsPage';
+import IndustrySolutionPage from './pages/IndustrySolutionPage';
+import AboutPage from './pages/AboutPage';
+import FAQPage from './pages/FAQPage';
+import ContactPage from './pages/ContactPage';
+import SanDiegoAIPage from './pages/SanDiegoAIPage';
 import PersonalizedRecapPage from './pages/PersonalizedRecapPage';
 import AIChatTutorPage from './pages/AIChatTutorPage';
 import LearningPathwaysPage from './pages/LearningPathwaysPage';
@@ -56,6 +64,14 @@ const App: React.FC = () => {
 
         {/* All other routes use Layout wrapper */}
         <Route element={<Layout />}>
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/faq" element={<FAQPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/library" element={<ResourceLibraryPage />} />
+          <Route path="/library/:slug" element={<ResourceDetailPage />} />
+          <Route path="/solutions" element={<IndustrySolutionsPage />} />
+          <Route path="/solutions/:slug" element={<IndustrySolutionPage />} />
+          <Route path="/ai-workshops-san-diego" element={<SanDiegoAIPage />} />
           <Route path="/courses" element={<CourseOverviewPage />} />
           <Route path="/courses/:courseId/modules/:moduleId/lessons/:lessonId" element={<LessonPage />} />
           <Route path="/welcome" element={<WelcomePage />} />

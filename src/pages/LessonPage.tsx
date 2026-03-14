@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import ReactPlayer from "react-player";
-import { getCourseById, getLessonMarkdownUrl, markLessonAsComplete, getUserProfile, getUserCourseProgress } from "../firebaseService"; // Import Firestore service
+import { getCourseById, getLessonMarkdownUrl, markLessonAsComplete, getUserProfile, getUserCourseProgress, userHasPaidAccess } from "../firebaseService"; // Import Firestore service
 import { Course, Lesson as LessonType, UserCourseProgress } from "../types/course"; // Import types
 import { useAuth } from "../context/AuthContext"; // For gating logic
 // Master access removed for production
@@ -76,9 +76,7 @@ const LessonPage: React.FC = () => {
           canAccess = !!(
             isFreeLesson ||
             isAdmin ||
-            profile?.isSubscribed ||
-            profile?.activeTrial ||
-            (profile as any)?.foundingMember
+            userHasPaidAccess(profile)
           );
           
           const progress = await getUserCourseProgress(currentUser.uid, courseId);

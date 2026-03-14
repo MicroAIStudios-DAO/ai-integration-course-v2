@@ -5,6 +5,7 @@ import SubscribeButton from '../components/payment/SubscribeButton';
 import { trackViewPricing } from '../utils/analytics';
 import useFoundingAccess from '../hooks/useFoundingAccess';
 import FoundingAccessFloatingButton from '../components/founding/FoundingAccessFloatingButton';
+import SEO from '../components/SEO';
 
 /**
  * PricingPage Component
@@ -38,6 +39,18 @@ const PricingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+      <SEO
+        title="Pricing"
+        description="Compare the Explorer, Pro, and Corporate plans for AI Integration Course. Start free, upgrade to the guided build path, or bring the training to your team."
+        url="/pricing"
+        keywords={[
+          'AI Integration Course pricing',
+          'AI automation course cost',
+          'AI course for business owners',
+          'Gemini API course pricing'
+        ]}
+        author="Blaine Casey"
+      />
       {/* Header */}
       <header className="border-b border-slate-700/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -70,8 +83,7 @@ const PricingPage: React.FC = () => {
             Start Building with AI Today
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
-            Join thousands of professionals who are integrating AI into their businesses.
-            Get your first win in 15 minutes with our hands-on curriculum.
+            Choose the path that matches your stage: free lessons for orientation, Pro for a guided deployment sprint, or Corporate for team rollout and support.
           </p>
 
           {/* AUDIT: Risk Reversal - 14-Day Build Guarantee */}
@@ -80,6 +92,24 @@ const PricingPage: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
             <span className="font-semibold">14-Day Build Guarantee</span>
+          </div>
+
+          <div className="mt-10 grid gap-4 md:grid-cols-3 max-w-5xl mx-auto text-left">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Outcome</p>
+              <h2 className="mt-2 text-lg font-semibold text-white">Ship one real workflow</h2>
+              <p className="mt-2 text-sm text-gray-300">The course is designed around getting from lesson to implementation, not endless theory.</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Support</p>
+              <h2 className="mt-2 text-lg font-semibold text-white">AI tutor plus guided project</h2>
+              <p className="mt-2 text-sm text-gray-300">Use the tutor, the build path, and the curriculum together so you can move faster with fewer stalls.</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Risk</p>
+              <h2 className="mt-2 text-lg font-semibold text-white">Guarantee stays specific</h2>
+              <p className="mt-2 text-sm text-gray-300">If you do not build your first working AI agent in 14 days, the course gets refunded.</p>
+            </div>
           </div>
         </div>
 
@@ -109,6 +139,16 @@ const PricingPage: React.FC = () => {
           </div>
         </div>
 
+        <p className="text-center text-sm text-gray-400 mb-12">
+          Annual saves ${proMonthlyPrice * 12 - proAnnualPrice * 12} versus monthly billing.
+        </p>
+
+        <div className="mb-10 text-center">
+          <p className="text-sm text-cyan-300">
+            Already have a founding code or beta invite? Create your account first, then redeem the code during onboarding.
+          </p>
+        </div>
+
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {isFounding && (
@@ -122,6 +162,7 @@ const PricingPage: React.FC = () => {
                 <h3 className="text-xl font-semibold text-white mb-2">Lifetime Access</h3>
                 <p className="text-gray-300">Limited to 15 seats</p>
               </div>
+              <p className="mb-6 text-sm text-emerald-200">Best for invited founding members who want permanent access and priority feedback.</p>
               <div className="mb-6">
                 <span className="text-4xl font-bold text-white">${foundingPrice}</span>
                 <span className="text-gray-300"> one-time</span>
@@ -154,6 +195,7 @@ const PricingPage: React.FC = () => {
               <h3 className="text-xl font-semibold text-white mb-2">Explorer</h3>
               <p className="text-gray-400">Get started with free lessons</p>
             </div>
+            <p className="mb-6 text-sm text-gray-400">Best for evaluating the teaching style, lesson quality, and your first workflow idea before upgrading.</p>
             
             <div className="mb-6">
               <span className="text-4xl font-bold text-white">$0</span>
@@ -198,7 +240,7 @@ const PricingPage: React.FC = () => {
               to="/courses"
               className="block w-full text-center py-3 px-6 rounded-lg border border-slate-600 text-gray-300 hover:border-slate-500 hover:text-white font-medium transition-colors"
             >
-              View Curriculum
+              Start Free Curriculum
             </Link>
           </div>
 
@@ -215,6 +257,7 @@ const PricingPage: React.FC = () => {
               <h3 className="text-xl font-semibold text-white mb-2">Pro</h3>
               <p className="text-gray-400">Everything you need to build with AI</p>
             </div>
+            <p className="mb-6 text-sm text-indigo-100">Best for solo builders, operators, and founders who want one production-ready workflow this month.</p>
             
             <div className="mb-6">
               <span className="text-4xl font-bold text-white">
@@ -292,6 +335,7 @@ const PricingPage: React.FC = () => {
               <h3 className="text-xl font-semibold text-white mb-2">Corporate</h3>
               <p className="text-gray-400">For teams and enterprises</p>
             </div>
+            <p className="mb-6 text-sm text-gray-400">Best for organizations that need team rollout, private workshops, and direct implementation support.</p>
             
             <div className="mb-6">
               <span className="text-4xl font-bold text-white">${corporatePrice}</span>
@@ -435,7 +479,7 @@ const PricingPage: React.FC = () => {
             Ready to Build Your First AI Solution?
           </h2>
           <p className="text-xl text-gray-300 mb-8">
-            Join thousands of professionals who are already building with AI.
+            If you are still evaluating, start free. If you are ready to ship, take the Pro path and move into checkout.
           </p>
           <Link
             to={currentUser ? "/courses" : "/signup"}

@@ -43,13 +43,25 @@ export interface UserProfile {
   displayName?: string;
   email?: string;
   photoURL?: string;
-  // custom fields like subscription status can be added here or in a subcollection
-  // For example, using custom claims is also an option for subscription status
-  isSubscribed?: boolean; // Simplified for now, will be more detailed with Stripe
+  premium?: boolean;
+  foundingMember?: boolean;
+  subscriptionStatus?:
+    | 'active'
+    | 'trialing'
+    | 'past_due'
+    | 'canceled'
+    | 'cancelled'
+    | 'unpaid'
+    | 'incomplete'
+    | 'incomplete_expired'
+    | 'none';
+  trialEndsAt?: Date | { toDate?: () => Date } | string | null;
+  trialEndDate?: Date | { toDate?: () => Date } | string | null;
+  isSubscribed?: boolean;
   activeTrial?: boolean;
-  trialEndDate?: Date; // Or Firestore Timestamp
+  isBetaTester?: boolean;
+  betaCohort?: string;
   // Admin role fields for testing and administration
   isAdmin?: boolean; // Simple admin flag
   role?: 'user' | 'admin' | 'moderator'; // Role-based access control
 }
-

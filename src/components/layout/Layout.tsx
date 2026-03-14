@@ -96,6 +96,51 @@ const Header: React.FC = () => {
                 >
                   Courses
                 </NavLink>
+                <NavLink
+                  to="/library"
+                  onClick={() => setMenuOpen(false)}
+                  className={({ isActive }) =>
+                    `block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100 ${isActive ? 'text-blue-700' : ''}`
+                  }
+                >
+                  Library
+                </NavLink>
+                <NavLink
+                  to="/solutions"
+                  onClick={() => setMenuOpen(false)}
+                  className={({ isActive }) =>
+                    `block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100 ${isActive ? 'text-blue-700' : ''}`
+                  }
+                >
+                  Industries
+                </NavLink>
+                <NavLink
+                  to="/about"
+                  onClick={() => setMenuOpen(false)}
+                  className={({ isActive }) =>
+                    `block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100 ${isActive ? 'text-blue-700' : ''}`
+                  }
+                >
+                  About
+                </NavLink>
+                <NavLink
+                  to="/faq"
+                  onClick={() => setMenuOpen(false)}
+                  className={({ isActive }) =>
+                    `block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100 ${isActive ? 'text-blue-700' : ''}`
+                  }
+                >
+                  FAQ
+                </NavLink>
+                <NavLink
+                  to="/contact"
+                  onClick={() => setMenuOpen(false)}
+                  className={({ isActive }) =>
+                    `block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100 ${isActive ? 'text-blue-700' : ''}`
+                  }
+                >
+                  Contact
+                </NavLink>
                 <div className="relative group">
                   <span className="block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100 cursor-default">
                     Modules ▸
@@ -194,6 +239,41 @@ const Layout: React.FC = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm">© 2025 MicroAI Studios™ — All rights reserved.</p>
             <div className="flex gap-6 text-sm">
+              <NavLink
+                to="/library"
+                className="hover:text-blue-300 transition-colors underline"
+                aria-label="View the AI integration resource library"
+              >
+                Library
+              </NavLink>
+              <NavLink
+                to="/solutions"
+                className="hover:text-blue-300 transition-colors underline"
+                aria-label="View AI integration industry pages"
+              >
+                Industries
+              </NavLink>
+              <NavLink
+                to="/about"
+                className="hover:text-blue-300 transition-colors underline"
+                aria-label="View the instructor bio page"
+              >
+                About
+              </NavLink>
+              <NavLink
+                to="/faq"
+                className="hover:text-blue-300 transition-colors underline"
+                aria-label="View frequently asked questions"
+              >
+                FAQ
+              </NavLink>
+              <NavLink
+                to="/contact"
+                className="hover:text-blue-300 transition-colors underline"
+                aria-label="View contact information"
+              >
+                Contact
+              </NavLink>
               <NavLink 
                 to="/terms" 
                 className="hover:text-blue-300 transition-colors underline"

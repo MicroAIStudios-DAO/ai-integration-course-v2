@@ -34,6 +34,27 @@ interface CourseSchemaProps {
     description?: string;
     duration?: string;
   }>;
+  faqItems?: Array<{
+    question: string;
+    answer: string;
+  }>;
+  includeFaqSchema?: boolean;
+  videoObject?: {
+    name: string;
+    description: string;
+    url: string;
+    embedUrl: string;
+    thumbnailUrl: string;
+    uploadDate: string;
+    duration?: string;
+    clips?: Array<{
+      name: string;
+      startOffset: number;
+      endOffset?: number;
+      url: string;
+    }>;
+  };
+  includeVideoSchema?: boolean;
 }
 
 const CourseSchema: React.FC<CourseSchemaProps> = ({
@@ -42,12 +63,16 @@ const CourseSchema: React.FC<CourseSchemaProps> = ({
   providerName = 'MicroAI Studios',
   providerUrl = 'https://aiintegrationcourse.com',
   courseUrl = 'https://aiintegrationcourse.com/courses',
-  imageUrl = 'https://aiintegrationcourse.com/assets/hero_background_neural_network.png',
-  price = 49,
+  imageUrl = 'https://aiintegrationcourse.com/assets/hero_background_neural_network.png/hero_background_neural_network.png',
+  price,
   currency = 'USD',
   duration = 'P4W', // 4 weeks in ISO 8601 duration format
   skillLevel = 'Beginner',
   language = 'en',
+  faqItems = [],
+  includeFaqSchema = false,
+  videoObject,
+  includeVideoSchema = false,
   modules = [
     { name: 'Build Your First Bot', description: 'Create a customer service email automation bot in 14 days', duration: 'P2W' },
     { name: 'AI Fundamentals', description: 'Understand core AI concepts and how to apply them in business', duration: 'P1W' },
@@ -79,17 +104,18 @@ const CourseSchema: React.FC<CourseSchemaProps> = ({
       ]
     },
     
-    // Pricing (Offer)
-    offers: {
-      '@type': 'Offer',
-      price: price,
-      priceCurrency: currency,
-      availability: 'https://schema.org/InStock',
-      validFrom: '2024-01-01',
-      url: `${providerUrl}/pricing`,
-      category: 'Subscription',
-      priceValidUntil: '2026-12-31',
-    },
+    ...(typeof price === 'number' ? {
+      offers: {
+        '@type': 'Offer',
+        price: price,
+        priceCurrency: currency,
+        availability: 'https://schema.org/InStock',
+        validFrom: '2024-01-01',
+        url: `${providerUrl}/pricing`,
+        category: 'Subscription',
+        priceValidUntil: '2026-12-31',
+      }
+    } : {}),
     
     // Course modules as hasCourseInstance
     hasCourseInstance: modules.map((module, index) => ({
@@ -100,19 +126,10 @@ const CourseSchema: React.FC<CourseSchemaProps> = ({
       courseWorkload: module.duration,
       instructor: {
         '@type': 'Person',
-        name: 'AI Integration Course Team',
+        name: 'Blaine Casey',
       }
     })),
-    
-    // Aggregate rating (placeholder - update with real data)
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.8',
-      reviewCount: '127',
-      bestRating: '5',
-      worstRating: '1'
-    },
-    
+
     // What students will learn
     teaches: [
       'Build AI-powered automation bots',
@@ -155,45 +172,52 @@ const CourseSchema: React.FC<CourseSchemaProps> = ({
     }))
   };
 
-  // FAQ schema for common questions
-  const faqSchema = {
+  const faqSchema = includeFaqSchema && faqItems.length > 0 ? {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: [
-      {
-        '@type': 'Question',
-        name: 'How long does it take to complete the AI Integration Course?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'The course is designed to be completed in 4 weeks, with the first bot project achievable in just 14 days. You can learn at your own pace with lifetime access.'
-        }
-      },
-      {
-        '@type': 'Question',
-        name: 'Do I need programming experience to take this course?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'No! The AI Integration Course is designed for beginners. We use no-code tools like Zapier and provide step-by-step guidance for any technical components.'
-        }
-      },
-      {
-        '@type': 'Question',
-        name: 'What is the 14-Day Build-Your-First-Bot Guarantee?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'If you follow our curriculum and don\'t have a working bot within 14 days, we\'ll give you a full refund. No questions asked.'
-        }
-      },
-      {
-        '@type': 'Question',
-        name: 'What kind of bots can I build with this course?',
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: 'You\'ll learn to build customer service email bots, workflow automation systems, data processing pipelines, and more. The skills transfer to any AI integration project.'
-        }
+    mainEntity: faqItems.map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.answer
       }
-    ]
-  };
+    }))
+    } : null;
+
+  const videoSchema = includeVideoSchema && videoObject ? {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: videoObject.name,
+    description: videoObject.description,
+    thumbnailUrl: [videoObject.thumbnailUrl],
+    uploadDate: videoObject.uploadDate,
+    duration: videoObject.duration || 'PT2M',
+    contentUrl: videoObject.url,
+    embedUrl: videoObject.embedUrl,
+    publisher: {
+      '@type': 'Organization',
+      name: providerName,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${providerUrl}/logo192.png`
+      }
+    },
+    potentialAction: {
+      '@type': 'SeekToAction',
+      target: `${videoObject.url}${videoObject.url.includes('?') ? '&' : '?'}t={seek_to_second_number}`,
+      'startOffset-input': 'required name=seek_to_second_number'
+    },
+    ...(videoObject.clips && videoObject.clips.length > 0 ? {
+      hasPart: videoObject.clips.map((clip) => ({
+        '@type': 'Clip',
+        name: clip.name,
+        startOffset: clip.startOffset,
+        ...(typeof clip.endOffset === 'number' ? { endOffset: clip.endOffset } : {}),
+        url: clip.url
+      }))
+    } : {})
+  } : null;
 
   // Organization schema
   const organizationSchema = {
@@ -228,9 +252,18 @@ const CourseSchema: React.FC<CourseSchemaProps> = ({
       </script>
       
       {/* FAQ Schema */}
-      <script type="application/ld+json">
-        {JSON.stringify(faqSchema)}
-      </script>
+      {faqSchema && (
+        <script type="application/ld+json">
+          {JSON.stringify(faqSchema)}
+        </script>
+      )}
+
+      {/* VideoObject Schema */}
+      {videoSchema && (
+        <script type="application/ld+json">
+          {JSON.stringify(videoSchema)}
+        </script>
+      )}
       
       {/* Organization Schema */}
       <script type="application/ld+json">

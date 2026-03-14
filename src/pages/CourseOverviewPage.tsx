@@ -6,24 +6,39 @@ import { useAuth } from '../context/AuthContext';
 import CourseSchema from '../components/seo/CourseSchema';
 
 const UNTITLED_TITLE_PATTERN = /^untitled lesson$/i;
-const LESSON_PREFIX_PATTERN = /^lesson\s+\d+(\.\d+)?\s*:/i;
+const LESSON_PREFIX_PATTERN = /^lesson\s+\d+(\.\d+)?\s*:\s*/i;
+const LESSON_NUMBER_PATTERN = /^lesson\s+(\d+(?:\.\d+)?)\s*:/i;
 
-const getLessonTitle = (lesson: Lesson, fallbackOrder: number): string => {
-  const rawTitle = typeof lesson.title === 'string' ? lesson.title.trim() : '';
-  if (!rawTitle || UNTITLED_TITLE_PATTERN.test(rawTitle)) {
-    return '';
-  }
+const stripLessonPrefix = (title: string): string => title.replace(LESSON_PREFIX_PATTERN, '').trim();
 
-  if (LESSON_PREFIX_PATTERN.test(rawTitle)) {
-    return rawTitle;
-  }
-
-  const order = Number.isFinite(lesson.order) ? lesson.order : fallbackOrder;
-  return `Lesson ${order}: ${rawTitle}`;
+const hasSubstance = (lesson: Lesson): boolean => {
+  const hasDescription = typeof lesson.description === 'string' && lesson.description.trim().length > 0;
+  const hasContent = typeof lesson.content === 'string' && lesson.content.trim().length > 0;
+  const hasVideo = typeof lesson.videoUrl === 'string' && lesson.videoUrl.trim().length > 0;
+  return hasDescription || hasContent || hasVideo;
 };
 
-const hasYoutubeVideo = (lesson: Lesson): boolean => {
-  return typeof lesson.videoUrl === 'string' && lesson.videoUrl.trim().length > 0;
+const isPlaceholderOnlyLesson = (lesson: Lesson): boolean => {
+  const rawTitle = typeof lesson.title === 'string' ? lesson.title.trim() : '';
+  const titleWithoutPrefix = stripLessonPrefix(rawTitle);
+  const isUntitled = !titleWithoutPrefix || UNTITLED_TITLE_PATTERN.test(titleWithoutPrefix);
+  return isUntitled && !hasSubstance(lesson);
+};
+
+const resolveLessonNumber = (lesson: Lesson, fallbackNumber: number): string => {
+  const rawTitle = typeof lesson.title === 'string' ? lesson.title.trim() : '';
+  const prefixed = rawTitle.match(LESSON_NUMBER_PATTERN);
+  if (prefixed?.[1]) return prefixed[1];
+  if (Number.isFinite(lesson.order) && lesson.order > 0) return String(lesson.order);
+  return String(fallbackNumber);
+};
+
+const toDisplayTitle = (lesson: Lesson, lessonNumber: string): string => {
+  const rawTitle = typeof lesson.title === 'string' ? lesson.title.trim() : '';
+  const titleWithoutPrefix = stripLessonPrefix(rawTitle);
+  const isUntitled = !titleWithoutPrefix || UNTITLED_TITLE_PATTERN.test(titleWithoutPrefix);
+  const normalizedTitle = isUntitled ? 'Title Coming Soon' : titleWithoutPrefix;
+  return `Lesson ${lessonNumber}: ${normalizedTitle}`;
 };
 
 type DisplayModule = Module & {
@@ -41,16 +56,22 @@ const CourseOverviewPage: React.FC = () => {
   const modulesWithDisplayLessons = useMemo<DisplayModule[]>(() => {
     if (!course) return [];
 
+    let fallbackNumber = 1;
+
     return [...course.modules]
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
       .map((module) => {
         const sortedLessons = [...module.lessons].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
         const displayLessons = sortedLessons
-          .map((lesson, index) => ({
-            ...lesson,
-            displayTitle: getLessonTitle(lesson, index + 1)
-          }))
-          .filter((lesson) => lesson.displayTitle.length > 0);
+          .filter((lesson) => !isPlaceholderOnlyLesson(lesson))
+          .map((lesson) => {
+            const lessonNumber = resolveLessonNumber(lesson, fallbackNumber);
+            fallbackNumber += 1;
+            return {
+              ...lesson,
+              displayTitle: toDisplayTitle(lesson, lessonNumber)
+            };
+          });
 
         return {
           ...module,
@@ -219,7 +240,6 @@ const CourseOverviewPage: React.FC = () => {
                 <ul className="space-y-3">
                   {module.displayLessons.map((lesson) => {
                     const isFreeLesson = lesson.tier === 'free' || lesson.isFree === true;
-                    const hasVideo = hasYoutubeVideo(lesson);
                     
                     return (
                     <li 
@@ -255,11 +275,6 @@ const CourseOverviewPage: React.FC = () => {
                         )}
                         {(!isFreeLesson && (!currentUser)) && (
                           <span className="text-xs bg-amber-400/20 text-amber-200 px-2 py-1 rounded-full font-sans">Premium</span>
-                        )}
-                        {!hasVideo && (
-                          <span className="text-xs bg-red-400/20 text-red-200 px-2 py-1 rounded-full font-sans">
-                            YouTube Placeholder
-                          </span>
                         )}
                         <span className="text-slate-300 text-sm font-sans">
                           {(!isFreeLesson && (!currentUser)) ? 'Login to access' : 'View Lesson'}
