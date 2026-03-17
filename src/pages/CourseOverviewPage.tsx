@@ -52,6 +52,19 @@ const CourseOverviewPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [userProgress, setUserProgress] = useState<UserCourseProgress | null>(null);
+  // Accordion: track which modules are expanded (all open by default)
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
+  const toggleModule = (moduleId: string) => {
+    setExpandedModules((prev) => {
+      const next = new Set(prev);
+      if (next.has(moduleId)) {
+        next.delete(moduleId);
+      } else {
+        next.add(moduleId);
+      }
+      return next;
+    });
+  };
 
   const modulesWithDisplayLessons = useMemo<DisplayModule[]>(() => {
     if (!course) return [];
@@ -124,6 +137,13 @@ const CourseOverviewPage: React.FC = () => {
 
     fetchCourseData();
   }, [currentUser]);
+
+  // When modules load, expand all by default
+  React.useEffect(() => {
+    if (modulesWithDisplayLessons.length > 0) {
+      setExpandedModules(new Set(modulesWithDisplayLessons.map((m) => m.id)));
+    }
+  }, [modulesWithDisplayLessons.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Function to check if a lesson is completed
   const isLessonCompleted = (lessonId: string): boolean => {
@@ -250,15 +270,41 @@ const CourseOverviewPage: React.FC = () => {
               </select>
             </div>
 
-            {modulesWithDisplayLessons.map((module: DisplayModule) => (
-              <div key={module.id} id={`module-${module.id}`} className="mb-10 w-[98%] mx-auto p-6 md:p-8 border border-white/10 rounded-2xl bg-white/5 shadow-xl">
-                <div className="flex items-center justify-between gap-4 mb-5">
-                  <h2 className="text-2xl font-headings font-semibold text-white">{module.title}</h2>
-                  <span className="text-xs uppercase tracking-[0.2em] text-slate-300 font-headings">
-                    Module {module.order}
-                  </span>
-                </div>
-                <p className="text-slate-200 mb-6 text-sm font-sans">{module.description}</p>
+            {modulesWithDisplayLessons.map((module: DisplayModule) => {
+              const isExpanded = expandedModules.has(module.id);
+              return (
+              <div key={module.id} id={`module-${module.id}`} className="mb-6 w-[98%] mx-auto border border-white/10 rounded-2xl bg-white/5 shadow-xl overflow-hidden">
+                {/* Accordion Header */}
+                <button
+                  type="button"
+                  onClick={() => toggleModule(module.id)}
+                  className="w-full flex items-center justify-between gap-4 p-6 md:p-8 text-left hover:bg-white/5 transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <h2 className="text-xl font-headings font-semibold text-white">{module.title}</h2>
+                      <span className="text-xs uppercase tracking-[0.2em] text-slate-400 font-headings flex-shrink-0">
+                        Module {module.order}
+                      </span>
+                      <span className="text-xs text-slate-400 flex-shrink-0">
+                        {module.displayLessons.length} lesson{module.displayLessons.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    {module.description && (
+                      <p className="text-slate-400 text-sm mt-1 font-sans truncate">{module.description}</p>
+                    )}
+                  </div>
+                  <svg
+                    className={`w-5 h-5 text-slate-400 flex-shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Accordion Body */}
+                {isExpanded && (
+                <div className="px-6 md:px-8 pb-6 md:pb-8">
                 <ul className="space-y-3">
                   {module.displayLessons.map((lesson) => {
                     const isFreeLesson = lesson.tier === 'free' || lesson.isFree === true;
@@ -309,8 +355,11 @@ const CourseOverviewPage: React.FC = () => {
                   );
                   })}
                 </ul>
+                </div>
+                )}{/* end accordion body */}
               </div>
-            ))}
+              );
+            })}
           </div>
           {error && course && (
             <div className="mt-6 text-center text-amber-200 bg-amber-500/10 border border-amber-400/20 p-4 rounded-xl">
