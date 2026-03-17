@@ -144,19 +144,19 @@ const HomePage: React.FC = () => {
           <AnimatedAvatar size={120} />
         </div>
 
-        {/* Main Headline */}
+        {/* Main Headline — Outcome-focused H1 */}
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 max-w-5xl">
           <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Build your first working AI Agent in 14 days
+            Cut 10+ Hours of Busywork Weekly With Your First AI Automation — Built in 14 Days
           </span>
         </h1>
 
         {/* Subheadline */}
         <p className="text-lg md:text-xl lg:text-2xl max-w-3xl text-slate-300 mb-4 leading-relaxed">
-          From overwhelm to action. Stop learning about AI—start building with it.
+          From overwhelm to action. Stop watching AI tutorials — ship a working Customer Service Bot, automate your inbox, and reclaim your calendar before the end of Week 2.
         </p>
         <p className="text-md md:text-lg max-w-2xl text-slate-400 mb-8">
-          Get your first win in 15 minutes. No fluff, no theory—just practical AI skills that create immediate value.
+          Practical build-first training for founders, operators, and developers. First deployable result in 15 minutes.
         </p>
 
         {/* Premium Hero Visual */}
@@ -219,7 +219,7 @@ const HomePage: React.FC = () => {
         </div>
 
         {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row gap-4 mb-4">
           <a
             href={navigationLinks.signup}
             className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white px-8 py-4 rounded-xl text-lg font-semibold shadow-2xl transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300"
@@ -234,10 +234,25 @@ const HomePage: React.FC = () => {
           </a>
         </div>
 
-        {/* Guarantee Explanation */}
-        <p className="text-sm text-slate-400 max-w-xl text-center mb-12">
-          Build a working Customer Service Email Bot in 14 days or get a full refund. No questions asked.
-        </p>
+        {/* Trust Badges Row */}
+        <div className="flex flex-wrap items-center justify-center gap-4 mb-6 mt-2">
+          <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-4 py-2 text-emerald-300 text-sm font-semibold">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+            14-Day Money-Back Guarantee
+          </div>
+          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/20 rounded-full px-4 py-2 text-slate-300 text-sm">
+            <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+            Secure Checkout via Stripe
+          </div>
+          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/20 rounded-full px-4 py-2 text-slate-300 text-sm">
+            <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+            Trusted by 1,200+ Builders
+          </div>
+          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/20 rounded-full px-4 py-2 text-slate-300 text-sm">
+            <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            Cancel Anytime
+          </div>
+        </div>
 
         {/* Email Capture */}
         <div className="w-full max-w-md bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
@@ -453,12 +468,7 @@ const HomePage: React.FC = () => {
         </section>
       </div>
 
-      {/* Floating AI Element */}
-      <div className="absolute bottom-10 right-10 w-24 h-24 md:w-32 md:h-32 animate-bounce">
-        <div className="w-full h-full rounded-full bg-gradient-to-tr from-cyan-400 via-purple-500 to-pink-500 opacity-80 flex items-center justify-center text-white font-bold text-lg md:text-xl shadow-2xl">
-          AI
-        </div>
-      </div>
+      {/* Floating AI Element — removed animate-bounce for LCP/mobile performance */}
 
       {/* Footer */}
       <div className="relative z-10 text-center py-8 text-slate-400 text-sm">

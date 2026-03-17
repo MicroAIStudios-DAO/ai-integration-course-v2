@@ -179,7 +179,29 @@ const CourseOverviewPage: React.FC = () => {
           <div className="absolute -top-32 left-10 h-80 w-80 rounded-full bg-cyan-500/20 blur-3xl" />
           <div className="absolute top-20 right-0 h-96 w-96 rounded-full bg-indigo-500/20 blur-3xl" />
         </div>
-        <div className="relative max-w-6xl mx-auto px-4 py-14">
+        <div className="relative max-w-7xl mx-auto px-4 py-14 flex gap-8">
+
+          {/* Sticky Table of Contents sidebar */}
+          {modulesWithDisplayLessons.length > 0 && (
+            <aside className="hidden lg:block w-64 flex-shrink-0">
+              <div className="sticky top-6 rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300 mb-4">Table of Contents</p>
+                <nav className="space-y-1">
+                  {modulesWithDisplayLessons.map((module) => (
+                    <a
+                      key={module.id}
+                      href={`#module-${module.id}`}
+                      className="block text-sm text-slate-300 hover:text-cyan-300 transition-colors py-1 pl-2 border-l-2 border-transparent hover:border-cyan-400 truncate"
+                    >
+                      {module.title}
+                    </a>
+                  ))}
+                </nav>
+              </div>
+            </aside>
+          )}
+
+          <div className="flex-1 min-w-0">
           <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 md:p-12 shadow-2xl">
             <div className="mb-10">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/10 text-cyan-200 px-4 py-1 text-xs font-headings font-semibold uppercase tracking-[0.2em]">
@@ -229,7 +251,7 @@ const CourseOverviewPage: React.FC = () => {
             </div>
 
             {modulesWithDisplayLessons.map((module: DisplayModule) => (
-              <div key={module.id} className="mb-10 w-[98%] mx-auto p-6 md:p-8 border border-white/10 rounded-2xl bg-white/5 shadow-xl">
+              <div key={module.id} id={`module-${module.id}`} className="mb-10 w-[98%] mx-auto p-6 md:p-8 border border-white/10 rounded-2xl bg-white/5 shadow-xl">
                 <div className="flex items-center justify-between gap-4 mb-5">
                   <h2 className="text-2xl font-headings font-semibold text-white">{module.title}</h2>
                   <span className="text-xs uppercase tracking-[0.2em] text-slate-300 font-headings">
@@ -295,6 +317,7 @@ const CourseOverviewPage: React.FC = () => {
               {error}
             </div>
           )}
+          </div>{/* end flex-1 main content */}
         </div>
       </div>
     </div>
