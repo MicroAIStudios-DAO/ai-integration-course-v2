@@ -3,13 +3,14 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import ReactPlayer from "react-player";
 import remarkGfm from "remark-gfm";
-import { getCourseById, getLessonMarkdownUrl, markLessonAsComplete, getUserProfile, getUserCourseProgress, isFoundersLesson, isFreeLesson, userCanAccessLesson } from "../firebaseService"; // Import Firestore service
+import { getCourseById, getLessonMarkdownUrl, getSecureLessonContent, markLessonAsComplete, getUserProfile, getUserCourseProgress, isFoundersLesson, isFreeLesson, userCanAccessLesson } from "../firebaseService"; // Import Firestore service
 import { Course, Lesson as LessonType, UserCourseProgress } from "../types/course"; // Import types
 import { useAuth } from "../context/AuthContext"; // For gating logic
 // Master access removed for production
 import AnimatedAvatar from "../components/layout/AnimatedAvatar"; // Import AnimatedAvatar
 import AITutor from "../components/AITutor";
 import CourseSchema from "../components/seo/CourseSchema";
+import SEO from "../components/SEO";
 import "../styles/lesson-content.css"; // Import textbook-style CSS
 import { trackLessonStart, trackLessonComplete } from "../utils/analytics";
 
@@ -84,12 +85,20 @@ const LessonPage: React.FC = () => {
           // Try to get lesson content from multiple sources
           let contentToDisplay = "";
           
-          // Priority 1: Direct content field in Firestore
-          if (currentLesson.content) {
+          // Priority 1: Gated lessonContent document for protected lessons
+          if (!isFreeLesson(currentLesson)) {
+            try {
+              contentToDisplay = await getSecureLessonContent(courseId, moduleId, lessonId) || "";
+            } catch (secureContentError) {
+              console.warn("Could not fetch gated lesson content:", secureContentError);
+            }
+          }
+          // Priority 2: Direct content field in Firestore
+          if (!contentToDisplay && currentLesson.content) {
             contentToDisplay = currentLesson.content;
           }
-          // Priority 2: Content from Firebase Storage
-          else if (currentLesson.storagePath) {
+          // Priority 3: Content from Firebase Storage
+          else if (!contentToDisplay && currentLesson.storagePath) {
             try {
               const mdUrl = await getLessonMarkdownUrl(currentLesson.storagePath);
               const response = await fetch(mdUrl);
@@ -101,7 +110,7 @@ const LessonPage: React.FC = () => {
             }
           }
           
-          // Priority 3: Fallback content if no content is available
+          // Priority 4: Fallback content if no content is available
           if (!contentToDisplay) {
             contentToDisplay = `# ${currentLesson.title}
 
@@ -218,17 +227,59 @@ The detailed content for this lesson is being prepared. Please check back soon o
     );
   }
 
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://aiintegrationcourse.com";
+  const pagePath =
+    typeof window !== "undefined"
+      ? window.location.pathname
+      : `/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`;
+  const coursePageUrl = `${origin}/courses`;
+  const lessonPageUrl = `${origin}${pagePath}`;
+  const lessonDescription = lesson?.description || course?.description || "Lesson content inside the AI Integration Course.";
+
   return (
     <div className="textbook-page">
+      <SEO
+        title={lesson ? `${lesson.title} Lesson` : "Course Lesson"}
+        description={lessonDescription}
+        url={pagePath}
+        type="course"
+        keywords={[
+          'AI course lesson',
+          'AI automation tutorial',
+          'AI integration lesson',
+          'AI workflow training',
+          lesson?.title || 'AI lesson'
+        ]}
+        author="Blaine Casey"
+        course={{
+          name: course?.title || 'AI Integration Course',
+          description: course?.description || lessonDescription,
+          provider: 'MicroAI Studios',
+          duration: 'P4W',
+          price: '49',
+          currency: 'USD'
+        }}
+      />
       {course && (
         <CourseSchema
           courseName={course.title}
           courseDescription={course.description}
-          courseUrl={typeof window !== "undefined" ? `${window.location.origin}/courses/${courseId}` : undefined}
-          providerUrl={typeof window !== "undefined" ? window.location.origin : undefined}
+          courseUrl={coursePageUrl}
+          pageUrl={lessonPageUrl}
+          pageTitle={lesson?.title || course.title}
+          pageDescription={lessonDescription}
+          providerUrl={origin}
+          price={49}
+          isAccessibleForFree={lesson ? isFreeLesson(lesson) : false}
+          breadcrumbItems={[
+            { name: 'Home', item: origin },
+            { name: 'Courses', item: coursePageUrl },
+            { name: lesson?.title || 'Lesson', item: lessonPageUrl }
+          ]}
           modules={course.modules.map((module) => ({
             name: module.title,
-            description: module.description
+            description: module.description,
+            url: `${coursePageUrl}#module-${module.id}`
           }))}
         />
       )}

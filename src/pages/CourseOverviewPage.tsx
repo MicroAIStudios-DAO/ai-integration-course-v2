@@ -4,6 +4,7 @@ import { getCourses, getUserCourseProgress, getUserProfile, isFoundersLesson, is
 import { Course, Module, Lesson, UserCourseProgress, UserProfile } from '../types/course';
 import { useAuth } from '../context/AuthContext';
 import CourseSchema from '../components/seo/CourseSchema';
+import SEO from '../components/SEO';
 
 const UNTITLED_TITLE_PATTERN = /^untitled lesson$/i;
 const LESSON_PREFIX_PATTERN = /^lesson\s+\d+(\.\d+)?\s*:\s*/i;
@@ -193,17 +194,51 @@ const CourseOverviewPage: React.FC = () => {
     );
   }
 
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://aiintegrationcourse.com';
+  const coursePageUrl = `${origin}/courses`;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100">
+      <SEO
+        title={course.title}
+        description={course.description}
+        url="/courses"
+        type="course"
+        keywords={[
+          'AI course curriculum',
+          'AI automation lessons',
+          'AI integration training',
+          'AI workflow course',
+          'online AI course'
+        ]}
+        author="Blaine Casey"
+        course={{
+          name: course.title,
+          description: course.description,
+          provider: 'MicroAI Studios',
+          duration: 'P4W',
+          price: '49',
+          currency: 'USD'
+        }}
+      />
       {course && (
         <CourseSchema
           courseName={course.title}
           courseDescription={course.description}
-          courseUrl={typeof window !== 'undefined' ? `${window.location.origin}/courses/${course.id}` : undefined}
-          providerUrl={typeof window !== 'undefined' ? window.location.origin : undefined}
+          courseUrl={coursePageUrl}
+          pageUrl={coursePageUrl}
+          pageTitle={course.title}
+          pageDescription={course.description}
+          providerUrl={origin}
+          price={49}
+          breadcrumbItems={[
+            { name: 'Home', item: origin },
+            { name: 'Courses', item: coursePageUrl },
+          ]}
           modules={course.modules.map((module) => ({
             name: module.title,
-            description: module.description
+            description: module.description,
+            url: `${coursePageUrl}#module-${module.id}`
           }))}
         />
       )}

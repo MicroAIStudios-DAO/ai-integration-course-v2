@@ -5,6 +5,9 @@ if (!admin.apps.length) {
   admin.initializeApp();
 }
 
+const buildLessonContentId = (courseId: string, moduleId: string, lessonId: string): string =>
+  `${courseId}__${moduleId}__${lessonId}`;
+
 export const addLessonToFirestoreV2 = onCall(
   { region: 'us-central1' },
   async (request) => {
@@ -15,34 +18,51 @@ export const addLessonToFirestoreV2 = onCall(
     }
 
     try {
+      const lessonId = lesson.id || `lesson_${Date.now()}`;
       const lessonRef = admin.firestore()
         .collection('courses')
         .doc(courseId)
         .collection('modules')
         .doc(moduleId)
         .collection('lessons')
-        .doc(lesson.id || `lesson_${Date.now()}`);
+        .doc(lessonId);
+      const contentRef = admin.firestore().collection('lessonContent').doc(buildLessonContentId(courseId, moduleId, lessonId));
+      const isProtectedLesson = lesson.isFree !== true && lesson.tier !== 'free';
+      const batch = admin.firestore().batch();
 
-      await lessonRef.set({
+      batch.set(lessonRef, {
         title: lesson.title,
         order: lesson.order,
         isFree: lesson.isFree || false,
         tier: lesson.tier || 'premium',
-        content: lesson.content || null,
         storagePath: lesson.storagePath || null,
         videoUrl: lesson.videoUrl || null,
         durationMinutes: lesson.durationMinutes || 0,
         description: lesson.description || null,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+        ...(isProtectedLesson ? {} : { content: lesson.content || null }),
+      }, { merge: true });
 
-      console.log(`Added lesson ${lessonRef.id} to ${courseId}/${moduleId}`);
+      if (isProtectedLesson && lesson.content) {
+        batch.set(contentRef, {
+          courseId,
+          moduleId,
+          lessonId,
+          tier: lesson.tier || 'premium',
+          content: lesson.content,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+      }
+
+      await batch.commit();
+
+      console.log(`Added lesson ${lessonId} to ${courseId}/${moduleId}`);
 
       return {
         success: true,
-        lessonId: lessonRef.id,
-        path: `courses/${courseId}/modules/${moduleId}/lessons/${lessonRef.id}`,
+        lessonId,
+        path: `courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`,
       };
     } catch (err: any) {
       console.error('Error adding lesson:', err);

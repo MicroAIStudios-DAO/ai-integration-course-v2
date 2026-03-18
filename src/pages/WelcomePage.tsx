@@ -17,11 +17,11 @@ const activeScripts = [
     accent: "cyan",
   },
   {
-    title: "Informed Search Agent (BETA)",
+    title: "The Informed Architect",
     description:
       "Real-time 2026 web-access module. Ground your AI in today’s facts.",
     cta: "Access Module 2 Build",
-    href: "/courses/course_01_id/modules/module_02_id/lessons/lesson_mod2_project",
+    href: "/courses/course_01_id/modules/module_02_id/lessons/lesson_founders_02_informed_architect",
     accent: "emerald",
   },
 ];

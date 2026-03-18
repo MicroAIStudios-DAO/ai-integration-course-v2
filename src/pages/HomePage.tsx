@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import AnimatedAvatar from '../components/layout/AnimatedAvatar';
 import { appConfig } from '../config/environment';
 import SEO from '../components/SEO';
@@ -6,26 +6,17 @@ import CourseSchema from '../components/seo/CourseSchema';
 import FeedbackDrawer from '../components/feedback/FeedbackDrawer';
 import FoundingAccessFloatingButton from '../components/founding/FoundingAccessFloatingButton';
 import AIReadinessQuiz from '../components/home/AIReadinessQuiz';
+import RoiGuaranteeBadge from '../components/conversion/RoiGuaranteeBadge';
+import LeadMagnetForm from '../components/lead-magnet/LeadMagnetForm';
+import ExitIntentLeadMagnet from '../components/lead-magnet/ExitIntentLeadMagnet';
+import { topWorkflowsLeadMagnet } from '../content/leadMagnets';
 import {
   homepageFaqItems,
   homepageVideoObject,
   industryPages,
   resourceLibraryItems
 } from '../content/marketingPages';
-
-type SubmissionState = 'idle' | 'loading' | 'success' | 'error';
-
-const SUBSCRIPTION_DELAY_MS = 1200;
-const SUBSCRIPTION_SUCCESS_MESSAGE =
-  "Thank you for subscribing! Check your email for your free AI strategy guide.";
-const SUBSCRIPTION_ERROR_MESSAGE =
-  'Something went wrong while processing your request. Please try again in a moment.';
 const GITHUB_REPO_URL = 'https://github.com/MicroAIStudios-DAO/ai-integration-course-v2';
-
-const wait = (duration: number) =>
-  new Promise<void>(resolve => {
-    setTimeout(resolve, duration);
-  });
 
 const buildExternalUrl = (baseUrl: string, path: string): string => {
   try {
@@ -44,10 +35,6 @@ const buildExternalUrl = (baseUrl: string, path: string): string => {
 };
 
 const HomePage: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [submissionState, setSubmissionState] = useState<SubmissionState>('idle');
-  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
-
   const { baseUrl } = appConfig;
   const navigationLinks = useMemo(() => {
     return {
@@ -64,26 +51,6 @@ const HomePage: React.FC = () => {
       signup: buildExternalUrl(baseUrl, '/signup')
     };
   }, [baseUrl]);
-
-  const isSubmitting = submissionState === 'loading';
-  const isSuccess = submissionState === 'success';
-
-  const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setSubmissionState('loading');
-    setFeedbackMessage(null);
-
-    try {
-      await wait(SUBSCRIPTION_DELAY_MS);
-      setSubmissionState('success');
-      setEmail('');
-      setFeedbackMessage(SUBSCRIPTION_SUCCESS_MESSAGE);
-    } catch (error) {
-      console.error('Newsletter subscription failed', error);
-      setSubmissionState('error');
-      setFeedbackMessage(SUBSCRIPTION_ERROR_MESSAGE);
-    }
-  };
 
   return (
     <>
@@ -147,13 +114,13 @@ const HomePage: React.FC = () => {
         {/* Main Headline — Outcome-focused H1 */}
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 max-w-5xl">
           <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Cut 10+ Hours of Busywork Weekly With Your First AI Automation — Built in 14 Days
+            Recover 10+ Hours a Week With an AI Workflow You Launch in 14 Days
           </span>
         </h1>
 
         {/* Subheadline */}
         <p className="text-lg md:text-xl lg:text-2xl max-w-3xl text-slate-300 mb-4 leading-relaxed">
-          From overwhelm to action. Stop watching AI tutorials — ship a working Customer Service Bot, automate your inbox, and reclaim your calendar before the end of Week 2.
+          Replace repetitive support, inbox, and reporting work with one guided automation sprint that moves from idea to live workflow before the second week ends.
         </p>
         <p className="text-md md:text-lg max-w-2xl text-slate-400 mb-8">
           Practical build-first training for founders, operators, and developers. First deployable result in 15 minutes.
@@ -211,12 +178,12 @@ const HomePage: React.FC = () => {
         </div>
 
         {/* AUDIT: 14-Day Build-Your-First-Bot Guarantee Badge */}
-        <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-6 py-3 text-emerald-400 mb-8">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-          </svg>
-          <span className="font-semibold">14-Day Build-Your-First-Bot Guarantee</span>
+        <div className="mb-3">
+          <RoiGuaranteeBadge className="px-6 py-3 text-sm" />
         </div>
+        <p className="mb-8 text-sm text-slate-400">
+          Build one working automation in 14 days or get a full refund.
+        </p>
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 mb-4">
@@ -256,37 +223,11 @@ const HomePage: React.FC = () => {
 
         {/* Email Capture */}
         <div className="w-full max-w-md bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-          <h3 className="text-xl font-semibold mb-3 text-center">Get Your Free AI Strategy Guide</h3>
+          <h3 className="text-xl font-semibold mb-3 text-center">{topWorkflowsLeadMagnet.title}</h3>
           <p className="text-sm text-slate-300 mb-4 text-center">
-            Join thousands shaping the future of AI. Get instant access to our exclusive guide.
+            {topWorkflowsLeadMagnet.description}
           </p>
-          <form onSubmit={handleEmailSubmit} className="space-y-3">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email address"
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent text-white placeholder-slate-400 backdrop-blur-sm"
-              required
-              disabled={isSubmitting}
-            />
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white font-semibold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? 'Sending...' : 'Get Free Guide'}
-            </button>
-          </form>
-          {feedbackMessage && (
-            <p
-              role="status"
-              aria-live="polite"
-              className={`text-sm mt-3 text-center ${isSuccess ? 'text-emerald-300' : 'text-rose-300'}`}
-            >
-              {feedbackMessage}
-            </p>
-          )}
+          <LeadMagnetForm source="homepage_inline" theme="dark" />
           <p className="text-xs text-slate-400 mt-3 text-center">
             No spam. Unsubscribe anytime. Your data is secure.
           </p>
@@ -483,6 +424,7 @@ const HomePage: React.FC = () => {
 
       <FoundingAccessFloatingButton />
       <FeedbackDrawer />
+      <ExitIntentLeadMagnet source="homepage_exit_intent" />
     </div>
     </>
   );

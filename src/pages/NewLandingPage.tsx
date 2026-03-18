@@ -1,24 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import AnimatedAvatar from '../components/layout/AnimatedAvatar';
 import FeedbackDrawer from '../components/feedback/FeedbackDrawer';
 import FoundingAccessFloatingButton from '../components/founding/FoundingAccessFloatingButton';
+import LeadMagnetForm from '../components/lead-magnet/LeadMagnetForm';
+import ExitIntentLeadMagnet from '../components/lead-magnet/ExitIntentLeadMagnet';
+import { topWorkflowsLeadMagnet } from '../content/leadMagnets';
 
 const NewLandingPage: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const handleEmailSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsSubmitted(true);
-    // Placeholder for email submission logic
-    setTimeout(() => {
-      alert("Thank you for subscribing! Check your email for your free AI strategy guide.");
-      setEmail('');
-      setIsSubmitted(false);
-    }, 1000);
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 text-white relative overflow-hidden">
       {/* Background Effects */}
@@ -52,16 +41,16 @@ const NewLandingPage: React.FC = () => {
         {/* Main Headline */}
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 max-w-5xl">
           <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Build your first working AI Agent in 14 days
+            Launch an AI Workflow That Pays Back in 14 Days
           </span>
         </h1>
 
         {/* Subheadline */}
         <p className="text-lg md:text-xl lg:text-2xl max-w-3xl text-slate-300 mb-4 leading-relaxed">
-          From overwhelm to action. Stop learning about AI—start building with it.
+          Stop collecting tutorials. Start with one workflow that removes repetitive work from your week and proves the ROI quickly.
         </p>
         <p className="text-md md:text-lg max-w-2xl text-slate-400 mb-8">
-          Get your first win in 15 minutes. No fluff, no theory—just practical AI skills that create immediate value.
+          Get your first win in 15 minutes. No fluff, no theory, just practical AI implementation with a direct business outcome.
         </p>
 
         {/* Premium Hero Visual */}
@@ -131,28 +120,11 @@ const NewLandingPage: React.FC = () => {
 
         {/* Email Capture */}
         <div className="w-full max-w-md bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-          <h3 className="text-xl font-semibold mb-3 text-center">Get Your Free AI Strategy Guide</h3>
+          <h3 className="text-xl font-semibold mb-3 text-center">{topWorkflowsLeadMagnet.title}</h3>
           <p className="text-sm text-slate-300 mb-4 text-center">
-            Join thousands shaping the future of AI. Get instant access to our exclusive guide.
+            {topWorkflowsLeadMagnet.description}
           </p>
-          <form onSubmit={handleEmailSubmit} className="space-y-3">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email address"
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent text-white placeholder-slate-400 backdrop-blur-sm"
-              required
-              disabled={isSubmitted}
-            />
-            <button
-              type="submit"
-              disabled={isSubmitted}
-              className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white font-semibold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSubmitted ? 'Sending...' : 'Get Free Guide'}
-            </button>
-          </form>
+          <LeadMagnetForm source="new_landing_inline" theme="dark" />
           <p className="text-xs text-slate-400 mt-3 text-center">
             No spam. Unsubscribe anytime. Your data is secure.
           </p>
@@ -173,6 +145,7 @@ const NewLandingPage: React.FC = () => {
 
       <FoundingAccessFloatingButton />
       <FeedbackDrawer />
+      <ExitIntentLeadMagnet source="new_landing_exit_intent" />
     </div>
   );
 };

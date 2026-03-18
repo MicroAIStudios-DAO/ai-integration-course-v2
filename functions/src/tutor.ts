@@ -34,6 +34,29 @@ sourceHomeEnv();
 
 const OPENAI_API_KEY = defineSecret('OPENAI_API_KEY');
 
+type LessonMetadata = {
+  title?: string;
+  description?: string;
+  learningObjectives?: unknown[];
+  content?: string;
+  md?: string;
+  html?: string;
+  storagePath?: string;
+  tier?: string;
+  isFree?: boolean;
+};
+
+type UserAccessProfile = {
+  premium?: boolean;
+  foundingMember?: boolean;
+  isBetaTester?: boolean;
+  subscriptionStatus?: string;
+  trialEndsAt?: FirebaseFirestore.Timestamp | Date | string | null;
+  trialEndDate?: FirebaseFirestore.Timestamp | Date | string | null;
+  isAdmin?: boolean;
+  role?: string;
+};
+
 // Small helpers
 function cosine(a: number[], b: number[]): number {
   let dot = 0, na = 0, nb = 0;
@@ -60,6 +83,77 @@ function chunkText(s: string, size = 900, overlap = 100): Chunk[] {
 
 function estTokensFromChars(chars: number): number {
   return Math.ceil(chars / 4); // rough heuristic
+}
+
+function toDate(value: UserAccessProfile['trialEndsAt'] | UserAccessProfile['trialEndDate']): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (typeof (value as any)?.toDate === 'function') return (value as any).toDate();
+  if (typeof value === 'string') {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+  return null;
+}
+
+function isFreeLessonData(lesson: LessonMetadata | null | undefined): boolean {
+  return lesson?.tier === 'free' || lesson?.isFree === true;
+}
+
+function isFoundersLessonData(lesson: LessonMetadata | null | undefined): boolean {
+  return lesson?.tier === 'founders';
+}
+
+function isAdminProfile(profile: UserAccessProfile | null | undefined): boolean {
+  return profile?.isAdmin === true || profile?.role === 'admin';
+}
+
+function userHasPaidAccess(profile: UserAccessProfile | null | undefined): boolean {
+  if (!profile) return false;
+  if (profile.foundingMember === true) return true;
+  if (profile.premium === true) return true;
+  if (profile.subscriptionStatus === 'active') return true;
+
+  const trialEndsAt = toDate(profile.trialEndsAt) || toDate(profile.trialEndDate);
+  if (profile.subscriptionStatus === 'trialing') {
+    return !!trialEndsAt && trialEndsAt > new Date();
+  }
+
+  return false;
+}
+
+function userHasFounderAccess(profile: UserAccessProfile | null | undefined): boolean {
+  if (!profile) return false;
+  if (profile.foundingMember === true) return true;
+  return profile.isBetaTester === true && userHasPaidAccess(profile);
+}
+
+function canAccessLesson(lesson: LessonMetadata | null | undefined, profile: UserAccessProfile | null | undefined): boolean {
+  if (isFreeLessonData(lesson)) return true;
+  if (isAdminProfile(profile)) return true;
+  if (isFoundersLessonData(lesson)) return userHasFounderAccess(profile);
+  return userHasPaidAccess(profile);
+}
+
+function getAuthToken(req: any): string | null {
+  const header = req.headers?.authorization || req.headers?.Authorization;
+  if (!header || typeof header !== 'string') return null;
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  return match?.[1] || null;
+}
+
+async function getRequestProfile(req: any): Promise<{ uid: string | null; profile: UserAccessProfile | null }> {
+  const token = getAuthToken(req);
+  if (!token) {
+    return { uid: null, profile: null };
+  }
+
+  const decoded = await admin.auth().verifyIdToken(token);
+  const userSnap = await admin.firestore().doc(`users/${decoded.uid}`).get();
+  return {
+    uid: decoded.uid,
+    profile: userSnap.exists ? (userSnap.data() as UserAccessProfile) : null,
+  };
 }
 
 const MODEL_FALLBACKS = (process.env.OPENAI_TUTOR_MODEL || 'o3-mini')
@@ -149,11 +243,25 @@ function loadSystemPrompt(): string {
   }
 }
 
-async function getLessonText(docPath: string): Promise<string> {
+function getLessonContentDocumentId(docPath: string): string {
+  const parts = docPath.split('/');
+  if (parts.length !== 6) {
+    throw new Error('Invalid lesson path');
+  }
+  return `${parts[1]}__${parts[3]}__${parts[5]}`;
+}
+
+async function getLessonText(docPath: string, lessonData?: LessonMetadata): Promise<string> {
   const db = admin.firestore();
   const snap = await db.doc(docPath).get();
   if (!snap.exists) throw new Error('Lesson not found');
-  const d = snap.data() || {} as any;
+  const d = (lessonData || (snap.data() as LessonMetadata) || {}) as any;
+  const lessonContentId = getLessonContentDocumentId(docPath);
+  const lessonContentSnap = await db.collection('lessonContent').doc(lessonContentId).get();
+  const lessonContentData = lessonContentSnap.exists ? lessonContentSnap.data() || {} : {};
+  const gatedContent = (lessonContentData.content || lessonContentData.markdown || '').toString();
+  if (gatedContent) return gatedContent;
+
   const inline = (d.content || d.md || d.html || '').toString();
   if (inline) return inline;
 
@@ -217,6 +325,7 @@ export async function tutorHandler(req: any, res: any) {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.set('Vary', 'Authorization');
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   if (req.method !== 'POST') { res.status(405).send('Method Not Allowed'); return; }
   try {
@@ -232,7 +341,32 @@ export async function tutorHandler(req: any, res: any) {
       docPath = `courses/${parts[0]}/modules/${parts[1]}/lessons/${parts[2]}`;
     } else { res.status(400).send('Invalid lessonId format'); return; }
 
-    const lessonText = await getLessonText(docPath);
+    const lessonSnap = await admin.firestore().doc(docPath).get();
+    if (!lessonSnap.exists) {
+      res.status(404).send('Lesson not found');
+      return;
+    }
+    const lessonData = (lessonSnap.data() || {}) as LessonMetadata;
+
+    const authToken = getAuthToken(req);
+    let profile: UserAccessProfile | null = null;
+    try {
+      ({ profile } = await getRequestProfile(req));
+    } catch {
+      res.status(401).send('Invalid authentication token');
+      return;
+    }
+
+    if (!isFreeLessonData(lessonData) && !authToken) {
+      res.status(401).send('Authentication required for this lesson');
+      return;
+    }
+    if (!canAccessLesson(lessonData, profile)) {
+      res.status(403).send('You do not have access to this lesson tutor');
+      return;
+    }
+
+    const lessonText = await getLessonText(docPath, lessonData);
 
     // Chunking
     let chunks = chunkText(lessonText, 900, 100);

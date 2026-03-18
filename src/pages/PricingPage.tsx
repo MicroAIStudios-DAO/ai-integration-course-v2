@@ -6,6 +6,8 @@ import { trackViewPricing } from '../utils/analytics';
 import useFoundingAccess from '../hooks/useFoundingAccess';
 import FoundingAccessFloatingButton from '../components/founding/FoundingAccessFloatingButton';
 import SEO from '../components/SEO';
+import RoiGuaranteeBadge from '../components/conversion/RoiGuaranteeBadge';
+import ExitIntentLeadMagnet from '../components/lead-magnet/ExitIntentLeadMagnet';
 
 /**
  * PricingPage Component
@@ -27,7 +29,6 @@ const PricingPage: React.FC = () => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
 
   const proMonthlyPrice = 49;
-  const foundingPrice = 20;
   const { isFounding } = useFoundingAccess();
 
   // Track view_item event when pricing page loads
@@ -87,12 +88,7 @@ const PricingPage: React.FC = () => {
           </p>
 
           {/* AUDIT: Risk Reversal - 14-Day Build Guarantee */}
-          <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-6 py-3 text-emerald-400">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-            <span className="font-semibold">14-Day Build Guarantee</span>
-          </div>
+          <RoiGuaranteeBadge className="px-6 py-3 text-sm" />
 
           <div className="mt-10 grid gap-4 md:grid-cols-3 max-w-5xl mx-auto text-left">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
@@ -156,46 +152,18 @@ const PricingPage: React.FC = () => {
           </p>
         </div>
 
+        {isFounding && (
+          <div className="mb-10 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-6 text-center">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300">Founding Access Active</p>
+            <h2 className="mt-3 text-2xl font-semibold text-white">Your founding benefits are already attached to this account.</h2>
+            <p className="mt-3 max-w-3xl mx-auto text-sm leading-7 text-emerald-100">
+              Pricing stays at three tiers for comparison, but you do not need a separate founding plan card. Your account already holds the permanent-access and priority-feedback benefits.
+            </p>
+          </div>
+        )}
+
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {isFounding && (
-            <div className="bg-gradient-to-b from-emerald-900/50 to-slate-800/50 border-2 border-emerald-400 rounded-2xl p-8 relative">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <span className="bg-emerald-500 text-white text-sm font-semibold px-4 py-1 rounded-full">
-                  Founding Member
-                </span>
-              </div>
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold text-white mb-2">Lifetime Access</h3>
-                <p className="text-gray-300">Limited to 15 seats</p>
-              </div>
-              <p className="mb-6 text-sm text-emerald-200">Best for invited founding members who want permanent access and priority feedback.</p>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-white">${foundingPrice}</span>
-                <span className="text-gray-300"> one-time</span>
-              </div>
-              <ul className="space-y-4 mb-8">
-                <li className="flex items-start gap-3 text-gray-200">
-                  <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Full course access forever</span>
-                </li>
-                <li className="flex items-start gap-3 text-gray-200">
-                  <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Priority feedback channel</span>
-                </li>
-              </ul>
-              <button
-                className="w-full py-3 px-6 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-semibold transition-colors"
-              >
-                Founding Access Unlocked
-              </button>
-            </div>
-          )}
-          
           {/* Free Tier - View Curriculum */}
           <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-8">
             <div className="mb-6">
@@ -316,8 +284,15 @@ const PricingPage: React.FC = () => {
             </ul>
 
             {/* AUDIT: Primary CTA - "Start Building Now" */}
-            {currentUser ? (
-              <SubscribeButton 
+            {isFounding ? (
+              <Link
+                to="/welcome"
+                className="block w-full text-center py-3 px-6 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold transition-colors"
+              >
+                Open Founding Dashboard
+              </Link>
+            ) : currentUser ? (
+              <SubscribeButton
                 priceId={billingCycle === 'monthly' ? 'price_pro_monthly' : 'price_pro_annual'}
                 buttonText="Start Building Now"
                 className="w-full py-3 px-6 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors"
@@ -332,13 +307,13 @@ const PricingPage: React.FC = () => {
             )}
 
             <p className="text-center text-sm text-gray-400 mt-4">
-              7-day free trial • Cancel anytime
+              {isFounding ? 'Permanent access active on this account' : '7-day free trial • Cancel anytime'}
             </p>
-            {/* Money-back guarantee badge next to Buy Now */}
-            <div className="mt-3 flex items-center justify-center gap-2 text-emerald-400 text-xs font-semibold">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-              14-Day Money-Back Guarantee
-            </div>
+            {!isFounding && (
+              <div className="mt-3 flex justify-center">
+                <RoiGuaranteeBadge />
+              </div>
+            )}
           </div>
 
           {/* AUDIT: Corporate Tier - $999 Anchoring */}
@@ -533,17 +508,23 @@ const PricingPage: React.FC = () => {
             If you are still evaluating, start free. If you are ready to ship, take the Pro path and move into checkout.
           </p>
           <Link
-            to={currentUser ? "/courses" : "/signup"}
+            to={isFounding ? "/welcome" : currentUser ? "/courses" : "/signup"}
             className="inline-flex items-center justify-center px-8 py-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg transition-colors"
           >
-            Start Building Now
+            {isFounding ? 'Open Founding Dashboard' : 'Start Building Now'}
             <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
           </Link>
+          {!isFounding && !currentUser && (
+            <div className="mt-4 flex justify-center">
+              <RoiGuaranteeBadge />
+            </div>
+          )}
         </div>
       </main>
       <FoundingAccessFloatingButton />
+      <ExitIntentLeadMagnet source="pricing_exit_intent" />
 
       {/* Footer */}
       <footer className="border-t border-slate-700/50 mt-20">

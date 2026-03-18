@@ -52,6 +52,9 @@ export { claimBetaTesterV2, redeemFoundingCodeV2, submitFeedbackV2 } from './fou
 // Import and export Beta Testing functions
 export { userJotToGithub, githubToUserJot, betaTesterSync } from './beta-testing';
 
+// Lead magnet capture
+export { submitLeadMagnetV2 } from './leadMagnet';
+
 // export const helloWorld = onRequest((request, response) => {
 //   logger.info("Hello logs!", {structuredData: true});
 //   response.send("Hello from Firebase!");

@@ -15,6 +15,7 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
+const buildLessonContentId = (courseId, moduleId, lessonId) => `${courseId}__${moduleId}__${lessonId}`;
 
 const lessons = [
   {
@@ -112,14 +113,18 @@ async function addLesson(lesson) {
     .doc(lesson.moduleId)
     .collection('lessons')
     .doc(lesson.lessonId);
+  const contentRef = db.collection('lessonContent').doc(
+    buildLessonContentId(lesson.courseId, lesson.moduleId, lesson.lessonId)
+  );
+  const batch = db.batch();
 
-  await lessonRef.set(
+  batch.set(
+    lessonRef,
     {
       title: lesson.title,
       order: lesson.order,
       isFree: lesson.isFree,
       tier: lesson.tier,
-      content,
       videoUrl: null,
       durationMinutes: lesson.durationMinutes,
       description: lesson.description,
@@ -129,6 +134,20 @@ async function addLesson(lesson) {
     },
     { merge: true }
   );
+  batch.set(
+    contentRef,
+    {
+      courseId: lesson.courseId,
+      moduleId: lesson.moduleId,
+      lessonId: lesson.lessonId,
+      tier: lesson.tier,
+      content,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  await batch.commit();
 
   console.log(`Added: ${lesson.title} -> courses/${lesson.courseId}/modules/${lesson.moduleId}/lessons/${lesson.lessonId}`);
 }

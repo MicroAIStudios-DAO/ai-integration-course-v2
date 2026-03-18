@@ -53,6 +53,10 @@ service cloud.firestore {
     function hasPremiumAccess() {
       return isPremium() || isFoundingMember() || hasActiveSubscription() || isInTrial();
     }
+
+    function canReadFoundersContent() {
+      return isFoundingMember() || (isBetaTester() && hasPremiumAccess()) || isAdmin();
+    }
     
     // Check if lesson is free tier
     function isFreeLesson(lessonData) {
@@ -77,6 +81,11 @@ service cloud.firestore {
         'role',
         'isAdmin',
         'subscriptionStatus',
+        'subscriptionEndsAt',
+        'subscriptionUpdatedAt',
+        'subscriptionCancelledAt',
+        'trialEndsAt',
+        'trialEndDate',
         'foundingMember',
         'foundingCode',
         'foundingActivatedAt',
@@ -86,7 +95,11 @@ service cloud.firestore {
         'betaAccessSource',
         'betaSignupDate',
         'betaScholarshipCode',
-        'betaScholarshipGrantedAt'
+        'betaScholarshipGrantedAt',
+        'isSubscribed',
+        'activeTrial',
+        'checkoutStartedAt',
+        'checkoutAttempts'
       ];
     }
 
@@ -167,8 +180,10 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (
         // Free content accessible to all authenticated users
         resource.data.tier == 'free' ||
+        // Founders content requires founding access or paid Pioneer beta access
+        (resource.data.tier == 'founders' && canReadFoundersContent()) ||
         // Premium content requires premium access
-        hasPremiumAccess()
+        (resource.data.tier != 'founders' && hasPremiumAccess())
       );
       
       // Only admins can write content

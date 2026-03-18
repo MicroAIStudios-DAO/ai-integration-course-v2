@@ -8,6 +8,7 @@ import { trackSignUp, trackBeginCheckout } from "../../utils/analytics";
 import ReactPlayer from "react-player";
 import FoundingAccessFloatingButton from "../founding/FoundingAccessFloatingButton";
 import SEO from "../SEO";
+import RoiGuaranteeBadge from "../conversion/RoiGuaranteeBadge";
 
 type BetaCodeClaimResult = {
   success?: boolean;
@@ -247,8 +248,14 @@ const SignupPage: React.FC = () => {
               disabled={loading}
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-headings font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 form-button"
             >
-              {loading ? "Creating account..." : "Create account"}
+              {loading ? "Creating account..." : "Create account and continue"}
             </button>
+            <div className="mt-3 flex justify-center">
+              <RoiGuaranteeBadge />
+            </div>
+            <p className="mt-2 text-center text-xs text-gray-500 font-body">
+              Finish checkout and build one live workflow in 14 days or request a full refund.
+            </p>
             <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-500 font-body">
               <span className="inline-flex items-center gap-1">
                 <svg

@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Top 5 AI Automation Workflows for 2026</title>
+    <style>
+      :root {
+        --bg: #08111f;
+        --panel: rgba(15, 23, 42, 0.86);
+        --border: rgba(148, 163, 184, 0.2);
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --cyan: #67e8f9;
+        --green: #34d399;
+        --white: #ffffff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(34, 211, 238, 0.18), transparent 32%),
+          radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.14), transparent 28%),
+          linear-gradient(180deg, #020617 0%, #08111f 100%);
+        color: var(--text);
+      }
+
+      .shell {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 48px 20px 72px;
+      }
+
+      .hero,
+      .workflow,
+      .footer-cta {
+        border: 1px solid var(--border);
+        background: var(--panel);
+        backdrop-filter: blur(12px);
+        border-radius: 28px;
+      }
+
+      .hero {
+        padding: 40px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(103, 232, 249, 0.28);
+        background: rgba(34, 211, 238, 0.08);
+        color: var(--cyan);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        margin-top: 18px;
+        font-size: clamp(36px, 6vw, 62px);
+        line-height: 1.02;
+      }
+
+      .hero p {
+        margin-top: 18px;
+        max-width: 760px;
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1.7;
+      }
+
+      .summary-grid {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        margin-top: 32px;
+      }
+
+      .summary-card {
+        border-radius: 22px;
+        border: 1px solid var(--border);
+        background: rgba(15, 23, 42, 0.74);
+        padding: 18px;
+      }
+
+      .summary-card strong {
+        display: block;
+        margin-bottom: 10px;
+        color: var(--white);
+        font-size: 16px;
+      }
+
+      .summary-card span {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .section-title {
+        margin: 48px 0 18px;
+        font-size: 30px;
+      }
+
+      .workflows {
+        display: grid;
+        gap: 18px;
+      }
+
+      .workflow {
+        padding: 26px;
+      }
+
+      .workflow-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .workflow-number {
+        color: var(--cyan);
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .workflow-meta {
+        color: var(--green);
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .workflow h3 {
+        margin-top: 10px;
+        font-size: 26px;
+      }
+
+      .workflow p {
+        margin-top: 12px;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .detail-grid {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        margin-top: 18px;
+      }
+
+      .detail-card {
+        border-radius: 18px;
+        background: rgba(2, 6, 23, 0.55);
+        border: 1px solid var(--border);
+        padding: 16px;
+      }
+
+      .detail-card strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 13px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--white);
+      }
+
+      .detail-card span {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .footer-cta {
+        margin-top: 48px;
+        padding: 32px;
+      }
+
+      .footer-cta p {
+        margin-top: 12px;
+        max-width: 700px;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .footer-cta a {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 22px;
+        padding: 14px 20px;
+        border-radius: 999px;
+        background: var(--cyan);
+        color: #082f49;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      @media (max-width: 640px) {
+        .shell {
+          padding-top: 28px;
+        }
+
+        .hero,
+        .workflow,
+        .footer-cta {
+          border-radius: 22px;
+          padding: 22px;
+        }
+
+        h1 {
+          font-size: 34px;
+        }
+
+        .workflow h3 {
+          font-size: 22px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div class="eyebrow">AI Integration Course Guide</div>
+        <h1>Top 5 AI Automation Workflows for 2026</h1>
+        <p>
+          These are the workflow categories operators are prioritizing when they need a result this
+          quarter, not a six-month transformation plan. Each workflow below maps to repetitive work,
+          clear review steps, and measurable time recovery.
+        </p>
+        <div class="summary-grid">
+          <div class="summary-card">
+            <strong>What this solves</strong>
+            <span>Manual inbox work, slow follow-up, brittle reporting, and high-friction knowledge handoffs.</span>
+          </div>
+          <div class="summary-card">
+            <strong>How to use it</strong>
+            <span>Pick one workflow, define the trigger, define the review rule, and run the pilot for 14 days.</span>
+          </div>
+          <div class="summary-card">
+            <strong>What to avoid</strong>
+            <span>Do not automate edge cases first. Start where the work repeats and the output is easy to verify.</span>
+          </div>
+        </div>
+      </section>
+
+      <h2 class="section-title">The Workflow Shortlist</h2>
+      <section class="workflows">
+        <article class="workflow">
+          <div class="workflow-header">
+            <div class="workflow-number">Workflow 01</div>
+            <div class="workflow-meta">Best for: ops and support teams</div>
+          </div>
+          <h3>Inbox triage and draft replies</h3>
+          <p>
+            Route inbound email by intent, urgency, and customer segment, then draft a first
+            response with the right context attached. Human review stays in the loop before the
+            message is sent.
+          </p>
+          <div class="detail-grid">
+            <div class="detail-card">
+              <strong>Typical stack</strong>
+              <span>Gmail or Outlook, model API, knowledge base, Zapier or custom middleware.</span>
+            </div>
+            <div class="detail-card">
+              <strong>Fast ROI signal</strong>
+              <span>Less manual sorting, faster first-touch response, lower time-to-resolution.</span>
+            </div>
+            <div class="detail-card">
+              <strong>Guardrail</strong>
+              <span>Require approval before any external reply is sent to a customer.</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="workflow">
+          <div class="workflow-header">
+            <div class="workflow-number">Workflow 02</div>
+            <div class="workflow-meta">Best for: revenue teams</div>
+          </div>
+          <h3>Lead qualification and follow-up sequencing</h3>
+          <p>
+            Score leads based on form data, prior activity, and inbound questions. Generate the next
+            recommended step, write the follow-up draft, and push the result into the CRM with a
+            clear handoff.
+          </p>
+          <div class="detail-grid">
+            <div class="detail-card">
+              <strong>Typical stack</strong>
+              <span>Web forms, CRM, calendar tools, meeting scheduler, model API.</span>
+            </div>
+            <div class="detail-card">
+              <strong>Fast ROI signal</strong>
+              <span>Shorter response times and less leakage between inquiry and booked call.</span>
+            </div>
+            <div class="detail-card">
+              <strong>Guardrail</strong>
+              <span>Constrain outputs to approved fields and qualification criteria.</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="workflow">
+          <div class="workflow-header">
+            <div class="workflow-number">Workflow 03</div>
+            <div class="workflow-meta">Best for: customer-facing teams</div>
+          </div>
+          <h3>Customer support knowledge assistant</h3>
+          <p>
+            Pull answers from policies, SOPs, product docs, and pricing rules so the team can answer
+            repetitive questions faster without relying on generic model memory.
+          </p>
+          <div class="detail-grid">
+            <div class="detail-card">
+              <strong>Typical stack</strong>
+              <span>Documentation source, retrieval layer, model API, support desk, analytics.</span>
+            </div>
+            <div class="detail-card">
+              <strong>Fast ROI signal</strong>
+              <span>Fewer escalations, lower handle time, better consistency in support responses.</span>
+            </div>
+            <div class="detail-card">
+              <strong>Guardrail</strong>
+              <span>Return citations so the reviewer can verify the answer before sending it.</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="workflow">
+          <div class="workflow-header">
+            <div class="workflow-number">Workflow 04</div>
+            <div class="workflow-meta">Best for: sales and implementation</div>
+          </div>
+          <h3>Proposal drafting with CRM handoff</h3>
+          <p>
+            Turn notes, discovery calls, and account context into a draft proposal, scope summary,
+            and CRM update package so the team moves from conversation to document faster.
+          </p>
+          <div class="detail-grid">
+            <div class="detail-card">
+              <strong>Typical stack</strong>
+              <span>Call notes, CRM, document templates, approval workflow, model API.</span>
+            </div>
+            <div class="detail-card">
+              <strong>Fast ROI signal</strong>
+              <span>Less admin time for AEs and faster turnaround on follow-up materials.</span>
+            </div>
+            <div class="detail-card">
+              <strong>Guardrail</strong>
+              <span>Lock pricing and legal terms to template data, not model improvisation.</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="workflow">
+          <div class="workflow-header">
+            <div class="workflow-number">Workflow 05</div>
+            <div class="workflow-meta">Best for: founders and operators</div>
+          </div>
+          <h3>Weekly reporting and anomaly alerts</h3>
+          <p>
+            Aggregate KPI snapshots, compare them to recent baselines, and generate a readable
+            narrative that flags unexpected movement before it gets buried in spreadsheets.
+          </p>
+          <div class="detail-grid">
+            <div class="detail-card">
+              <strong>Typical stack</strong>
+              <span>Spreadsheet or BI data, scheduled automation, model API, Slack or email delivery.</span>
+            </div>
+            <div class="detail-card">
+              <strong>Fast ROI signal</strong>
+              <span>Less reporting prep time and earlier detection of performance issues.</span>
+            </div>
+            <div class="detail-card">
+              <strong>Guardrail</strong>
+              <span>Separate raw metric calculations from model-written summaries.</span>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="footer-cta">
+        <div class="eyebrow">Next Step</div>
+        <h2>Use one workflow to prove the business case fast</h2>
+        <p>
+          The course is built around selecting one workflow, wiring the inputs and outputs, and
+          getting to a working implementation quickly enough that the ROI conversation becomes
+          concrete. If you are ready to move from ideas to a live build, start with the pricing
+          page and take the Pro path.
+        </p>
+        <a href="/pricing">See the Pro path</a>
+      </section>
+    </main>
+  </body>
+</html>

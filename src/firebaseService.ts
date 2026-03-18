@@ -9,6 +9,13 @@ import { User } from 'firebase/auth';
 const storage = getStorage(app);
 
 type LessonAccessSubject = Pick<Lesson, 'tier' | 'isFree'> | null | undefined;
+type LessonContentDoc = {
+  content?: string;
+  markdown?: string;
+};
+
+export const getLessonContentDocumentId = (courseId: string, moduleId: string, lessonId: string): string =>
+  `${courseId}__${moduleId}__${lessonId}`;
 
 // --- Course & Lesson Data --- //
 
@@ -78,6 +85,21 @@ export const getLessonMarkdownUrl = async (storagePath: string): Promise<string>
   }
 };
 
+export const getSecureLessonContent = async (
+  courseId: string,
+  moduleId: string,
+  lessonId: string
+): Promise<string | null> => {
+  const contentRef = doc(db, 'lessonContent', getLessonContentDocumentId(courseId, moduleId, lessonId));
+  const contentSnap = await getDoc(contentRef);
+  if (!contentSnap.exists()) {
+    return null;
+  }
+
+  const data = contentSnap.data() as LessonContentDoc;
+  return data.content || data.markdown || null;
+};
+
 // --- User Profile & Progress --- //
 
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
@@ -104,13 +126,8 @@ export const userHasPaidAccess = (profile: UserProfile | null | undefined): bool
   if (!profile) return false;
   if (profile.foundingMember === true) return true;
   if (profile.premium === true) return true;
-  if (profile.isSubscribed === true) return true;
 
   const trialEndsAt = toDate(profile.trialEndsAt) || toDate(profile.trialEndDate);
-  if (profile.activeTrial === true) {
-    return !trialEndsAt || trialEndsAt > new Date();
-  }
-
   if (profile.subscriptionStatus === 'active') {
     return true;
   }
