@@ -8,6 +8,8 @@ import { User } from 'firebase/auth';
 // Initialize Firebase Storage
 const storage = getStorage(app);
 
+type LessonAccessSubject = Pick<Lesson, 'tier' | 'isFree'> | null | undefined;
+
 // --- Course & Lesson Data --- //
 
 export const getCourses = async (): Promise<Course[]> => {
@@ -118,6 +120,42 @@ export const userHasPaidAccess = (profile: UserProfile | null | undefined): bool
   }
 
   return false;
+};
+
+export const isAdminProfile = (profile: UserProfile | null | undefined): boolean => {
+  if (!profile) return false;
+  return profile.isAdmin === true || profile.role === 'admin';
+};
+
+export const userHasFounderAccess = (profile: UserProfile | null | undefined): boolean => {
+  if (!profile) return false;
+  if (profile.foundingMember === true) return true;
+  return profile.isBetaTester === true && userHasPaidAccess(profile);
+};
+
+export const isFreeLesson = (lesson: LessonAccessSubject): boolean =>
+  lesson?.tier === 'free' || lesson?.isFree === true;
+
+export const isFoundersLesson = (lesson: LessonAccessSubject): boolean =>
+  lesson?.tier === 'founders';
+
+export const userCanAccessLesson = (
+  lesson: LessonAccessSubject,
+  profile: UserProfile | null | undefined
+): boolean => {
+  if (isFreeLesson(lesson)) {
+    return true;
+  }
+
+  if (isAdminProfile(profile)) {
+    return true;
+  }
+
+  if (isFoundersLesson(lesson)) {
+    return userHasFounderAccess(profile);
+  }
+
+  return userHasPaidAccess(profile);
 };
 
 export const createUserProfile = async (user: User, additionalData?: Partial<UserProfile>): Promise<void> => {

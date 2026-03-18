@@ -22,6 +22,18 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.premium == true;
     }
+
+    function isFoundingMember() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.foundingMember == true;
+    }
+
+    function isBetaTester() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isBetaTester == true;
+    }
     
     // Check if user has active subscription
     function hasActiveSubscription() {
@@ -39,7 +51,7 @@ service cloud.firestore {
     
     // Check if user has any form of access (premium, active subscription, or trial)
     function hasPremiumAccess() {
-      return isPremium() || hasActiveSubscription() || isInTrial();
+      return isPremium() || isFoundingMember() || hasActiveSubscription() || isInTrial();
     }
     
     // Check if lesson is free tier
@@ -59,6 +71,25 @@ service cloud.firestore {
       return email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
     }
     
+    function protectedAccessFields() {
+      return [
+        'premium',
+        'role',
+        'isAdmin',
+        'subscriptionStatus',
+        'foundingMember',
+        'foundingCode',
+        'foundingActivatedAt',
+        'isBetaTester',
+        'betaCohort',
+        'betaAccessCode',
+        'betaAccessSource',
+        'betaSignupDate',
+        'betaScholarshipCode',
+        'betaScholarshipGrantedAt'
+      ];
+    }
+
     // ============================================
     // USER DOCUMENTS
     // ============================================
@@ -70,11 +101,12 @@ service cloud.firestore {
       // Users can create their own profile
       allow create: if isOwner(userId) && 
         request.resource.data.keys().hasAll(['email']) &&
-        isValidEmail(request.resource.data.email);
+        isValidEmail(request.resource.data.email) &&
+        !request.resource.data.keys().hasAny(protectedAccessFields());
       
       // Users can update their own profile (but not premium status or role)
       allow update: if isOwner(userId) && 
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['premium', 'role', 'subscriptionStatus']);
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(protectedAccessFields());
       
       // Only admins can delete users
       allow delete: if isAdmin();

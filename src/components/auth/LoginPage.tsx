@@ -64,7 +64,7 @@ const LoginPage: React.FC = () => {
             Sign in to your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 font-body">
-            Welcome back. Continue your lessons and progress.
+            Welcome back. Pioneer cohort members sign in normally. Your rate lock, feedback lane, and cohort dashboard stay attached to this account once the membership is active.
           </p>
         </div>
         {/* Regular Login Form */}

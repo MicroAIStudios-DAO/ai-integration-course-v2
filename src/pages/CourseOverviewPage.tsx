@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCourses, getUserCourseProgress } from '../firebaseService';
-import { Course, Module, Lesson, UserCourseProgress } from '../types/course';
+import { getCourses, getUserCourseProgress, getUserProfile, isFoundersLesson, isFreeLesson, isAdminProfile, userHasFounderAccess } from '../firebaseService';
+import { Course, Module, Lesson, UserCourseProgress, UserProfile } from '../types/course';
 import { useAuth } from '../context/AuthContext';
 import CourseSchema from '../components/seo/CourseSchema';
 
@@ -38,6 +38,9 @@ const toDisplayTitle = (lesson: Lesson, lessonNumber: string): string => {
   const titleWithoutPrefix = stripLessonPrefix(rawTitle);
   const isUntitled = !titleWithoutPrefix || UNTITLED_TITLE_PATTERN.test(titleWithoutPrefix);
   const normalizedTitle = isUntitled ? 'Title Coming Soon' : titleWithoutPrefix;
+  if (isFoundersLesson(lesson)) {
+    return normalizedTitle;
+  }
   return `Lesson ${lessonNumber}: ${normalizedTitle}`;
 };
 
@@ -52,6 +55,7 @@ const CourseOverviewPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [userProgress, setUserProgress] = useState<UserCourseProgress | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   // Accordion: track which modules are expanded (all open by default)
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
   const toggleModule = (moduleId: string) => {
@@ -69,6 +73,7 @@ const CourseOverviewPage: React.FC = () => {
   const modulesWithDisplayLessons = useMemo<DisplayModule[]>(() => {
     if (!course) return [];
 
+    const hasFounderVisibility = userHasFounderAccess(userProfile) || isAdminProfile(userProfile);
     let fallbackNumber = 1;
 
     return [...course.modules]
@@ -77,9 +82,12 @@ const CourseOverviewPage: React.FC = () => {
         const sortedLessons = [...module.lessons].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
         const displayLessons = sortedLessons
           .filter((lesson) => !isPlaceholderOnlyLesson(lesson))
+          .filter((lesson) => !isFoundersLesson(lesson) || hasFounderVisibility)
           .map((lesson) => {
             const lessonNumber = resolveLessonNumber(lesson, fallbackNumber);
-            fallbackNumber += 1;
+            if (!isFoundersLesson(lesson)) {
+              fallbackNumber += 1;
+            }
             return {
               ...lesson,
               displayTitle: toDisplayTitle(lesson, lessonNumber)
@@ -92,7 +100,7 @@ const CourseOverviewPage: React.FC = () => {
         };
       })
       .filter((module) => module.displayLessons.length > 0);
-  }, [course]);
+  }, [course, userProfile]);
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -103,9 +111,16 @@ const CourseOverviewPage: React.FC = () => {
         if (courses && courses.length > 0) {
           const fetchedCourse = courses[0];
           setCourse(fetchedCourse);
-          // Fetch user progress with the actual course ID
           if (currentUser && fetchedCourse.id) {
-            fetchUserProgress(fetchedCourse.id);
+            const [progress, profile] = await Promise.all([
+              fetchUserProgress(fetchedCourse.id),
+              getUserProfile(currentUser.uid),
+            ]);
+            setUserProgress(progress);
+            setUserProfile(profile);
+          } else {
+            setUserProgress(null);
+            setUserProfile(null);
           }
         } else {
           setError('No courses available. Please try again later.');
@@ -119,20 +134,18 @@ const CourseOverviewPage: React.FC = () => {
     };
 
     // Function to fetch user progress
-    const fetchUserProgress = async (courseId: string) => {
+    const fetchUserProgress = async (courseId: string): Promise<UserCourseProgress | null> => {
       if (currentUser && courseId) {
         try {
           // Using the actual courseId from the fetched course
           const progress = await getUserCourseProgress(currentUser.uid, courseId);
-          setUserProgress(progress);
-          
-          // Also fetch the user profile for premium status checks
-          // const profile = await getUserProfile(currentUser.uid);
-          // setUserProfile(profile);
+          return progress;
         } catch (error) {
           console.error('Error fetching user progress:', error);
+          return null;
         }
       }
+      return null;
     };
 
     fetchCourseData();
@@ -154,8 +167,8 @@ const CourseOverviewPage: React.FC = () => {
   // Function to navigate to the lesson page
   const handleLessonClick = (lesson: Lesson, moduleId: string) => {
     // If the lesson is premium and user is not logged in, navigate to login
-    const isFreeLesson = lesson.tier === 'free' || lesson.isFree === true;
-    if (!isFreeLesson && !currentUser) {
+    const lessonIsFree = isFreeLesson(lesson);
+    if (!lessonIsFree && !currentUser) {
       navigate('/login', { state: { from: `/courses/${course?.id}/modules/${moduleId}/lessons/${lesson.id}` } });
       return;
     }
@@ -260,10 +273,10 @@ const CourseOverviewPage: React.FC = () => {
                     <option
                       key={`${module.id}|${lesson.id}`}
                       value={`${module.id}|${lesson.id}`}
-                      disabled={lesson.tier !== 'free' && !lesson.isFree && !currentUser}
+                      disabled={!isFreeLesson(lesson) && !currentUser}
                       className="text-slate-100"
                     >
-                      {module.title} - {lesson.displayTitle} {(lesson.tier === 'free' || lesson.isFree) ? '(Free)' : ''}
+                      {module.title} - {lesson.displayTitle} {isFoundersLesson(lesson) ? '(Founders)' : isFreeLesson(lesson) ? '(Free)' : ''}
                     </option>
                   ))
                 )}
@@ -307,17 +320,18 @@ const CourseOverviewPage: React.FC = () => {
                 <div className="px-6 md:px-8 pb-6 md:pb-8">
                 <ul className="space-y-3">
                   {module.displayLessons.map((lesson) => {
-                    const isFreeLesson = lesson.tier === 'free' || lesson.isFree === true;
+                    const lessonIsFree = isFreeLesson(lesson);
+                    const foundersLesson = isFoundersLesson(lesson);
                     
                     return (
                     <li 
                       key={lesson.id} 
                       onClick={() => handleLessonClick(lesson, module.id)}
                       className={`w-[98%] mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-4 rounded-xl transition-all duration-200 ease-in-out cursor-pointer 
-                                  ${(!isFreeLesson && (!currentUser)) 
+                                  ${(!lessonIsFree && (!currentUser)) 
                                     ? 'bg-white/5 text-slate-300 hover:bg-white/10'
                                     : 'bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 hover:from-cyan-500/20 hover:to-indigo-500/20 text-white'}
-                                  ${isFreeLesson ? 'border border-emerald-400/30' : 'border border-white/10'}
+                                  ${lessonIsFree ? 'border border-emerald-400/30' : foundersLesson ? 'border border-amber-400/30' : 'border border-white/10'}
                                   ${isLessonCompleted(lesson.id) ? 'opacity-70' : ''}
                                 `}
                     >
@@ -338,14 +352,17 @@ const CourseOverviewPage: React.FC = () => {
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
-                        {isFreeLesson && (
+                        {lessonIsFree && (
                           <span className="text-xs bg-emerald-400/20 text-emerald-200 px-2 py-1 rounded-full font-sans">Free</span>
                         )}
-                        {(!isFreeLesson && (!currentUser)) && (
+                        {foundersLesson && (
+                          <span className="text-xs bg-amber-400/20 text-amber-100 px-2 py-1 rounded-full font-sans">Founders</span>
+                        )}
+                        {(!lessonIsFree && !foundersLesson && (!currentUser)) && (
                           <span className="text-xs bg-amber-400/20 text-amber-200 px-2 py-1 rounded-full font-sans">Premium</span>
                         )}
                         <span className="text-slate-300 text-sm font-sans">
-                          {(!isFreeLesson && (!currentUser)) ? 'Login to access' : 'View Lesson'}
+                          {(!lessonIsFree && (!currentUser)) ? 'Login to access' : foundersLesson ? 'Open founders lesson' : 'View Lesson'}
                         </span>
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />

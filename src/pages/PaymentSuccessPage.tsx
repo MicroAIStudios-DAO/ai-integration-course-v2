@@ -1,12 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { getUserProfile } from '../firebaseService';
+import { UserProfile } from '../types/course';
 import { trackPurchase, setUserProperties } from '../utils/analytics';
 
 const PaymentSuccessPage: React.FC = () => {
+  const { currentUser } = useAuth();
   const location = useLocation();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
@@ -38,6 +43,33 @@ const PaymentSuccessPage: React.FC = () => {
       setLoading(false);
     }
   }, [location]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadProfile = async () => {
+      if (!currentUser) {
+        setProfile(null);
+        return;
+      }
+
+      try {
+        const nextProfile = await getUserProfile(currentUser.uid);
+        if (active) {
+          setProfile(nextProfile);
+        }
+      } catch (profileError) {
+        console.error('Failed to load payment success profile:', profileError);
+      }
+    };
+
+    void loadProfile();
+    return () => {
+      active = false;
+    };
+  }, [currentUser]);
+
+  const isPioneerCohort = useMemo(() => profile?.isBetaTester === true, [profile]);
 
   if (loading) {
     return (
@@ -83,9 +115,26 @@ const PaymentSuccessPage: React.FC = () => {
         </div>
 
         {/* Success Message */}
-        <h1 className="text-3xl font-bold text-white mb-4">Welcome to Pro! 🎉</h1>
-        <p className="text-gray-300 mb-2">Your payment was successful and your account has been upgraded.</p>
+        <h1 className="text-3xl font-bold text-white mb-4">
+          {isPioneerCohort ? 'Vanguard Access Confirmed' : 'Welcome to Pro! 🎉'}
+        </h1>
+        <p className="text-gray-300 mb-2">
+          {isPioneerCohort
+            ? 'Your $49/mo founding rate is active. The Pioneer cohort tag now unlocks the paid dashboard, feedback lane, and build path.'
+            : 'Your payment was successful and your account has been upgraded.'}
+        </p>
         <p className="text-sm text-gray-500 mb-6">Transaction ID: {sessionId}</p>
+
+        {isPioneerCohort && (
+          <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-4 mb-6 text-left">
+            <h3 className="font-semibold text-cyan-300 mb-2">Founder's Scholarship Layer</h3>
+            <ul className="space-y-2 text-sm text-gray-300">
+              <li>$50 in builder credits is the gift, not free site access.</li>
+              <li>Use the credits to reduce the cost of Gemini, search, and experimentation in the first month.</li>
+              <li>Complete the first 4 modules and a 15-minute feedback call to earn month 2 back as a credit.</li>
+            </ul>
+          </div>
+        )}
 
         {/* 14-Day Guarantee Reminder */}
         <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4 mb-6">
@@ -104,15 +153,15 @@ const PaymentSuccessPage: React.FC = () => {
           <ol className="space-y-2 text-sm text-gray-300">
             <li className="flex items-start gap-2">
               <span className="bg-indigo-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
-              <span>Start the "Build Your First Bot" lesson to claim your guarantee</span>
+              <span>{isPioneerCohort ? 'Open the Vanguard dashboard and launch Content Architect v1.1' : 'Start the "Build Your First Bot" lesson to claim your guarantee'}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="bg-indigo-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
-              <span>Set up your AI tools (Gmail, Zapier, OpenAI)</span>
+              <span>{isPioneerCohort ? 'Request your builder-credit pack and begin the first implementation sprint' : 'Set up your AI tools (Gmail, Zapier, OpenAI)'}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="bg-indigo-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
-              <span>Deploy your first customer service email bot</span>
+              <span>{isPioneerCohort ? 'Complete 4 modules and book the 15-minute feedback call to earn your month 2 credit' : 'Deploy your first customer service email bot'}</span>
             </li>
           </ol>
         </div>
@@ -120,10 +169,10 @@ const PaymentSuccessPage: React.FC = () => {
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link 
-            to="/courses" 
+            to={isPioneerCohort ? "/welcome" : "/courses"} 
             className="inline-flex items-center justify-center px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition-colors"
           >
-            Start Building Now →
+            {isPioneerCohort ? 'Open Vanguard Dashboard →' : 'Start Building Now →'}
           </Link>
           <Link 
             to="/" 

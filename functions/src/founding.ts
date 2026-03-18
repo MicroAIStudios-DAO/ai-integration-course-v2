@@ -8,6 +8,7 @@ if (!admin.apps.length) {
 }
 
 const CODES_COLLECTION = 'founding_codes';
+const BETA_CODES_COLLECTION = 'beta_access_codes';
 const FEEDBACK_COLLECTION = 'founder_feedback';
 const WEBHOOK_URL = defineSecret('FEEDBACK_WEBHOOK_URL');
 const DEFAULT_BETA_SIGNUP_CODE = 'PIONEER';
@@ -76,42 +77,115 @@ const toLookupCandidates = (input: string): string[] => {
   return Array.from(new Set(candidates));
 };
 
+const normalizeBetaCode = (value: string): string =>
+  value.toUpperCase().replace(/\s+/g, '').trim();
+
 export const claimBetaTesterV2 = onCall(
   { region: 'us-central1' },
   async (request) => {
     const auth = requireRegisteredAuth(request);
 
-    const code = (request.data?.code || '').toString().trim().toUpperCase();
+    const code = normalizeBetaCode((request.data?.code || '').toString());
     if (!code) {
       throw new HttpsError('invalid-argument', 'Missing beta code');
     }
 
-    const expectedCode = (process.env.BETA_SIGNUP_CODE || DEFAULT_BETA_SIGNUP_CODE).toString().trim().toUpperCase();
-    if (code !== expectedCode) {
-      throw new HttpsError('permission-denied', 'Invalid beta code');
-    }
-
     const cohortRaw = (request.data?.cohort || 'Pioneer').toString().trim();
-    const cohort = cohortRaw.length > 0 ? cohortRaw : 'Pioneer';
     const userRef = admin.firestore().doc(`users/${auth.uid}`);
-    const userSnap = await userRef.get();
-    const existing = userSnap.data() || {};
+    const codeRef = admin.firestore().collection(BETA_CODES_COLLECTION).doc(code);
+    const claimRef = codeRef.collection('claims').doc(auth.uid);
+    let grantPremium = false;
+    let resolvedCohort = cohortRaw.length > 0 ? cohortRaw : 'Pioneer';
+    let usesRemaining = 0;
+    let maxUses = 1;
+    let accessSource = 'signup_offer_code';
 
-    const updateData: Record<string, any> = {
-      email: existing.email || auth.token?.email || null,
-      displayName: existing.displayName || auth.token?.name || null,
-      isBetaTester: true,
-      betaCohort: existing.betaCohort || cohort,
-      betaAccessSource: 'signup_offer_code',
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    await admin.firestore().runTransaction(async (tx) => {
+      const codeSnap = await tx.get(codeRef);
+      const claimSnap = await tx.get(claimRef);
+      const userSnap = await tx.get(userRef);
+
+      if (!codeSnap.exists) {
+        throw new HttpsError('permission-denied', 'Invalid beta code');
+      }
+
+      const codeData = codeSnap.data() || {};
+      if (codeData.active === false) {
+        throw new HttpsError('failed-precondition', 'This beta code is inactive');
+      }
+
+      const configuredMaxUses = Number(codeData.maxUses);
+      maxUses = Number.isFinite(configuredMaxUses) && configuredMaxUses > 0 ? configuredMaxUses : 1;
+      const currentUses = Number(codeData.usesCount || 0);
+      grantPremium = codeData.grantPremium === true;
+      resolvedCohort =
+        (codeData.cohort || cohortRaw || DEFAULT_BETA_SIGNUP_CODE).toString().trim() || 'Pioneer';
+      accessSource = grantPremium ? 'beta_scholarship_code' : 'signup_offer_code';
+
+      if (!claimSnap.exists && currentUses >= maxUses) {
+        throw new HttpsError('failed-precondition', 'This beta code has reached its usage limit');
+      }
+
+      const existing = userSnap.data() || {};
+      const updateData: Record<string, any> = {
+        email: existing.email || auth.token?.email || null,
+        displayName: existing.displayName || auth.token?.name || null,
+        isBetaTester: true,
+        betaCohort: existing.betaCohort || resolvedCohort,
+        betaAccessSource: accessSource,
+        betaAccessCode: existing.betaAccessCode || code,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      };
+
+      if (!existing.betaSignupDate) {
+        updateData.betaSignupDate = admin.firestore.FieldValue.serverTimestamp();
+      }
+
+      if (grantPremium) {
+        updateData.premium = true;
+        updateData.betaScholarshipCode = existing.betaScholarshipCode || code;
+        if (!existing.betaScholarshipGrantedAt) {
+          updateData.betaScholarshipGrantedAt = admin.firestore.FieldValue.serverTimestamp();
+        }
+      }
+
+      tx.set(userRef, updateData, { merge: true });
+
+      if (!claimSnap.exists) {
+        tx.set(
+          claimRef,
+          {
+            uid: auth.uid,
+            code,
+            grantPremium,
+            claimedAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+
+        tx.set(
+          codeRef,
+          {
+            code,
+            usesCount: admin.firestore.FieldValue.increment(1),
+            lastClaimedAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+        usesRemaining = Math.max(maxUses - (currentUses + 1), 0);
+      } else {
+        usesRemaining = Math.max(maxUses - currentUses, 0);
+      }
+    });
+
+    return {
+      success: true,
+      cohort: resolvedCohort,
+      grantPremium,
+      skipCheckout: grantPremium,
+      maxUses,
+      usesRemaining,
     };
-
-    if (!existing.betaSignupDate) {
-      updateData.betaSignupDate = admin.firestore.FieldValue.serverTimestamp();
-    }
-
-    await userRef.set(updateData, { merge: true });
-    return { success: true };
   }
 );
 

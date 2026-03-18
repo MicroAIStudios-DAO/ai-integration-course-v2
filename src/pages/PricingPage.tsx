@@ -143,9 +143,16 @@ const PricingPage: React.FC = () => {
           Annual saves ${proMonthlyPrice * 12 - proAnnualPrice * 12} versus monthly billing.
         </p>
 
+        <div className="mb-8 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-5 text-center text-sm text-cyan-100">
+          <p className="font-semibold uppercase tracking-[0.18em] text-cyan-200">Founding Cohort Alignment</p>
+          <p className="mt-3 max-w-3xl mx-auto leading-7">
+            <code>PIONEER</code> is the main 20-seat cohort code and does not bypass the $49/mo membership. Separate private scholarship codes can activate complimentary premium access for invited builders without a credit card.
+          </p>
+        </div>
+
         <div className="mb-10 text-center">
           <p className="text-sm text-cyan-300">
-            Already have a founding code or beta invite? Create your account first, then redeem the code during onboarding.
+            Already have <code>PIONEER</code>, a scholarship code, or a founding code? Create your account first. <code>PIONEER</code> claims a cohort seat, scholarship codes can waive checkout, and separate founding codes are redeemed after account creation.
           </p>
         </div>
 

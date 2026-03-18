@@ -1,10 +1,32 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const PaymentCancelPage = () => {
   return (
-    <div className="container mx-auto p-4 text-center">
-      <h1 className="text-2xl font-bold text-red-500 mb-4">Payment Cancelled</h1>
-      <p>Your payment was not processed. You can try again or contact support if the issue persists.</p>
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 flex items-center justify-center px-4">
+      <div className="max-w-xl rounded-2xl border border-amber-400/20 bg-slate-900/70 p-8 text-center text-slate-100">
+        <h1 className="text-3xl font-bold text-amber-300 mb-4">Checkout Interrupted</h1>
+        <p className="text-slate-300 leading-7">
+          Your payment was not processed. If you used <code>PIONEER</code>, your cohort tag is still attached to the account, but the paid membership has not been activated yet.
+        </p>
+        <p className="mt-4 text-sm text-slate-400">
+          Resume checkout to lock the $49/mo founding rate, unlock the dashboard, and activate the builder-credit onboarding.
+        </p>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <Link
+            to="/pricing"
+            className="inline-flex items-center justify-center rounded-lg bg-amber-400 px-6 py-3 font-semibold text-slate-950 transition-colors hover:bg-amber-300"
+          >
+            Resume Checkout
+          </Link>
+          <Link
+            to="/login"
+            className="inline-flex items-center justify-center rounded-lg border border-white/15 px-6 py-3 font-semibold text-white transition-colors hover:bg-white/5"
+          >
+            Sign In
+          </Link>
+        </div>
+      </div>
     </div>
   );
 };

@@ -1,197 +1,419 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import ReactPlayer from "react-player";
+import { useAuth } from "../context/AuthContext";
+import { getUserProfile, userHasPaidAccess } from "../firebaseService";
+import { UserProfile } from "../types/course";
+import { openBetaFeedback } from "../components/UserJotWidget";
 
-const WELCOME_VIDEO_URL = "https://youtu.be/smkBKoxwzdE";
+const DISCORD_URL = process.env.REACT_APP_FOUNDING_DISCORD_URL || "";
 
-const ONBOARDING_STEPS = [
+const activeScripts = [
   {
-    order: 1,
-    label: "Visit the Homepage",
-    why: "Get a feel for the overall experience",
-    icon: "🏠",
+    title: "Content Architect v1.1",
+    description:
+      "Turn raw transcripts into a 30-day distribution engine. Optimized for Gemini 1.5 Pro.",
+    cta: "Launch Script Environment",
+    href: "/courses/course_01_id/modules/module_01_id/lessons/lesson_founders_01_content_architect",
+    accent: "cyan",
   },
   {
-    order: 2,
-    label: 'Click "Courses" in the nav',
-    why: "Browse the course catalog",
-    icon: "📚",
-  },
-  {
-    order: 3,
-    label: "Open any lesson",
-    why: "Experience the AI-enhanced lesson format",
-    icon: "▶️",
-  },
-  {
-    order: 4,
-    label: "Try the AI Chat Tutor",
-    why: "Ask it a question about something you're learning",
-    icon: "🤖",
-  },
-  {
-    order: 5,
-    label: "Visit your Profile",
-    why: "Set up your avatar and learning preferences",
-    icon: "👤",
+    title: "Informed Search Agent (BETA)",
+    description:
+      "Real-time 2026 web-access module. Ground your AI in today’s facts.",
+    cta: "Access Module 2 Build",
+    href: "/courses/course_01_id/modules/module_02_id/lessons/lesson_mod2_project",
+    accent: "emerald",
   },
 ];
 
-const FEEDBACK_STEPS = [
-  'Look for the "Founding Access" button in the bottom-left corner of any page',
-  "Click it — a feedback panel will slide open",
-  "Choose a category: Bug, Feature Request, or General Feedback",
-  "Describe what you experienced in as much detail as you can",
-  "Hit Submit — it goes directly to our development team",
+const intelPipeline = [
+  {
+    title: "01 | Foundation & Environment",
+    copy: "Setting up your high-performance environment on Windows and Mac.",
+    status: "Live",
+  },
+  {
+    title: "02 | The Informed Architect",
+    copy: "Integrating Serper.dev for real-time web awareness.",
+    status: "Beta",
+  },
+  {
+    title: "03 | Persistent Memory",
+    copy: "Connecting your agents to vector databases for long-term recall.",
+    status: "Coming Soon",
+  },
 ];
+
+const systemPulse = [
+  { label: "API Health", value: "Optimal", state: "online" },
+  { label: "Next Live Build Log", value: "Thursday, 10:00 AM PST", state: "neutral" },
+  { label: "Member Count", value: "20/20 Cohort Full", state: "accent" },
+];
+
+const accentClassMap: Record<string, string> = {
+  cyan: "from-cyan-500/20 via-cyan-400/10 to-transparent border-cyan-400/25 shadow-cyan-500/10",
+  emerald: "from-emerald-500/20 via-emerald-400/10 to-transparent border-emerald-400/25 shadow-emerald-500/10",
+};
+
+const statusClassMap: Record<string, string> = {
+  Live: "bg-cyan-400/15 text-cyan-200 border-cyan-400/30",
+  Beta: "bg-emerald-400/15 text-emerald-200 border-emerald-400/30",
+  "Coming Soon": "bg-white/10 text-slate-300 border-white/15",
+};
+
+const resolveMemberName = (profile: UserProfile | null, email: string | null | undefined) => {
+  const explicit =
+    profile?.displayName?.trim() ||
+    (email ? email.split("@")[0] : "") ||
+    "Architect";
+
+  return explicit
+    .split(/[.\-_ ]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+};
 
 const WelcomePage: React.FC = () => {
+  const { currentUser } = useAuth();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadProfile = async () => {
+      if (!currentUser) {
+        setProfile(null);
+        return;
+      }
+
+      try {
+        const nextProfile = await getUserProfile(currentUser.uid);
+        if (active) {
+          setProfile(nextProfile);
+        }
+      } catch (error) {
+        console.error("Failed to load welcome profile:", error);
+      }
+    };
+
+    void loadProfile();
+    return () => {
+      active = false;
+    };
+  }, [currentUser]);
+
+  const memberName = useMemo(
+    () => resolveMemberName(profile, currentUser?.email),
+    [profile, currentUser?.email]
+  );
+  const isPioneerTagged = profile?.isBetaTester === true;
+  const isScholarshipAccess = !!profile?.betaScholarshipCode;
+  const hasPaidCohortAccess = useMemo(() => {
+    if (!profile) return false;
+    if (profile.foundingMember === true) return true;
+    return profile.isBetaTester === true && userHasPaidAccess(profile);
+  }, [profile]);
+  const canUseDirectLine = hasPaidCohortAccess;
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100">
-      <div className="mx-auto max-w-4xl px-4 py-12">
+    <div className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.16),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.14),_transparent_24%),linear-gradient(180deg,_#020617_0%,_#0f172a_45%,_#020617_100%)] text-slate-100">
+      <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[linear-gradient(90deg,transparent,rgba(34,211,238,0.08),transparent)] blur-3xl" />
 
-        {/* ── Pioneer Badge ── */}
-        <div className="mb-8 text-center">
-          <span className="inline-flex items-center gap-2 rounded-full bg-amber-400/20 border border-amber-400/40 px-5 py-2 text-sm font-semibold text-amber-300 uppercase tracking-[0.15em]">
-            🚀 Pioneer Cohort — Founding Access
-          </span>
-        </div>
-
-        {/* ── Hero ── */}
-        <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 md:p-12 shadow-2xl mb-8">
-          <h1 className="text-3xl md:text-4xl font-headings font-extrabold text-white text-center">
-            Your Pioneer Cohort access is now live.
-          </h1>
-          <p className="mt-4 text-lg text-slate-300 text-center max-w-2xl mx-auto">
-            Here is everything you need to get started and how to make the most of the next two weeks.
-          </p>
-
-          {/* Welcome Video */}
-          <div className="mt-8 rounded-2xl overflow-hidden border border-white/10 bg-black/30">
-            <div className="w-full" style={{ aspectRatio: "16/9" }}>
-              <ReactPlayer
-                url={WELCOME_VIDEO_URL}
-                width="100%"
-                height="100%"
-                controls
-                className="react-player"
-              />
+        {isPioneerTagged && !hasPaidCohortAccess && (
+          <div className="mb-8 rounded-[1.75rem] border border-amber-300/20 bg-amber-300/10 p-6 text-amber-100">
+            <p className="text-xs font-headings font-semibold uppercase tracking-[0.22em] text-amber-200">
+              Cohort Tag Saved
+            </p>
+            <h2 className="mt-3 text-2xl font-headings font-bold text-white">
+              Complete checkout to activate Vanguard Access.
+            </h2>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-amber-50/90">
+              Your <code>PIONEER</code> tag is attached to this account, but the paid founding membership is not active yet. Finish the $49/mo checkout to unlock the dashboard, the direct feedback line, and the builder-credit onboarding.
+            </p>
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+              <Link
+                to="/pricing"
+                className="inline-flex items-center justify-center rounded-2xl bg-amber-300 px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-slate-950 transition-colors hover:bg-amber-200"
+              >
+                Activate Founding Rate
+              </Link>
+              <Link
+                to="/courses"
+                className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-white/10"
+              >
+                Preview Curriculum
+              </Link>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* ── Step 1: Create Account ── */}
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8 mb-6">
-          <div className="flex items-center gap-3 mb-5">
-            <span className="flex-shrink-0 w-8 h-8 rounded-full bg-cyan-500 flex items-center justify-center text-white font-bold text-sm">1</span>
-            <h2 className="text-xl font-headings font-bold text-white">Create Your Account</h2>
-          </div>
-          <ol className="space-y-3 text-slate-300 text-sm">
-            {[
-              <>Go to <a href="https://aiintegrationcourse.com" className="text-cyan-400 underline" target="_blank" rel="noreferrer">aiintegrationcourse.com</a></>,
-              <>Click <strong className="text-white">"Get Started"</strong> in the top right corner</>,
-              "Sign up with your email address and create a password",
-              "Check your inbox for a verification email and confirm your address",
-              "Log back in — you will be taken directly to the platform",
-            ].map((step, i) => (
-              <li key={i} className="flex items-start gap-3">
-                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-xs text-slate-400 mt-0.5">{i + 1}</span>
-                <span>{step}</span>
-              </li>
-            ))}
-          </ol>
-          <div className="mt-5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 p-4 text-sm text-cyan-200">
-            <strong>Note:</strong> Your account has already been flagged as a beta tester on our end. Once you log in, your Pioneer access will activate automatically.
-          </div>
-        </div>
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <main className="space-y-8">
+            <section className="relative overflow-hidden rounded-[2rem] border border-cyan-400/20 bg-slate-950/70 p-8 shadow-[0_30px_80px_rgba(2,8,23,0.55)] backdrop-blur-xl md:p-10">
+              <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(34,211,238,0.12),transparent_38%,rgba(16,185,129,0.08))]" />
+              <div className="relative">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="inline-flex rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-1 text-xs font-headings font-semibold uppercase tracking-[0.28em] text-cyan-200">
+                    Vanguard Access // Pioneer Cohort
+                  </span>
+                  <span className="inline-flex rounded-full border border-amber-300/25 bg-amber-300/10 px-4 py-1 text-xs font-headings font-semibold uppercase tracking-[0.2em] text-amber-200">
+                    Est. March 2026 | Founding Rate Locked
+                  </span>
+                </div>
 
-        {/* ── Step 2: Explore ── */}
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8 mb-6">
-          <div className="flex items-center gap-3 mb-5">
-            <span className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-sm">2</span>
-            <h2 className="text-xl font-headings font-bold text-white">Explore the Platform</h2>
-          </div>
-          <p className="text-slate-400 text-sm mb-5">
-            Take 15–20 minutes to explore freely. We recommend this path:
-          </p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-white/10">
-                  <th className="text-left py-2 pr-4 text-slate-400 font-semibold w-10">Order</th>
-                  <th className="text-left py-2 pr-4 text-slate-400 font-semibold">What to Do</th>
-                  <th className="text-left py-2 text-slate-400 font-semibold">Why</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ONBOARDING_STEPS.map((step) => (
-                  <tr key={step.order} className="border-b border-white/5">
-                    <td className="py-3 pr-4 text-center">
-                      <span className="text-lg">{step.icon}</span>
-                    </td>
-                    <td className="py-3 pr-4 text-white font-medium">{step.label}</td>
-                    <td className="py-3 text-slate-400">{step.why}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
+                  <div>
+                    <p className="text-sm font-medium uppercase tracking-[0.22em] text-slate-400">
+                      Identity Layer
+                    </p>
+                    <h1 className="mt-4 max-w-4xl text-4xl font-headings font-black uppercase tracking-[0.04em] text-white md:text-6xl">
+                      Welcome, {memberName}.
+                    </h1>
+                    <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
+                      You are one of the 20 architects currently shaping the future of
+                      {" "}
+                      <span className="text-cyan-200">aiintegrationcourse.com</span>.
+                    </p>
+                    <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                      <Link
+                        to={hasPaidCohortAccess ? "/courses/course_01_id/modules/module_01_id/lessons/lesson_founders_01_content_architect" : "/pricing"}
+                        className="inline-flex items-center justify-center rounded-2xl bg-cyan-500 px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-slate-950 transition-colors hover:bg-cyan-400"
+                      >
+                        {hasPaidCohortAccess ? "Enter The Forge" : "Activate Founding Rate"}
+                      </Link>
+                      {canUseDirectLine ? (
+                        <button
+                          type="button"
+                          onClick={openBetaFeedback}
+                          className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-slate-100 transition-colors hover:border-cyan-300/35 hover:bg-cyan-400/10"
+                        >
+                          Open Architect&apos;s Direct Line
+                        </button>
+                      ) : (
+                        <Link
+                          to="/pricing"
+                          className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-slate-100 transition-colors hover:border-cyan-300/35 hover:bg-cyan-400/10"
+                        >
+                          Finish Paid Onboarding
+                        </Link>
+                      )}
+                    </div>
+                  </div>
 
-        {/* ── Step 3: Submit Feedback ── */}
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8 mb-8">
-          <div className="flex items-center gap-3 mb-5">
-            <span className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold text-sm">3</span>
-            <h2 className="text-xl font-headings font-bold text-white">
-              Submit Feedback{" "}
-              <span className="text-emerald-400 text-base font-normal">(This Is the Most Important Part)</span>
-            </h2>
-          </div>
-          <p className="text-slate-400 text-sm mb-5">
-            We have made it as easy as possible to give feedback without leaving the page you are on.
-          </p>
-
-          <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-[0.15em] mb-3">How to submit feedback:</h3>
-          <ol className="space-y-2 mb-6">
-            {FEEDBACK_STEPS.map((step, i) => (
-              <li key={i} className="flex items-start gap-3 text-sm text-slate-300">
-                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-xs text-emerald-300 mt-0.5">{i + 1}</span>
-                <span>{step}</span>
-              </li>
-            ))}
-          </ol>
-
-          <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-[0.15em] mb-3">What makes great feedback:</h3>
-          <div className="grid gap-3 md:grid-cols-3">
-            {[
-              { label: "For bugs", tip: 'Tell us exactly what you did, what you expected to happen, and what actually happened. The more specific, the faster we can fix it.' },
-              { label: "For UX issues", tip: '"This was confusing because..." is more useful than "this is bad."' },
-              { label: "For feature requests", tip: "Describe the problem you were trying to solve, not just the solution you imagined." },
-            ].map((item) => (
-              <div key={item.label} className="rounded-xl bg-white/5 border border-white/10 p-4">
-                <p className="text-xs font-bold text-emerald-300 uppercase tracking-[0.12em] mb-2">{item.label}</p>
-                <p className="text-sm text-slate-400 leading-relaxed">{item.tip}</p>
+                  <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-5">
+                    <p className="text-xs font-headings font-semibold uppercase tracking-[0.24em] text-slate-400">
+                      Cohort Access
+                    </p>
+                    <div className="mt-5 space-y-4">
+                      <div className="rounded-2xl border border-emerald-400/25 bg-emerald-400/10 p-4">
+                        <p className="text-xs uppercase tracking-[0.18em] text-emerald-200">
+                          {isScholarshipAccess ? "Scholarship Access" : "Founding Rate"}
+                        </p>
+                        <p className="mt-2 text-2xl font-headings font-bold text-white">
+                          {isScholarshipAccess
+                            ? "Premium Active"
+                            : hasPaidCohortAccess
+                              ? "$49/mo Active"
+                              : "$49/mo Reserved"}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-4">
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                          Builder Scholarship
+                        </p>
+                        <p className="mt-2 text-sm leading-6 text-slate-300">
+                          $50 in API credits removes the cost of experimentation. The gift is build fuel, not free site access.
+                        </p>
+                      </div>
+                      <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-4">
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                          Month 2 Credit
+                        </p>
+                        <p className="mt-2 text-sm leading-6 text-slate-300">
+                          Complete the first 4 modules and a 15-minute feedback call to earn your second month back as a credit.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
+            </section>
 
-        {/* ── CTA ── */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link
-            to="/courses"
-            className="inline-flex items-center justify-center rounded-xl bg-cyan-600 px-8 py-4 font-semibold text-white hover:bg-cyan-700 transition-colors text-lg"
-          >
-            Go to Courses →
-          </Link>
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-xl border border-white/20 px-8 py-4 font-semibold text-slate-300 hover:bg-white/5 transition-colors text-lg"
-          >
-            Back to Homepage
-          </Link>
-        </div>
+            <section className="rounded-[2rem] border border-white/10 bg-slate-950/65 p-8 backdrop-blur-xl">
+              <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="text-xs font-headings font-semibold uppercase tracking-[0.24em] text-cyan-300">
+                    The Implementation Lab
+                  </p>
+                  <h2 className="mt-3 text-3xl font-headings font-black uppercase tracking-[0.06em] text-white">
+                    The Forge: Active Scripts
+                  </h2>
+                </div>
+                <p className="max-w-xl text-sm leading-6 text-slate-400">
+                  This is the do zone. Every build here should push a real system, not just theory.
+                </p>
+              </div>
 
+              <div className="mt-8 grid gap-5 lg:grid-cols-2">
+                {activeScripts.map((card) => (
+                  <article
+                    key={card.title}
+                    className={`rounded-[1.75rem] border bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.08),transparent_40%)] p-6 shadow-2xl ${accentClassMap[card.accent]}`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-headings font-semibold uppercase tracking-[0.22em] text-slate-400">
+                          Active Asset
+                        </p>
+                        <h3 className="mt-3 text-2xl font-headings font-bold text-white">
+                          {card.title}
+                        </h3>
+                      </div>
+                      <div className="h-11 w-11 rounded-2xl border border-white/10 bg-slate-950/80" />
+                    </div>
+                    <p className="mt-5 text-sm leading-7 text-slate-300">
+                      {card.description}
+                    </p>
+                    <Link
+                      to={card.href}
+                      className="mt-8 inline-flex items-center rounded-2xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:border-white/25 hover:bg-white/10"
+                    >
+                      {card.cta}
+                    </Link>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-[2rem] border border-white/10 bg-slate-950/65 p-8 backdrop-blur-xl">
+              <p className="text-xs font-headings font-semibold uppercase tracking-[0.24em] text-emerald-300">
+                Strategic Intel
+              </p>
+              <h2 className="mt-3 text-3xl font-headings font-black uppercase tracking-[0.06em] text-white">
+                Curriculum Pipeline
+              </h2>
+              <div className="mt-8 grid gap-4">
+                {intelPipeline.map((item) => (
+                  <div
+                    key={item.title}
+                    className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-5 md:flex md:items-center md:justify-between md:gap-8"
+                  >
+                    <div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <h3 className="text-lg font-headings font-bold uppercase tracking-[0.04em] text-white">
+                          {item.title}
+                        </h3>
+                        <span
+                          className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${statusClassMap[item.status]}`}
+                        >
+                          {item.status}
+                        </span>
+                      </div>
+                      <p className="mt-3 text-sm leading-7 text-slate-400">
+                        {item.copy}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-[2rem] border border-emerald-400/15 bg-[linear-gradient(180deg,rgba(16,185,129,0.08),rgba(15,23,42,0.72))] p-8 backdrop-blur-xl">
+              <p className="text-xs font-headings font-semibold uppercase tracking-[0.24em] text-emerald-300">
+                The Pioneer Feedback Loop
+              </p>
+              <h2 className="mt-3 text-3xl font-headings font-black uppercase tracking-[0.06em] text-white">
+                The Architect&apos;s Direct Line
+              </h2>
+
+              <div className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,1fr)_240px]">
+                <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/65 p-6">
+                  <p className="text-xs font-headings font-semibold uppercase tracking-[0.22em] text-slate-400">
+                    Co-Build This Course
+                  </p>
+                  <p className="mt-4 max-w-2xl text-base leading-8 text-slate-300">
+                    Is there a specific integration you need for your business? A bug in the script? A feature you want to see? Your feedback dictates the Module 4 roadmap.
+                  </p>
+                  <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                    {canUseDirectLine ? (
+                      <button
+                        type="button"
+                        onClick={openBetaFeedback}
+                        className="inline-flex items-center justify-center rounded-2xl bg-emerald-400 px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-slate-950 transition-colors hover:bg-emerald-300"
+                      >
+                        Submit Feature Request / Bug Report
+                      </button>
+                    ) : (
+                      <Link
+                        to="/pricing"
+                        className="inline-flex items-center justify-center rounded-2xl bg-emerald-400 px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-slate-950 transition-colors hover:bg-emerald-300"
+                      >
+                        Activate Direct Line
+                      </Link>
+                    )}
+                    {DISCORD_URL ? (
+                      <a
+                        href={DISCORD_URL}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-slate-100 transition-colors hover:border-white/25 hover:bg-white/10"
+                      >
+                        Join #Founding-Cohort on Discord
+                      </a>
+                    ) : (
+                      <div className="inline-flex items-center justify-center rounded-2xl border border-dashed border-white/15 px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-slate-400">
+                        Discord Link Posting Soon
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.03] p-6">
+                  <p className="text-xs font-headings font-semibold uppercase tracking-[0.22em] text-slate-400">
+                    Influence Window
+                  </p>
+                  <p className="mt-4 text-sm leading-7 text-slate-300">
+                    PIONEER tags the cohort. Paid membership unlocks the direct feedback lane. Founding code redemption remains separate and is only for access activation.
+                  </p>
+                </div>
+              </div>
+            </section>
+          </main>
+
+          <aside className="space-y-6">
+            <section className="sticky top-6 rounded-[2rem] border border-white/10 bg-slate-950/70 p-6 shadow-2xl backdrop-blur-xl">
+              <p className="text-xs font-headings font-semibold uppercase tracking-[0.24em] text-cyan-300">
+                System Pulse
+              </p>
+              <div className="mt-6 space-y-4">
+                {systemPulse.map((item) => (
+                  <div key={item.label} className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      {item.label}
+                    </p>
+                    <div className="mt-2 flex items-center gap-3">
+                      {item.state === "online" && <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_16px_rgba(74,222,128,0.8)]" />}
+                      <p className="text-sm font-medium text-white">{item.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 rounded-[1.5rem] border border-cyan-400/15 bg-cyan-400/10 p-4">
+                <p className="text-xs font-headings font-semibold uppercase tracking-[0.18em] text-cyan-200">
+                  Status Channel
+                </p>
+                <p className="mt-3 text-sm leading-7 text-slate-200">
+                  {isScholarshipAccess
+                    ? "This account was activated through a private scholarship code. The cohort dashboard and feedback lane are live without checkout."
+                    : "The rate lock stays on this account. PIONEER tags the cohort lane, but checkout activates the membership and builder-credit onboarding."}
+                </p>
+              </div>
+            </section>
+          </aside>
+        </div>
       </div>
     </div>
   );

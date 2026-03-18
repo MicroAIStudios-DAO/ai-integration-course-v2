@@ -3,7 +3,7 @@ export interface Lesson {
   title: string;
   order: number;
   isFree: boolean;
-  tier?: string; // 'free' or 'premium' - alternative to isFree boolean
+  tier?: string; // 'free', 'premium', or 'founders' - alternative to isFree boolean
   storagePath?: string; // Path to Markdown file in Firebase Storage (optional)
   content?: string; // Direct lesson content in markdown format (alternative to storagePath)
   videoUrl?: string;
@@ -61,6 +61,9 @@ export interface UserProfile {
   activeTrial?: boolean;
   isBetaTester?: boolean;
   betaCohort?: string;
+  betaAccessCode?: string;
+  betaScholarshipCode?: string;
+  betaScholarshipGrantedAt?: Date | { toDate?: () => Date } | string | null;
   // Admin role fields for testing and administration
   isAdmin?: boolean; // Simple admin flag
   role?: 'user' | 'admin' | 'moderator'; // Role-based access control

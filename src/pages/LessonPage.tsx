@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import ReactPlayer from "react-player";
 import remarkGfm from "remark-gfm";
-import { getCourseById, getLessonMarkdownUrl, markLessonAsComplete, getUserProfile, getUserCourseProgress, userHasPaidAccess } from "../firebaseService"; // Import Firestore service
+import { getCourseById, getLessonMarkdownUrl, markLessonAsComplete, getUserProfile, getUserCourseProgress, isFoundersLesson, isFreeLesson, userCanAccessLesson } from "../firebaseService"; // Import Firestore service
 import { Course, Lesson as LessonType, UserCourseProgress } from "../types/course"; // Import types
 import { useAuth } from "../context/AuthContext"; // For gating logic
 // Master access removed for production
@@ -67,18 +67,12 @@ const LessonPage: React.FC = () => {
         }
         setLesson(currentLesson);
 
-        // Check access: free lesson, subscription, or admin role
-        const isFreeLesson = currentLesson.tier === 'free' || currentLesson.isFree === true;
-        let canAccess = isFreeLesson;
+        // Check access against the lesson tier and current user profile.
+        let profile = null;
+        let canAccess = isFreeLesson(currentLesson);
         if (currentUser) {
-          // Check subscription status for logged-in users without master access
-          const profile = await getUserProfile(currentUser.uid);
-          const isAdmin = profile?.role === 'admin' || profile?.isAdmin;
-          canAccess = !!(
-            isFreeLesson ||
-            isAdmin ||
-            userHasPaidAccess(profile)
-          );
+          profile = await getUserProfile(currentUser.uid);
+          canAccess = userCanAccessLesson(currentLesson, profile);
           
           const progress = await getUserCourseProgress(currentUser.uid, courseId);
           setUserProgress(progress);
@@ -143,7 +137,11 @@ The detailed content for this lesson is being prepared. Please check back soon o
             courseId
           );
         } else {
-          setError("You do not have access to this premium lesson.");
+          setError(
+            isFoundersLesson(currentLesson)
+              ? "This founders lesson is reserved for active Pioneer cohort members and founding members."
+              : "You do not have access to this premium lesson."
+          );
         }
 
       } catch (err: any) {
@@ -243,10 +241,13 @@ The detailed content for this lesson is being prepared. Please check back soon o
           <h1>{lesson?.title}</h1>
           <div className="textbook-meta">
             <span>Duration: {lesson?.durationMinutes} minutes</span>
-            {((lesson as any)?.isFree || (lesson as any)?.tier === 'free') && (
+            {isFreeLesson(lesson) && (
               <span className="bg-green-500 bg-opacity-20 px-2 py-1 rounded-full text-xs">FREE</span>
             )}
-            {((lesson as any) && !((lesson as any)?.isFree || (lesson as any)?.tier === 'free')) && (
+            {isFoundersLesson(lesson) && (
+              <span className="bg-amber-500 bg-opacity-20 px-2 py-1 rounded-full text-xs">FOUNDERS</span>
+            )}
+            {(lesson && !isFreeLesson(lesson) && !isFoundersLesson(lesson)) && (
               <span className="bg-yellow-600 bg-opacity-20 px-2 py-1 rounded-full text-xs">PREMIUM</span>
             )}
             {isLessonCompleted() && <span className="bg-blue-500 bg-opacity-20 px-2 py-1 rounded-full text-xs">COMPLETED</span>}
@@ -328,7 +329,7 @@ The detailed content for this lesson is being prepared. Please check back soon o
               </p>
               <AITutor
                 lessonId={`courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`}
-                premium={!lesson?.isFree}
+                premium={!isFreeLesson(lesson)}
                 hasAccess={isAllowed}
               />
             </div>
