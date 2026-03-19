@@ -16,8 +16,6 @@ import {
   industryPages,
   resourceLibraryItems
 } from '../content/marketingPages';
-const GITHUB_REPO_URL = 'https://github.com/MicroAIStudios-DAO/ai-integration-course-v2';
-
 const buildExternalUrl = (baseUrl: string, path: string): string => {
   try {
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
@@ -355,20 +353,6 @@ const HomePage: React.FC = () => {
                   </p>
                   <a href={navigationLinks.about} className="mt-5 inline-flex text-cyan-300 hover:text-cyan-200">
                     Read about Blaine →
-                  </a>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
-                  <h3 className="text-xl font-semibold text-white">GitHub Build Signal</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-slate-300">
-                    Public build artifacts and repo-level implementation detail help technical buyers trust the teaching.
-                  </p>
-                  <a
-                    href={GITHUB_REPO_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-5 inline-flex text-cyan-300 hover:text-cyan-200"
-                  >
-                    Review the repo →
                   </a>
                 </div>
               </div>
