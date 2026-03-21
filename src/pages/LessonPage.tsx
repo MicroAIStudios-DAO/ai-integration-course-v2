@@ -346,7 +346,7 @@ The detailed content for this lesson is being prepared. Please check back soon o
               {/* Lesson Content with Textbook Styling */}
               {markdownContent && (
                 <div className="lesson-content">
-                  <ReactMarkdown remarkPlugins={[remarkGfm as any]}>{markdownContent}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdownContent}</ReactMarkdown>
                 </div>
               )}
 

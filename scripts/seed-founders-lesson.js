@@ -18,6 +18,7 @@ const lessons = [
     title: 'Founders Lesson: The Content Architect (Your Day 1 Win)',
     order: 0,
     durationMinutes: 35,
+    videoUrl: null,
     description:
       'A welcome lesson for the founding cohort and Pioneer beta testers that turns a rough idea into a reusable content engine.',
     markdownPath: path.join(
@@ -34,6 +35,7 @@ const lessons = [
     title: 'Founders Lesson: The Informed Architect (Adding Real-Time Search)',
     order: 0,
     durationMinutes: 30,
+    videoUrl: 'https://youtu.be/LIHqsE49FMo',
     description:
       'Day 2 of the Pioneer beta track: add real-time Serper search before generating content so the agent can write with fresh 2026 context.',
     markdownPath: path.join(
@@ -43,6 +45,39 @@ const lessons = [
       'founders',
       'founders-lesson-02-informed-architect.md'
     ),
+  },
+  {
+    moduleId: 'module_03_id',
+    lessonId: 'lesson_founders_03_persistent_memory',
+    title: 'Founders Lesson: Persistent Memory (Vector Database Integration)',
+    order: 0,
+    durationMinutes: 30,
+    videoUrl: 'https://youtu.be/zTIWJ8xz4Ms',
+    description:
+      'Connect your agents to vector databases for long-term recall and context continuity across sessions.',
+    markdownPath: null,
+  },
+  {
+    moduleId: 'module_04_id',
+    lessonId: 'lesson_founders_04_governed_agents',
+    title: 'Founders Lesson: Governed Agents (Guardrails and Output Control)',
+    order: 0,
+    durationMinutes: 30,
+    videoUrl: 'https://youtu.be/yegyaYCQhgs',
+    description:
+      'Build agents with production-grade guardrails, output validation, and governance strategies for autonomous execution.',
+    markdownPath: null,
+  },
+  {
+    moduleId: 'module_05_id',
+    lessonId: 'lesson_founders_05_deployment_pipeline',
+    title: 'Founders Lesson: Deployment Pipeline (From Script to Production)',
+    order: 0,
+    durationMinutes: 30,
+    videoUrl: 'https://youtu.be/uw2hznD04xU',
+    description:
+      'Move your agentic workflows from local scripts to deployed, scheduled, production-ready systems.',
+    markdownPath: null,
   },
 ];
 
@@ -74,7 +109,9 @@ async function main() {
   for (const lesson of lessons) {
     const moduleRef = await resolveModuleRef(courseRef, lesson.moduleId);
     const moduleSnap = await moduleRef.get();
-    const content = fs.readFileSync(lesson.markdownPath, 'utf8');
+    const content = lesson.markdownPath
+      ? fs.readFileSync(lesson.markdownPath, 'utf8')
+      : null;
     const lessonRef = moduleRef.collection('lessons').doc(lesson.lessonId);
     const contentRef = db.collection('lessonContent').doc(
       buildLessonContentId(COURSE_ID, moduleRef.id, lesson.lessonId)
@@ -88,7 +125,7 @@ async function main() {
         order: lesson.order,
         isFree: false,
         tier: 'founders',
-        videoUrl: null,
+        videoUrl: lesson.videoUrl || null,
         durationMinutes: lesson.durationMinutes,
         description: lesson.description,
         isFoundersLesson: true,
@@ -100,18 +137,20 @@ async function main() {
       { merge: true }
     );
 
-    batch.set(
-      contentRef,
-      {
-        courseId: COURSE_ID,
-        moduleId: moduleRef.id,
-        lessonId: lesson.lessonId,
-        tier: 'founders',
-        content,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      },
-      { merge: true }
-    );
+    if (content) {
+      batch.set(
+        contentRef,
+        {
+          courseId: COURSE_ID,
+          moduleId: moduleRef.id,
+          lessonId: lesson.lessonId,
+          tier: 'founders',
+          content,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+    }
 
     await batch.commit();
 

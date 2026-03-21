@@ -23,7 +23,7 @@ const MarkdownPage: React.FC<MarkdownPageProps> = (props: MarkdownPageProps) => 
   return (
     <article className="prose mx-auto p-6">
       {content ? (
-        <ReactMarkdown remarkPlugins={[remarkGfm as any]}>{content}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
       ) : (
         <p>Loading…</p>
       )}

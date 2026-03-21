@@ -5,17 +5,14 @@ import SEO from '../components/SEO';
 import CourseSchema from '../components/seo/CourseSchema';
 import FeedbackDrawer from '../components/feedback/FeedbackDrawer';
 import FoundingAccessFloatingButton from '../components/founding/FoundingAccessFloatingButton';
-import AIReadinessQuiz from '../components/home/AIReadinessQuiz';
-import RoiGuaranteeBadge from '../components/conversion/RoiGuaranteeBadge';
 import LeadMagnetForm from '../components/lead-magnet/LeadMagnetForm';
 import ExitIntentLeadMagnet from '../components/lead-magnet/ExitIntentLeadMagnet';
-import { topWorkflowsLeadMagnet } from '../content/leadMagnets';
+import { topWorkflowsLeadMagnet, agenticReadinessScorecard } from '../content/leadMagnets';
 import {
   homepageFaqItems,
   homepageVideoObject,
-  industryPages,
-  resourceLibraryItems
 } from '../content/marketingPages';
+
 const buildExternalUrl = (baseUrl: string, path: string): string => {
   try {
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
@@ -24,44 +21,48 @@ const buildExternalUrl = (baseUrl: string, path: string): string => {
     resolvedUrl.search = '';
     resolvedUrl.hash = '';
     return resolvedUrl.toString();
-  } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn('Unable to construct navigation URL', { baseUrl, path, error });
-    }
+  } catch {
     return path;
   }
 };
 
 const HomePage: React.FC = () => {
   const { baseUrl } = appConfig;
-  const navigationLinks = useMemo(() => {
-    return {
-      home: baseUrl,
-      about: buildExternalUrl(baseUrl, '/about'),
-      courses: buildExternalUrl(baseUrl, '/courses'),
-      library: buildExternalUrl(baseUrl, '/library'),
-      solutions: buildExternalUrl(baseUrl, '/solutions'),
-      faq: buildExternalUrl(baseUrl, '/faq'),
-      contact: buildExternalUrl(baseUrl, '/contact'),
-      local: buildExternalUrl(baseUrl, '/ai-workshops-san-diego'),
-      tutor: buildExternalUrl(baseUrl, '/tutor'),
-      login: buildExternalUrl(baseUrl, '/login'),
-      signup: buildExternalUrl(baseUrl, '/signup')
-    };
-  }, [baseUrl]);
+  const nav = useMemo(() => ({
+    home: baseUrl,
+    lab: buildExternalUrl(baseUrl, '/welcome'),
+    courses: buildExternalUrl(baseUrl, '/courses'),
+    local: buildExternalUrl(baseUrl, '/ai-workshops-san-diego'),
+    login: buildExternalUrl(baseUrl, '/login'),
+    signup: buildExternalUrl(baseUrl, '/signup'),
+    pricing: buildExternalUrl(baseUrl, '/pricing'),
+    about: buildExternalUrl(baseUrl, '/about'),
+    library: buildExternalUrl(baseUrl, '/library'),
+    solutions: buildExternalUrl(baseUrl, '/solutions'),
+    contact: buildExternalUrl(baseUrl, '/contact'),
+    faq: buildExternalUrl(baseUrl, '/faq'),
+    tutor: buildExternalUrl(baseUrl, '/tutor'),
+    terms: buildExternalUrl(baseUrl, '/terms'),
+    privacy: buildExternalUrl(baseUrl, '/privacy'),
+  }), [baseUrl]);
 
   return (
     <>
       <SEO
-        title="AI Automation Training for Business Owners and Developers"
-        description="Learn Gemini API integration, AI workflow automation, and practical deployment patterns with a build-first course for operators, founders, and developers."
+        title="Stop Chatting, Start Architecting | AI Integration Course"
+        description="Join the Founding 20 Pioneers learning to build, deploy, and govern autonomous AI workflows. Practical agentic systems training for operators and developers."
         url="/"
         keywords={[
-          'How do I integrate Gemini API with Python',
-          'Is this course for non-coders',
-          'How to use AI for business automation',
-          'AI integration course',
-          'AI automation training'
+          'How to build agentic workflows with LiteLLM',
+          'Python AI automation for real estate agents',
+          'Replacing Zapier with custom AI agents',
+          'Gemini 1.5 Pro vs Claude for local data processing',
+          'Integrating Serper API with local Python scripts',
+          'AI governance strategies for S-Corps 2026',
+          'How to build a personalized content distribution engine',
+          'San Diego AI consulting and integration workshops',
+          'Moving from prompt engineering to systems architecture',
+          'Retrieval-Augmented Generation RAG for small business',
         ]}
         author="Blaine Casey"
       />
@@ -71,177 +72,135 @@ const HomePage: React.FC = () => {
         includeVideoSchema
         videoObject={homepageVideoObject}
       />
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 text-white relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.05),transparent)]"></div>
-        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-gradient-to-r from-cyan-400/20 to-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 left-1/4 w-48 h-48 bg-gradient-to-r from-pink-400/20 to-indigo-600/20 rounded-full blur-2xl animate-pulse delay-1000"></div>
-      </div>
+      <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,rgba(6,182,212,0.12),transparent_40%),radial-gradient(ellipse_at_bottom_right,rgba(16,185,129,0.08),transparent_36%),linear-gradient(180deg,#020617_0%,#0f172a_50%,#020617_100%)] text-slate-100 overflow-hidden">
 
-      {/* Navigation */}
-      <nav className="relative z-20 flex justify-between items-center p-6 md:p-8">
-        <a
-          href={navigationLinks.home}
-          className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent hover:opacity-80 transition-opacity"
-        >
-          AI Integration Course
-        </a>
-        <div className="hidden md:flex items-center space-x-6">
-          <a href={navigationLinks.courses} className="hover:text-cyan-400 transition-colors">Courses</a>
-          <a href={navigationLinks.library} className="hover:text-cyan-400 transition-colors">Library</a>
-          <a href={navigationLinks.solutions} className="hover:text-cyan-400 transition-colors">Industries</a>
-          <a href={navigationLinks.about} className="hover:text-cyan-400 transition-colors">About</a>
-          <a href={navigationLinks.login} className="hover:text-cyan-400 transition-colors">Login</a>
-          <a
-            href={navigationLinks.signup}
-            className="bg-gradient-to-r from-cyan-500 to-purple-500 px-4 py-2 rounded-lg hover:from-cyan-600 hover:to-purple-600 transition-all"
-          >
-            Get Started
+        {/* NAVBAR */}
+        <nav className="relative z-30 flex items-center justify-between px-6 py-5 md:px-10">
+          <a href={nav.home} className="text-xl font-black uppercase tracking-[0.06em] text-white hover:opacity-80 transition-opacity">
+            AI Integration Course
           </a>
-        </div>
-      </nav>
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide text-slate-300">
+            <a href={nav.lab} className="hover:text-cyan-300 transition-colors">The Lab</a>
+            <a href={nav.courses} className="hover:text-cyan-300 transition-colors">Curriculum</a>
+            <a href={nav.local} className="hover:text-cyan-300 transition-colors">San Diego Workshops</a>
+            <a href={nav.login} className="hover:text-cyan-300 transition-colors">Login</a>
+          </div>
+          <a
+            href={nav.pricing}
+            className="hidden md:inline-flex rounded-xl bg-cyan-500 px-5 py-2.5 text-sm font-bold uppercase tracking-[0.1em] text-slate-950 shadow-lg shadow-cyan-500/25 hover:bg-cyan-400 transition-colors"
+          >
+            Claim Pioneer Seat
+          </a>
+          <button className="md:hidden text-white" aria-label="Menu">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+          </button>
+        </nav>
 
-      {/* Hero Section */}
-      <div className="relative z-10 flex flex-col items-center justify-center text-center px-6 py-12 md:py-20">
-        {/* Animated Avatar */}
-        <div className="mb-8">
-          <AnimatedAvatar size={120} />
-        </div>
+        {/* HERO */}
+        <section className="relative z-10 mx-auto max-w-6xl px-6 pt-10 pb-20 text-center md:pt-16 md:pb-28">
+          <div className="mb-8 flex justify-center">
+            <AnimatedAvatar size={100} />
+          </div>
+          <p className="mb-6 inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-5 py-1.5 text-xs font-bold uppercase tracking-[0.24em] text-cyan-200">
+            Pioneer Cohort \u2014 20 Seats Only
+          </p>
 
-        {/* Main Headline — Outcome-focused H1 */}
-        <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 max-w-5xl">
-          <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Recover 10+ Hours a Week With an AI Workflow You Launch in 14 Days
-          </span>
-        </h1>
+          <h1 className="mx-auto max-w-4xl text-5xl font-black uppercase leading-[1.08] tracking-tight text-white md:text-7xl lg:text-8xl">
+            Stop&nbsp;Chatting.
+            <br />
+            <span className="bg-gradient-to-r from-cyan-300 via-emerald-300 to-cyan-300 bg-clip-text text-transparent">
+              Start&nbsp;Architecting.
+            </span>
+          </h1>
 
-        {/* Subheadline */}
-        <p className="text-lg md:text-xl lg:text-2xl max-w-3xl text-slate-300 mb-4 leading-relaxed">
-          Replace repetitive support, inbox, and reporting work with one guided automation sprint that moves from idea to live workflow before the second week ends.
-        </p>
-        <p className="text-md md:text-lg max-w-2xl text-slate-400 mb-8">
-          Practical build-first training for founders, operators, and developers. First deployable result in 15 minutes.
-        </p>
+          <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-slate-300 md:text-xl">
+            The internet is moving from LLMs to Agentic Systems. Join the Founding 20 Pioneers
+            learning to build, deploy, and govern autonomous AI workflows.
+          </p>
 
-        {/* Premium Hero Visual */}
-        <div className="w-full max-w-6xl mb-12">
-          <div className="relative overflow-hidden rounded-3xl border border-white/20 bg-slate-950/40 shadow-[0_20px_80px_rgba(15,23,42,0.55)]">
-            <img
-              src="/assets/hero_background_neural_network.png/hero_background_neural_network.png"
-              alt="Premium AI systems and automation visual for AI Integration Course"
-              className="h-[260px] w-full object-cover object-center md:h-[360px]"
-              loading="eager"
-              fetchPriority="high"
-              decoding="async"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-900/40 to-transparent" />
-            <div className="absolute inset-0 flex items-end justify-between p-5 md:p-8">
-              <div className="max-w-2xl text-left">
-                <p className="mb-2 inline-flex items-center rounded-full border border-cyan-300/40 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
-                  Premium Training Experience
-                </p>
-                <h2 className="text-xl font-bold text-white md:text-3xl">
-                  AI Integration Course Blueprint
-                </h2>
-                <p className="mt-2 text-sm text-slate-200 md:text-base">
-                  Structured modules, practical workflows, and deployable automation systems.
-                </p>
-              </div>
-              <div className="hidden rounded-2xl border border-white/20 bg-slate-900/65 px-4 py-3 text-right backdrop-blur md:block">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-300">Guarantee</p>
-                <p className="text-lg font-bold text-white">14-Day Build Window</p>
-              </div>
+          <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+            <a
+              href={nav.pricing}
+              className="inline-flex items-center rounded-2xl bg-cyan-500 px-8 py-4 text-base font-bold uppercase tracking-[0.1em] text-slate-950 shadow-xl shadow-cyan-500/20 transition-all hover:bg-cyan-400 hover:shadow-cyan-400/30 hover:scale-[1.02]"
+            >
+              Access The Forge \u2014 $49/mo Locked for Life
+            </a>
+            <a
+              href="#demo"
+              className="inline-flex items-center rounded-2xl border border-white/15 bg-white/5 px-8 py-4 text-base font-semibold uppercase tracking-[0.1em] text-white backdrop-blur transition-all hover:border-white/25 hover:bg-white/10"
+            >
+              Watch the Day 1 Script Demo
+            </a>
+          </div>
+
+          {/* Trust Badges */}
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-300">
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+              14-Day Money-Back Guarantee
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-slate-300">
+              <svg className="h-3.5 w-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+              Secure Checkout via Stripe
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-slate-300">
+              <svg className="h-3.5 w-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+              Cancel Anytime
+            </span>
+          </div>
+        </section>
+        {/* SOCIAL PROOF / AUTHORITY */}
+        <section className="relative z-10 mx-auto max-w-4xl px-6 pb-20 text-center">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-8 py-6 backdrop-blur">
+            <p className="text-sm font-medium tracking-wide text-slate-400">
+              Built by <span className="font-semibold text-white">Blaine Casey</span> \u2014
+              Governance &middot; Robotics &middot; Systems Architecture
+            </p>
+            <p className="mt-3 text-sm text-slate-400">
+              Not another prompting course. This is the <span className="text-cyan-200 font-semibold">Blue Collar Developer</span> path — high-level technical capability packaged for business ROI. Python, APIs, and agents focused on deployment, not theory.
+            </p>
+          </div>
+        </section>
+
+        {/* PROBLEM / SOLUTION SPLIT */}
+        <section className="relative z-10 mx-auto max-w-6xl px-6 pb-24">
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="rounded-3xl border border-rose-400/15 bg-rose-500/[0.06] p-8 md:p-10">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-rose-300/80">The Old Way</p>
+              <h3 className="mt-4 text-2xl font-bold text-white md:text-3xl">Copy-pasting into ChatGPT all day.</h3>
+              <p className="mt-4 text-base leading-relaxed text-slate-300">
+                Manual prompts. No memory. No integration. Every task starts from scratch.
+                You\u2019re using a $200B technology stack as a search bar.
+              </p>
+            </div>
+            <div className="rounded-3xl border border-cyan-400/15 bg-cyan-400/[0.06] p-8 md:p-10">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">The 2026 Way</p>
+              <h3 className="mt-4 text-2xl font-bold text-white md:text-3xl">One script. Autonomous execution. Integrated APIs.</h3>
+              <p className="mt-4 text-base leading-relaxed text-slate-300">
+                Your agent pulls live data, processes it through your business logic, and outputs
+                distribution-ready assets \u2014 while you move on to the next decision.
+              </p>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Key Value Props */}
-        <div className="grid md:grid-cols-3 gap-6 max-w-4xl mb-12">
-          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-            <div className="text-3xl mb-3">⏱️</div>
-            <h3 className="text-lg font-semibold mb-2">First Win in 15 Minutes</h3>
-            <p className="text-sm text-slate-400">No lengthy setup. Complete your first AI project before your coffee gets cold.</p>
+        {/* 2-MIN DEMO VIDEO */}
+        <section id="demo" className="relative z-10 mx-auto max-w-5xl px-6 pb-24">
+          <div className="text-center mb-8">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">See It In Action</p>
+            <h2 className="mt-3 text-3xl font-black uppercase tracking-tight text-white md:text-4xl">
+              Watch the Day 1 Script Demo
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-slate-300">
+              See the exact Content Architect workflow you will build \u2014 from raw transcript to
+              30-day distribution engine in one execution.
+            </p>
           </div>
-          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-            <div className="text-3xl mb-3">🛠️</div>
-            <h3 className="text-lg font-semibold mb-2">Built for Builders</h3>
-            <p className="text-sm text-slate-400">Skip the theory. Every lesson ends with something you can use immediately.</p>
-          </div>
-          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-            <div className="text-3xl mb-3">🤖</div>
-            <h3 className="text-lg font-semibold mb-2">AI as Your Coach</h3>
-            <p className="text-sm text-slate-400">Not just videos—an AI-enhanced accelerator that thinks with you and pushes you toward mastery.</p>
-          </div>
-        </div>
-
-        {/* AUDIT: 14-Day Build-Your-First-Bot Guarantee Badge */}
-        <div className="mb-3">
-          <RoiGuaranteeBadge className="px-6 py-3 text-sm" />
-        </div>
-        <p className="mb-8 text-sm text-slate-400">
-          Build one working automation in 14 days or get a full refund.
-        </p>
-
-        {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-4">
-          <a
-            href={navigationLinks.signup}
-            className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white px-8 py-4 rounded-xl text-lg font-semibold shadow-2xl transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300"
-          >
-            Start Building Now
-          </a>
-          <a
-            href={navigationLinks.courses}
-            className="border-2 border-white/20 hover:border-white/40 text-white px-8 py-4 rounded-xl text-lg font-semibold backdrop-blur-sm transition-all hover:bg-white/5"
-          >
-            View Curriculum
-          </a>
-        </div>
-
-        {/* Trust Badges Row */}
-        <div className="flex flex-wrap items-center justify-center gap-4 mb-6 mt-2">
-          <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-4 py-2 text-emerald-300 text-sm font-semibold">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-            14-Day Money-Back Guarantee
-          </div>
-          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/20 rounded-full px-4 py-2 text-slate-300 text-sm">
-            <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-            Secure Checkout via Stripe
-          </div>
-          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/20 rounded-full px-4 py-2 text-slate-300 text-sm">
-            <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-            Trusted by 1,200+ Builders
-          </div>
-          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/20 rounded-full px-4 py-2 text-slate-300 text-sm">
-            <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-            Cancel Anytime
-          </div>
-        </div>
-
-        {/* Email Capture */}
-        <div className="w-full max-w-md bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-          <h3 className="text-xl font-semibold mb-3 text-center">{topWorkflowsLeadMagnet.title}</h3>
-          <p className="text-sm text-slate-300 mb-4 text-center">
-            {topWorkflowsLeadMagnet.description}
-          </p>
-          <LeadMagnetForm source="homepage_inline" theme="dark" />
-          <p className="text-xs text-slate-400 mt-3 text-center">
-            No spam. Unsubscribe anytime. Your data is secure.
-          </p>
-        </div>
-
-        {/* Trailer Video */}
-        <section className="w-full max-w-5xl mt-16 mb-12 text-left">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Watch the 2-minute course trailer</h2>
-          <p className="text-slate-300 mb-6 max-w-3xl">
-            See the exact workflow you will build, from Gemini API prompting to production-ready automation.
-          </p>
-          <div className="overflow-hidden rounded-2xl border border-white/20 bg-slate-900 shadow-2xl">
+          <div className="overflow-hidden rounded-3xl border border-white/15 bg-slate-950/60 shadow-2xl">
             <div className="aspect-video">
               <iframe
                 src="https://www.youtube.com/embed/smkBKoxwzdE?rel=0"
-                title="AI Integration Course trailer"
+                title="AI Integration Course Day 1 Script Demo"
                 className="w-full h-full"
                 loading="lazy"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -250,167 +209,215 @@ const HomePage: React.FC = () => {
             </div>
           </div>
         </section>
-
-        <AIReadinessQuiz />
-
-        <section className="w-full max-w-6xl mt-16 text-left">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div className="max-w-3xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-300">Resource Library</p>
-              <h2 className="mt-2 text-3xl md:text-4xl font-bold">Permanent guides for operators and developers</h2>
-              <p className="mt-4 text-slate-300 leading-relaxed">
-                Build search depth with long-tail pages that answer implementation questions and business automation questions without making visitors hunt through a blog archive.
+        {/* AGENTIC READINESS SCORECARD — Audit #1 Fastest Win */}
+        <section className="relative z-10 mx-auto max-w-4xl px-6 pb-24">
+          <div className="rounded-3xl border border-emerald-400/20 bg-emerald-500/[0.04] p-8 md:p-10">
+            <div className="text-center">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-300">Free Assessment</p>
+              <h2 className="mt-3 text-2xl font-black uppercase tracking-tight text-white md:text-3xl">
+                {agenticReadinessScorecard.title}
+              </h2>
+              <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-slate-300">
+                {agenticReadinessScorecard.description}
               </p>
             </div>
-            <a href={navigationLinks.library} className="text-cyan-300 hover:text-cyan-200">
-              Browse the full library →
-            </a>
-          </div>
-          <div className="mt-8 grid gap-6 lg:grid-cols-3">
-            {resourceLibraryItems.map((resource) => (
-              <article
-                key={resource.slug}
-                className="rounded-3xl border border-white/20 bg-white/5 p-6 backdrop-blur-sm"
+            <ul className="mx-auto mt-6 max-w-md space-y-3 text-left">
+              {agenticReadinessScorecard.bullets.map((bullet) => (
+                <li key={bullet} className="flex items-start gap-3 text-sm text-slate-300">
+                  <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-emerald-400" />
+                  {bullet}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-8 text-center">
+              <a
+                href={agenticReadinessScorecard.downloadPath}
+                className="inline-flex items-center rounded-2xl bg-emerald-500 px-6 py-3 text-sm font-bold uppercase tracking-[0.1em] text-slate-950 shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-400 hover:scale-[1.02]"
               >
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">{resource.eyebrow}</p>
-                <h3 className="mt-3 text-2xl font-bold text-white">{resource.title}</h3>
-                <p className="mt-3 text-slate-300 leading-relaxed">{resource.summary}</p>
-                <p className="mt-4 text-sm text-slate-400">Best for: {resource.audience}</p>
-                <a
-                  href={buildExternalUrl(baseUrl, `/library/${resource.slug}`)}
-                  className="mt-6 inline-flex rounded-xl border border-white/20 px-4 py-2 font-semibold text-white hover:bg-white/5"
-                >
-                  Read guide
-                </a>
-              </article>
+                {agenticReadinessScorecard.ctaLabel}
+              </a>
+              <p className="mt-3 text-xs text-slate-500">{agenticReadinessScorecard.instantAccessLabel}</p>
+            </div>
+          </div>
+        </section>
+
+        {/* CURRICULUM PREVIEW */}
+        <section className="relative z-10 mx-auto max-w-5xl px-6 pb-24">
+          <div className="text-center mb-10">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-300">Strategic Intel</p>
+            <h2 className="mt-3 text-3xl font-black uppercase tracking-tight text-white md:text-4xl">
+              Curriculum Pipeline
+            </h2>
+          </div>
+          <div className="space-y-4">
+            {[
+              { num: '01', title: 'The Content Architect', copy: 'Turn raw transcripts into a 30-day distribution engine. Environment setup on Windows and Mac.', status: 'Live', accent: 'cyan' },
+              { num: '02', title: 'The Informed Agent', copy: 'Integrating Serper.dev for real-time web awareness. Ground every output in 2026 facts.', status: 'Live', accent: 'emerald' },
+              { num: '03', title: 'Persistent Memory', copy: 'Connecting your agents to vector databases for long-term recall and context continuity.', status: 'Next Week', accent: 'slate' },
+            ].map((mod) => (
+              <div
+                key={mod.num}
+                className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-6 md:flex-row md:items-center md:justify-between"
+              >
+                <div className="flex items-start gap-5">
+                  <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-white/10 bg-slate-950/80 text-lg font-black text-white">
+                    {mod.num}
+                  </span>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">{mod.title}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-slate-400">{mod.copy}</p>
+                  </div>
+                </div>
+                <span className={`inline-flex flex-shrink-0 rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-[0.16em] ${
+                  mod.accent === 'cyan'
+                    ? 'border-cyan-400/30 bg-cyan-400/10 text-cyan-200'
+                    : mod.accent === 'emerald'
+                      ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
+                      : 'border-white/15 bg-white/5 text-slate-300'
+                }`}>
+                  {mod.status}
+                </span>
+              </div>
             ))}
           </div>
-        </section>
-
-        <section className="w-full max-w-6xl mt-16 text-left">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div className="max-w-3xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-300">Industry Pages</p>
-              <h2 className="mt-2 text-3xl md:text-4xl font-bold">AI integration for high-intent business searches</h2>
-              <p className="mt-4 text-slate-300 leading-relaxed">
-                These pages target buyers who already know their industry problem. Each one frames the safest first pilot and the workflow categories that fit.
-              </p>
-            </div>
-            <a href={navigationLinks.solutions} className="text-cyan-300 hover:text-cyan-200">
-              View all industry pages →
+          <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+            <a
+              href="/courses/course_01_id/modules/module_01_id/lessons/lesson_founders_01_content_architect"
+              className="inline-flex items-center rounded-2xl bg-cyan-500 px-6 py-3 text-sm font-bold uppercase tracking-[0.1em] text-slate-950 shadow-lg shadow-cyan-500/20 transition-all hover:bg-cyan-400 hover:scale-[1.02]"
+            >
+              Run the Content Architect Script
+            </a>
+            <a href={nav.courses} className="text-sm font-semibold text-cyan-300 hover:text-cyan-200 transition-colors">
+              View full curriculum details →
             </a>
           </div>
-          <div className="mt-8 grid gap-6 lg:grid-cols-3">
-            {industryPages.map((industry) => (
-              <article
-                key={industry.slug}
-                className="rounded-3xl border border-white/20 bg-slate-950/40 p-6 shadow-xl"
+        </section>
+        {/* PIONEER GUARANTEE */}
+        <section className="relative z-10 mx-auto max-w-4xl px-6 pb-24">
+          <div className="rounded-3xl border border-cyan-400/20 bg-[linear-gradient(135deg,rgba(6,182,212,0.10),rgba(16,185,129,0.06),transparent_60%)] p-10 text-center md:p-14">
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">The Pioneer Guarantee</p>
+            <h2 className="mt-4 text-3xl font-black uppercase tracking-tight text-white md:text-5xl">
+              Lock in $49/mo for life.
+            </h2>
+            <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-slate-300">
+              Co-build the roadmap. Get direct access to the builder. 20 seats only.
+              The price locks the moment you join and never increases \u2014 even as modules,
+              tools, and cohort value grow.
+            </p>
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
+                <p className="text-2xl font-black text-cyan-300">$49</p>
+                <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-400">Per month \u2014 forever</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
+                <p className="text-2xl font-black text-emerald-300">20</p>
+                <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-400">Total pioneer seats</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
+                <p className="text-2xl font-black text-white">14-Day</p>
+                <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-400">Money-back guarantee</p>
+              </div>
+            </div>
+            <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+              <a
+                href={nav.pricing}
+                className="inline-flex items-center rounded-2xl bg-cyan-500 px-8 py-4 text-base font-bold uppercase tracking-[0.1em] text-slate-950 shadow-xl shadow-cyan-500/20 transition-all hover:bg-cyan-400 hover:scale-[1.02]"
               >
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">{industry.eyebrow}</p>
-                <h3 className="mt-3 text-2xl font-bold text-white">{industry.title}</h3>
-                <p className="mt-3 text-slate-300 leading-relaxed">{industry.summary}</p>
-                <ul className="mt-5 space-y-2 text-sm text-slate-400">
-                  {industry.workflows.slice(0, 3).map((workflow) => (
-                    <li key={workflow} className="flex gap-3">
-                      <span className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-cyan-300" />
-                      <span>{workflow}</span>
-                    </li>
-                  ))}
-                </ul>
-                <a
-                  href={buildExternalUrl(baseUrl, `/solutions/${industry.slug}`)}
-                  className="mt-6 inline-flex rounded-xl bg-cyan-400 px-4 py-2 font-semibold text-slate-950 hover:bg-cyan-300"
-                >
-                  View industry page
-                </a>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="w-full max-w-6xl mt-16 text-left">
-          <div className="grid gap-6 lg:grid-cols-[1.2fr,0.8fr]">
-            <div className="rounded-3xl border border-white/20 bg-white/5 p-8 backdrop-blur-sm">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-300">Proof of Competence</p>
-              <h2 className="mt-3 text-3xl md:text-4xl font-bold text-white">The site should prove the course can ship real systems</h2>
-              <p className="mt-4 max-w-3xl text-slate-300 leading-relaxed">
-                That means more than course copy. It means interactive tooling, a visible instructor point of view, live implementation surfaces, and public build signals that show this is not a theory product.
-              </p>
-              <div className="mt-8 grid gap-4 md:grid-cols-3">
-                <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
-                  <h3 className="text-xl font-semibold text-white">Live AI Tutor</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-slate-300">
-                    Use the AI tutor to see how the course supports implementation questions after the lesson ends.
-                  </p>
-                  <a href={navigationLinks.tutor} className="mt-5 inline-flex text-cyan-300 hover:text-cyan-200">
-                    Open tutor →
-                  </a>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
-                  <h3 className="text-xl font-semibold text-white">Instructor Authority</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-slate-300">
-                    The about page now frames Blaine Casey around project themes, rollout discipline, and the operator mindset behind the curriculum.
-                  </p>
-                  <a href={navigationLinks.about} className="mt-5 inline-flex text-cyan-300 hover:text-cyan-200">
-                    Read about Blaine →
-                  </a>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-3xl border border-emerald-400/20 bg-emerald-500/10 p-8">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300">San Diego Angle</p>
-              <h2 className="mt-3 text-3xl font-bold text-white">Lower-competition local intent is now covered</h2>
-              <p className="mt-4 text-slate-200 leading-relaxed">
-                The site now includes a dedicated page for San Diego and Southern California teams looking for AI workshops and implementation training.
-              </p>
-              <div className="mt-6 space-y-3 text-slate-200">
-                <p>Targeted terms include AI workshops in San Diego, AI training in Southern California, and practical rollout support for local teams.</p>
-                <a href={navigationLinks.local} className="inline-flex text-emerald-200 hover:text-white">
-                  Visit the local landing page →
-                </a>
-              </div>
+                Lock Your $49/mo Rate
+              </a>
+              <a
+                href={nav.signup}
+                className="inline-flex items-center rounded-2xl border border-white/15 bg-white/5 px-8 py-4 text-base font-semibold uppercase tracking-[0.1em] text-white transition-all hover:border-white/25 hover:bg-white/10"
+              >
+                Join the Vanguard Cohort
+              </a>
             </div>
           </div>
         </section>
+        {/* LEAD MAGNET */}
+        <section className="relative z-10 mx-auto max-w-md px-6 pb-24">
+          <div className="rounded-3xl border border-white/15 bg-white/[0.06] p-8 backdrop-blur text-center">
+            <h3 className="text-xl font-bold text-white">{topWorkflowsLeadMagnet.title}</h3>
+            <p className="mt-3 text-sm text-slate-300">{topWorkflowsLeadMagnet.description}</p>
+            <div className="mt-5">
+              <LeadMagnetForm source="homepage_inline" theme="dark" />
+            </div>
+            <p className="mt-3 text-xs text-slate-500">No spam. Unsubscribe anytime.</p>
+          </div>
+        </section>
 
-        {/* Frequently Asked Questions */}
-        <section className="w-full max-w-5xl mt-6 mb-8 text-left">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">Frequently Asked Questions</h2>
-          <div className="grid gap-4">
+        {/* FAQ */}
+        <section className="relative z-10 mx-auto max-w-4xl px-6 pb-24">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-black uppercase tracking-tight text-white md:text-4xl">
+              Frequently Asked Questions
+            </h2>
+          </div>
+          <div className="space-y-4">
             {homepageFaqItems.map((item) => (
-              <article
-                key={item.question}
-                className="rounded-2xl border border-white/20 bg-white/5 backdrop-blur-sm p-6"
-              >
-                <h3 className="text-xl font-semibold text-white mb-2">{item.question}</h3>
-                <p className="text-slate-300 leading-relaxed">{item.answer}</p>
+              <article key={item.question} className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+                <h3 className="text-lg font-bold text-white">{item.question}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-slate-400">{item.answer}</p>
               </article>
             ))}
           </div>
-          <a href={navigationLinks.faq} className="mt-6 inline-flex text-cyan-300 hover:text-cyan-200">
-            View the full FAQ page →
-          </a>
+          <div className="mt-6 text-center">
+            <a href={nav.faq} className="text-sm font-semibold text-cyan-300 hover:text-cyan-200">
+              View the full FAQ page \u2192
+            </a>
+          </div>
         </section>
-      </div>
 
-      {/* Floating AI Element — removed animate-bounce for LCP/mobile performance */}
+        {/* FINAL CTA */}
+        <section className="relative z-10 mx-auto max-w-3xl px-6 pb-20 text-center">
+          <h2 className="text-3xl font-black uppercase tracking-tight text-white md:text-5xl">
+            Deploy Your First Agent
+          </h2>
+          <p className="mx-auto mt-6 max-w-xl text-lg text-slate-300">
+            The cohort is small on purpose. Get in, run the script, and ship something real this week.
+          </p>
+          <div className="mt-8">
+            <a
+              href={nav.pricing}
+              className="inline-flex items-center rounded-2xl bg-cyan-500 px-10 py-4 text-lg font-bold uppercase tracking-[0.1em] text-slate-950 shadow-xl shadow-cyan-500/20 transition-all hover:bg-cyan-400 hover:scale-[1.02]"
+            >
+              Claim Your Pioneer Access
+            </a>
+          </div>
+        </section>
 
-      {/* Footer */}
-      <div className="relative z-10 text-center py-8 text-slate-400 text-sm">
-        <p>© {new Date().getFullYear()} AI Integration Course. Guided by humans, built by AI.</p>
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-4">
-          <a href={navigationLinks.library} className="hover:text-cyan-300">Library</a>
-          <a href={navigationLinks.solutions} className="hover:text-cyan-300">Industries</a>
-          <a href={navigationLinks.about} className="hover:text-cyan-300">About</a>
-          <a href={navigationLinks.contact} className="hover:text-cyan-300">Contact</a>
+        {/* FOOTER */}
+        <footer className="relative z-10 border-t border-white/10 px-6 py-10 text-center text-sm text-slate-500">
+          <p>&copy; {new Date().getFullYear()} AI Integration Course. Built by humans, powered by agents.</p>
+          <p className="mt-2 text-xs text-slate-600">San Diego, California &mdash; AI consulting, workshops, and integration training</p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-6">
+            <a href={nav.courses} className="hover:text-cyan-300 transition-colors">Curriculum</a>
+            <a href={nav.library} className="hover:text-cyan-300 transition-colors">Library</a>
+            <a href={nav.solutions} className="hover:text-cyan-300 transition-colors">Industries</a>
+            <a href={nav.local} className="hover:text-cyan-300 transition-colors">SD Workshops</a>
+            <a href={nav.about} className="hover:text-cyan-300 transition-colors">About</a>
+            <a href={nav.contact} className="hover:text-cyan-300 transition-colors">Contact</a>
+            <a href={nav.terms} className="hover:text-cyan-300 transition-colors">Terms</a>
+            <a href={nav.privacy} className="hover:text-cyan-300 transition-colors">Privacy</a>
+          </div>
+        </footer>
+
+        {/* FLOATING MOBILE CTA — Audit Section 6 UX recommendation */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-slate-950/95 px-4 py-3 backdrop-blur md:hidden">
+          <a
+            href={nav.pricing}
+            className="flex w-full items-center justify-center rounded-xl bg-cyan-500 py-3 text-sm font-bold uppercase tracking-[0.1em] text-slate-950 shadow-lg shadow-cyan-500/25 transition-colors hover:bg-cyan-400"
+          >
+            Claim Pioneer Seat &mdash; $49/mo
+          </a>
         </div>
-      </div>
 
-      <FoundingAccessFloatingButton />
-      <FeedbackDrawer />
-      <ExitIntentLeadMagnet source="homepage_exit_intent" />
-    </div>
+        <FoundingAccessFloatingButton />
+        <FeedbackDrawer />
+        <ExitIntentLeadMagnet source="homepage_exit_intent" />
+      </div>
     </>
   );
 };
+
 export default HomePage;
