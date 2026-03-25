@@ -17,6 +17,34 @@ type LessonContentDoc = {
 export const getLessonContentDocumentId = (courseId: string, moduleId: string, lessonId: string): string =>
   `${courseId}__${moduleId}__${lessonId}`;
 
+const normalizeVideoUrl = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') return undefined;
+
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
+    return `https://www.youtube.com/watch?v=${trimmed}`;
+  }
+
+  return trimmed;
+};
+
+const normalizeLesson = (raw: any): Lesson => {
+  const isFree = raw?.tier === 'free' || !!raw?.isFree;
+  const videoUrl = normalizeVideoUrl(raw?.videoUrl) || normalizeVideoUrl(raw?.youtubeUrl) || normalizeVideoUrl(raw?.videoId);
+
+  return {
+    ...raw,
+    isFree,
+    ...(videoUrl ? { videoUrl } : {}),
+  } as Lesson;
+};
+
 // --- Course & Lesson Data --- //
 
 export const getCourses = async (): Promise<Course[]> => {
@@ -35,12 +63,7 @@ export const getCourses = async (): Promise<Course[]> => {
     for (const module of course.modules) {
       const lessonsCol = collection(db, `courses/${course.id}/modules/${module.id}/lessons`);
       const lessonSnapshot = await getDocs(query(lessonsCol, orderBy('order')));
-      module.lessons = lessonSnapshot.docs.map(lessDoc => {
-        const raw = { id: lessDoc.id, ...lessDoc.data() } as any;
-        // Normalize: map Firestore 'tier' to isFree flag expected by UI
-        const isFree = (raw.tier === 'free') || !!raw.isFree;
-        return { ...raw, isFree } as Lesson;
-      });
+      module.lessons = lessonSnapshot.docs.map((lessDoc) => normalizeLesson({ id: lessDoc.id, ...lessDoc.data() }));
     }
   }
   return coursesList;
@@ -65,11 +88,7 @@ export const getCourseById = async (courseId: string): Promise<Course | null> =>
   for (const module of courseData.modules) {
     const lessonsCol = collection(db, `courses/${courseId}/modules/${module.id}/lessons`);
     const lessonSnapshot = await getDocs(query(lessonsCol, orderBy('order')));
-    module.lessons = lessonSnapshot.docs.map(lessDoc => {
-      const raw = { id: lessDoc.id, ...lessDoc.data() } as any;
-      const isFree = (raw.tier === 'free') || !!raw.isFree;
-      return { ...raw, isFree } as Lesson;
-    });
+    module.lessons = lessonSnapshot.docs.map((lessDoc) => normalizeLesson({ id: lessDoc.id, ...lessDoc.data() }));
   }
   return courseData;
 };

@@ -37,6 +37,7 @@ const HomePage: React.FC = () => {
     signup: buildExternalUrl(baseUrl, '/signup'),
     pricing: buildExternalUrl(baseUrl, '/pricing'),
     about: buildExternalUrl(baseUrl, '/about'),
+    blogs: buildExternalUrl(baseUrl, '/blogs'),
     library: buildExternalUrl(baseUrl, '/library'),
     solutions: buildExternalUrl(baseUrl, '/solutions'),
     contact: buildExternalUrl(baseUrl, '/contact'),
@@ -82,6 +83,7 @@ const HomePage: React.FC = () => {
           <div className="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide text-slate-300">
             <a href={nav.lab} className="hover:text-cyan-300 transition-colors">The Lab</a>
             <a href={nav.courses} className="hover:text-cyan-300 transition-colors">Curriculum</a>
+            <a href={nav.blogs} className="hover:text-cyan-300 transition-colors">Blog</a>
             <a href={nav.local} className="hover:text-cyan-300 transition-colors">San Diego Workshops</a>
             <a href={nav.login} className="hover:text-cyan-300 transition-colors">Login</a>
           </div>
@@ -392,6 +394,7 @@ const HomePage: React.FC = () => {
           <p className="mt-2 text-xs text-slate-600">San Diego, California &mdash; AI consulting, workshops, and integration training</p>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-6">
             <a href={nav.courses} className="hover:text-cyan-300 transition-colors">Curriculum</a>
+            <a href={nav.blogs} className="hover:text-cyan-300 transition-colors">Blog</a>
             <a href={nav.library} className="hover:text-cyan-300 transition-colors">Library</a>
             <a href={nav.solutions} className="hover:text-cyan-300 transition-colors">Industries</a>
             <a href={nav.local} className="hover:text-cyan-300 transition-colors">SD Workshops</a>

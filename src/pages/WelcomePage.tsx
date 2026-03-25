@@ -107,14 +107,15 @@ const WelcomePage: React.FC = () => {
     () => resolveMemberName(profile, currentUser?.email),
     [profile, currentUser?.email]
   );
-  const isPioneerTagged = profile?.isBetaTester === true;
-  const isScholarshipAccess = !!profile?.betaScholarshipCode;
+  const isPioneerTagged = profile?.isBetaTester === true || profile?.foundingMember === true;
+  const isFoundingAccess = profile?.foundingMember === true;
   const hasPaidCohortAccess = useMemo(() => {
     if (!profile) return false;
     if (profile.foundingMember === true) return true;
     return profile.isBetaTester === true && userHasPaidAccess(profile);
   }, [profile]);
   const canUseDirectLine = hasPaidCohortAccess;
+  const cohortRateLabel = isFoundingAccess ? '$49/mo' : '$29.99/mo';
 
   return (
     <div className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.16),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.14),_transparent_24%),linear-gradient(180deg,_#020617_0%,_#0f172a_45%,_#020617_100%)] text-slate-100">
@@ -127,10 +128,10 @@ const WelcomePage: React.FC = () => {
               Cohort Tag Saved
             </p>
             <h2 className="mt-3 text-2xl font-headings font-bold text-white">
-              Complete checkout to activate Vanguard Access.
+              Complete checkout to activate paid beta access.
             </h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-amber-50/90">
-              Your <code>PIONEER</code> tag is attached to this account, but the paid founding membership is not active yet. Finish the $49/mo checkout to unlock the dashboard, the direct feedback line, and the builder-credit onboarding.
+              Your <code>PIONEER</code> tag is attached to this account, but the paid beta membership is not active yet. Finish the {cohortRateLabel} checkout to unlock the dashboard, direct feedback lane, and launch-week onboarding.
             </p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -156,10 +157,10 @@ const WelcomePage: React.FC = () => {
               <div className="relative">
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="inline-flex rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-1 text-xs font-headings font-semibold uppercase tracking-[0.28em] text-cyan-200">
-                    Vanguard Access // Pioneer Cohort
+                    Pioneer Cohort Access
                   </span>
                   <span className="inline-flex rounded-full border border-amber-300/25 bg-amber-300/10 px-4 py-1 text-xs font-headings font-semibold uppercase tracking-[0.2em] text-amber-200">
-                    Est. March 2026 | Founding Rate Locked
+                    {isFoundingAccess ? 'Founding Benefits Active' : 'Launch Week | Paid Beta Live'}
                   </span>
                 </div>
 
@@ -207,24 +208,22 @@ const WelcomePage: React.FC = () => {
                       Cohort Access
                     </p>
                     <div className="mt-5 space-y-4">
-                      <div className="rounded-2xl border border-emerald-400/25 bg-emerald-400/10 p-4">
+                    <div className="rounded-2xl border border-emerald-400/25 bg-emerald-400/10 p-4">
                         <p className="text-xs uppercase tracking-[0.18em] text-emerald-200">
-                          {isScholarshipAccess ? "Scholarship Access" : "Founding Rate"}
+                          Pioneer Cohort
                         </p>
                         <p className="mt-2 text-2xl font-headings font-bold text-white">
-                          {isScholarshipAccess
-                            ? "Premium Active"
-                            : hasPaidCohortAccess
-                              ? "$49/mo Active"
-                              : "$49/mo Reserved"}
+                          {hasPaidCohortAccess
+                            ? `${cohortRateLabel} Active`
+                            : `${cohortRateLabel} Reserved`}
                         </p>
                       </div>
                       <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-4">
                         <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                          Builder Scholarship
+                          Beta Build Credits
                         </p>
                         <p className="mt-2 text-sm leading-6 text-slate-300">
-                          $50 in API credits removes the cost of experimentation. The gift is build fuel, not free site access.
+                          Builder credits reduce the cost of experimentation. The beta itself stays paid so tester behavior mirrors launch users.
                         </p>
                       </div>
                       <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-4">
@@ -375,7 +374,7 @@ const WelcomePage: React.FC = () => {
                     Influence Window
                   </p>
                   <p className="mt-4 text-sm leading-7 text-slate-300">
-                    PIONEER tags the cohort. Paid membership unlocks the direct feedback lane. Founding code redemption remains separate and is only for access activation.
+                    PIONEER tags the cohort. Paid beta unlocks the direct feedback lane. Founding code redemption remains separate and is only for access activation.
                   </p>
                 </div>
               </div>
@@ -406,9 +405,9 @@ const WelcomePage: React.FC = () => {
                   Status Channel
                 </p>
                 <p className="mt-3 text-sm leading-7 text-slate-200">
-                  {isScholarshipAccess
-                    ? "This account was activated through a private scholarship code. The cohort dashboard and feedback lane are live without checkout."
-                    : "The rate lock stays on this account. PIONEER tags the cohort lane, but checkout activates the membership and builder-credit onboarding."}
+                  {hasPaidCohortAccess
+                    ? "Paid access is active on this account. The cohort dashboard and feedback lane are live."
+                    : "The beta rate stays attached to this account. PIONEER tags the cohort lane, but checkout activates paid access and launch-week onboarding."}
                 </p>
               </div>
             </section>

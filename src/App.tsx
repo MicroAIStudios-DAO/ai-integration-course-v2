@@ -8,6 +8,8 @@ import CourseOverviewPage from './pages/CourseOverviewPage';
 import LessonPage from './pages/LessonPage';
 import ResourceLibraryPage from './pages/ResourceLibraryPage';
 import ResourceDetailPage from './pages/ResourceDetailPage';
+import BlogIndexPage from './pages/BlogIndexPage';
+import BlogPostPage from './pages/BlogPostPage';
 import IndustrySolutionsPage from './pages/IndustrySolutionsPage';
 import IndustrySolutionPage from './pages/IndustrySolutionPage';
 import AboutPage from './pages/AboutPage';
@@ -67,6 +69,8 @@ const App: React.FC = () => {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/faq" element={<FAQPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/blogs" element={<BlogIndexPage />} />
+          <Route path="/blogs/:slug" element={<BlogPostPage />} />
           <Route path="/library" element={<ResourceLibraryPage />} />
           <Route path="/library/:slug" element={<ResourceDetailPage />} />
           <Route path="/solutions" element={<IndustrySolutionsPage />} />

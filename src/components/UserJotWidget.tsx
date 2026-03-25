@@ -14,15 +14,15 @@ const OPEN_BETA_FEEDBACK_EVENT = 'beta-feedback:open';
  */
 export function UserJotWidget() {
   const { currentUser } = useAuth();
-  const [isBetaTester, setIsBetaTester] = useState(false);
-  const [hasPaidBetaAccess, setHasPaidBetaAccess] = useState(false);
+  const [isCohortMember, setIsCohortMember] = useState(false);
+  const [hasPaidCohortAccess, setHasPaidCohortAccess] = useState(false);
   const [betaCohort, setBetaCohort] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     if (!currentUser) {
-      setIsBetaTester(false);
-      setHasPaidBetaAccess(false);
+      setIsCohortMember(false);
+      setHasPaidCohortAccess(false);
       setBetaCohort(null);
       return;
     }
@@ -32,19 +32,19 @@ export function UserJotWidget() {
       (snapshot) => {
         if (snapshot.exists()) {
           const userData = snapshot.data();
-          setIsBetaTester(userData.isBetaTester === true);
-          setHasPaidBetaAccess(userHasPaidAccess(userData));
+          setIsCohortMember(userData.isBetaTester === true || userData.foundingMember === true);
+          setHasPaidCohortAccess(userHasPaidAccess(userData));
           setBetaCohort(userData.betaCohort || null);
         } else {
-          setIsBetaTester(false);
-          setHasPaidBetaAccess(false);
+          setIsCohortMember(false);
+          setHasPaidCohortAccess(false);
           setBetaCohort(null);
         }
       },
       (error) => {
         console.error('Error fetching beta tester status:', error);
-        setIsBetaTester(false);
-        setHasPaidBetaAccess(false);
+        setIsCohortMember(false);
+        setHasPaidCohortAccess(false);
       }
     );
 
@@ -84,7 +84,7 @@ export function UserJotWidget() {
     }
   }, [currentUser, betaCohort]);
 
-  if (!isBetaTester || !hasPaidBetaAccess || !currentUser || !feedbackUrl) {
+  if (!isCohortMember || !hasPaidCohortAccess || !currentUser || !feedbackUrl) {
     return null;
   }
 

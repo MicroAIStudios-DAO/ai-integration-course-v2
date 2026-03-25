@@ -9,8 +9,14 @@ import ReactPlayer from "react-player";
 import FoundingAccessFloatingButton from "../founding/FoundingAccessFloatingButton";
 import SEO from "../SEO";
 import RoiGuaranteeBadge from "../conversion/RoiGuaranteeBadge";
+import { CheckoutPlanKey, getCheckoutPlan } from "../../config/pricing";
 
-type BetaCodeClaimResult = {
+type AccessCodeClaimResult = {
+  accessType?: 'beta' | 'scholarship';
+  checkoutPlanKey?: CheckoutPlanKey;
+  checkoutRequired?: boolean;
+  cohort?: string;
+  priceCents?: number;
   success?: boolean;
   grantPremium?: boolean;
   skipCheckout?: boolean;
@@ -28,22 +34,23 @@ const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { executeAndVerify, isLoaded } = useReCaptcha();
-  const priceId = process.env.REACT_APP_STRIPE_PRICE_ID || "price_1SmgMKKnsQ10RdBLEWL2w8e4";
   const queryParams = new URLSearchParams(location.search);
   const checkoutCancelled = queryParams.get("checkout") === "cancelled";
   const introVideoUrl = "https://youtu.be/sG9_phBnm40";
 
-  const startStandardCheckout = async () => {
+  const startCheckout = async (planKey: CheckoutPlanKey) => {
     const origin = window.location.origin;
+    const plan = getCheckoutPlan(planKey);
     const createCheckoutSession = httpsCallable(functions, "createCheckoutSessionV2");
     const result = await createCheckoutSession({
-      priceId,
+      planKey,
+      priceId: plan.priceId,
       successUrl: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl: `${origin}/payment-cancel`
     });
     const data = result.data as { url?: string };
     if (data?.url) {
-      trackBeginCheckout(49, 'USD', 'Pro Plan', 'pro_monthly');
+      trackBeginCheckout(plan.amount, 'USD', plan.name, planKey);
       window.location.href = data.url;
       return;
     }
@@ -76,20 +83,26 @@ const SignupPage: React.FC = () => {
         try {
           const claimBetaTester = httpsCallable(functions, "claimBetaTesterV2");
           const result = await claimBetaTester({ code: normalizedOfferCode, cohort: "Pioneer" });
-          const data = result.data as BetaCodeClaimResult;
+          const data = result.data as AccessCodeClaimResult;
           trackSignUp('Email');
-          if (data?.grantPremium || data?.skipCheckout) {
+          if (data?.accessType === 'scholarship' || data?.grantPremium) {
+            navigate("/courses");
+            setLoading(false);
+            return;
+          }
+
+          if (data?.skipCheckout) {
             navigate("/welcome");
             setLoading(false);
             return;
           }
 
-          await startStandardCheckout();
+          await startCheckout(data?.checkoutPlanKey || 'beta_monthly');
           return;
         } catch (betaErr) {
           console.error("Beta enrollment failed after signup:", betaErr);
           setError(
-            "Your account was created, but the cohort code could not be applied. Sign in and contact support before checkout if this code should unlock cohort or scholarship access."
+            "Your account was created, but the access code could not be applied. Sign in and contact support before continuing if this code should unlock a special access path."
           );
           setLoading(false);
           trackSignUp('Email');
@@ -99,7 +112,7 @@ const SignupPage: React.FC = () => {
 
       // Track sign_up event
       trackSignUp('Email');
-      await startStandardCheckout();
+      await startCheckout('pro_monthly');
     } catch (err: any) {
       setError(err.message || "Failed to create an account. Please try again.");
     }
@@ -110,13 +123,13 @@ const SignupPage: React.FC = () => {
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50 py-12 px-4 sm:px-6 lg:px-8 font-body">
       <SEO
         title="Sign Up"
-        description="Create your AI Integration Course account. Use PIONEER for the 20-seat founding cohort, or a private scholarship code if you were invited to premium access without checkout."
+        description="Create your AI Integration Course account. Use PIONEER or an approved cohort code to unlock the $29.99/mo tester rate, or join the standard Pro path."
         url="/signup"
         keywords={[
           'AI Integration Course signup',
-          'PIONEER founding cohort signup',
-          'beta scholarship code',
-          'founding member access',
+          'PIONEER beta signup',
+          'paid beta testing',
+          'beta cohort pricing',
           'AI course account creation'
         ]}
         author="Blaine Casey"
@@ -139,16 +152,15 @@ const SignupPage: React.FC = () => {
             Create your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 font-body">
-            `PIONEER` is the 20-seat cohort code. Private scholarship codes can unlock premium without checkout for invited builders who do not have a card.
+            `PIONEER` and approved cohort codes unlock the paid tester rate at $29.99/mo. Standard signup still flows into the normal Pro checkout.
           </p>
         </div>
         <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5 text-sm text-blue-900">
           <p className="font-semibold">Choose the right path:</p>
           <ul className="mt-3 space-y-2">
             <li>1. Standard signup: create your account, then continue to checkout.</li>
-            <li>2. Founding cohort: enter `PIONEER` to claim one of the 20 cohort seats, then continue to the $49/mo founding rate checkout.</li>
-            <li>3. Scholarship invite: enter your private code to activate complimentary premium access without checkout.</li>
-            <li>4. Founding member: create your account first, then redeem the separate founding code in the next step.</li>
+            <li>2. Cohort signup: enter `PIONEER` or your approved invite code to claim the $29.99/mo tester rate, then continue straight to checkout.</li>
+            <li>3. Founding member: create your account first, then redeem the separate founding code in the next step.</li>
           </ul>
         </div>
         {checkoutCancelled && (
@@ -222,12 +234,12 @@ const SignupPage: React.FC = () => {
                 type="text"
                 autoComplete="off"
                 className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm font-body"
-                placeholder="Offer code (optional) - e.g. PIONEER or SCHOLAR-7K2M"
+                placeholder="Offer code (optional) - e.g. PIONEER"
                 value={offerCode}
                 onChange={(e) => setOfferCode(e.target.value.toUpperCase())}
               />
               <p className="mt-2 text-xs text-gray-500">
-                Use `PIONEER` for the paid cohort path, or a private scholarship code if we told you it waives checkout.
+                Use `PIONEER` or your approved invite code for the paid tester path at $29.99/mo.
               </p>
             </div>
           </div>

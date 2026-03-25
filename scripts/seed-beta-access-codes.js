@@ -1,5 +1,5 @@
 /**
- * Seed cohort and scholarship beta access codes.
+ * Seed cohort and scholarship access codes.
  *
  * Run with:
  *   GOOGLE_APPLICATION_CREDENTIALS=/path/to/admin.json node scripts/seed-beta-access-codes.js
@@ -19,69 +19,99 @@ const ref = db.collection('beta_access_codes');
 const codes = [
   {
     code: 'PIONEER',
+    accessType: 'beta',
+    accessSource: 'paid_beta_code',
     cohort: 'Pioneer',
     maxUses: 20,
     grantPremium: false,
-    description: 'Primary founding cohort code with a 20-seat cap.',
+    checkoutPlanKey: 'beta_monthly',
+    priceCents: 2999,
+    description: 'Primary paid beta cohort code with a 20-seat cap.',
   },
   {
     code: 'SCHOLAR-7K2M',
-    cohort: 'Pioneer',
+    accessType: 'scholarship',
+    accessSource: 'scholarship_code',
     maxUses: 1,
     grantPremium: true,
-    description: 'Scholarship code for invited builders without a credit card.',
+    description: 'Private scholarship code for invited builders.',
   },
   {
     code: 'SCHOLAR-4Q8R',
-    cohort: 'Pioneer',
+    accessType: 'scholarship',
+    accessSource: 'scholarship_code',
     maxUses: 1,
     grantPremium: true,
-    description: 'Scholarship code for invited builders without a credit card.',
+    description: 'Private scholarship code for invited builders.',
   },
   {
     code: 'SCHOLAR-9V3X',
-    cohort: 'Pioneer',
+    accessType: 'scholarship',
+    accessSource: 'scholarship_code',
     maxUses: 1,
     grantPremium: true,
-    description: 'Scholarship code for invited builders without a credit card.',
+    description: 'Private scholarship code for invited builders.',
   },
   {
     code: 'SCHOLAR-2L7N',
-    cohort: 'Pioneer',
+    accessType: 'scholarship',
+    accessSource: 'scholarship_code',
     maxUses: 1,
     grantPremium: true,
-    description: 'Scholarship code for invited builders without a credit card.',
+    description: 'Private scholarship code for invited builders.',
   },
   {
     code: 'SCHOLAR-6T5P',
-    cohort: 'Pioneer',
+    accessType: 'scholarship',
+    accessSource: 'scholarship_code',
     maxUses: 1,
     grantPremium: true,
-    description: 'Scholarship code for invited builders without a credit card.',
+    description: 'Private scholarship code for invited builders.',
   },
 ];
 
 async function main() {
-  const batch = db.batch();
-
   for (const entry of codes) {
-    batch.set(
-      ref.doc(entry.code),
+    const docRef = ref.doc(entry.code);
+    const snap = await docRef.get();
+    const isScholarship = entry.accessType === 'scholarship';
+
+    await docRef.set(
       {
-        ...entry,
+        code: entry.code,
+        accessType: entry.accessType,
+        accessSource: entry.accessSource,
+        grantPremium: entry.grantPremium,
+        maxUses: entry.maxUses,
+        description: entry.description,
         active: true,
-        usesCount: 0,
+        ...(isScholarship
+          ? {
+              cohort: admin.firestore.FieldValue.delete(),
+              checkoutPlanKey: admin.firestore.FieldValue.delete(),
+              priceCents: admin.firestore.FieldValue.delete(),
+            }
+          : {
+              cohort: entry.cohort,
+              checkoutPlanKey: entry.checkoutPlanKey,
+              priceCents: entry.priceCents,
+            }),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        ...(snap.exists
+          ? {}
+          : {
+              createdAt: admin.firestore.FieldValue.serverTimestamp(),
+              usesCount: 0,
+            }),
       },
       { merge: true }
     );
   }
-
-  await batch.commit();
   console.log('Seeded beta access codes:');
   codes.forEach((entry) => {
-    console.log(`- ${entry.code} | premium=${entry.grantPremium} | maxUses=${entry.maxUses}`);
+    console.log(
+      `- ${entry.code} | type=${entry.accessType} | premium=${entry.grantPremium} | maxUses=${entry.maxUses}`
+    );
   });
 }
 

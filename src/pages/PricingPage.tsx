@@ -8,6 +8,9 @@ import FoundingAccessFloatingButton from '../components/founding/FoundingAccessF
 import SEO from '../components/SEO';
 import RoiGuaranteeBadge from '../components/conversion/RoiGuaranteeBadge';
 import ExitIntentLeadMagnet from '../components/lead-magnet/ExitIntentLeadMagnet';
+import { getUserProfile, userHasPaidAccess } from '../firebaseService';
+import { UserProfile } from '../types/course';
+import { CheckoutPlanKey, formatPlanPrice, getCheckoutPlan } from '../config/pricing';
 
 /**
  * PricingPage Component
@@ -27,16 +30,52 @@ import ExitIntentLeadMagnet from '../components/lead-magnet/ExitIntentLeadMagnet
 const PricingPage: React.FC = () => {
   const { currentUser } = useAuth();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [profile, setProfile] = useState<UserProfile | null>(null);
 
-  const proMonthlyPrice = 49;
+  const proMonthlyPlan = getCheckoutPlan('pro_monthly');
+  const proAnnualPlan = getCheckoutPlan('pro_annual');
+  const proMonthlyPrice = proMonthlyPlan.amount;
   const { isFounding } = useFoundingAccess();
+  const proAnnualPrice = proAnnualPlan.amount;
+  const isPaidBetaEligible = profile?.isBetaTester === true && profile?.foundingMember !== true;
+  const hasPaidBetaAccess = isPaidBetaEligible && userHasPaidAccess(profile);
+  const featuredPlanKey: CheckoutPlanKey = isPaidBetaEligible
+    ? 'beta_monthly'
+    : billingCycle === 'monthly'
+      ? 'pro_monthly'
+      : 'pro_annual';
+  const featuredPlan = getCheckoutPlan(featuredPlanKey);
+  const corporatePrice = 999;
+
+  useEffect(() => {
+    let active = true;
+
+    const loadProfile = async () => {
+      if (!currentUser) {
+        setProfile(null);
+        return;
+      }
+
+      try {
+        const nextProfile = await getUserProfile(currentUser.uid);
+        if (active) {
+          setProfile(nextProfile);
+        }
+      } catch (error) {
+        console.error('Failed to load pricing profile:', error);
+      }
+    };
+
+    void loadProfile();
+    return () => {
+      active = false;
+    };
+  }, [currentUser]);
 
   // Track view_item event when pricing page loads
   useEffect(() => {
-    trackViewPricing('USD', proMonthlyPrice, 'Pro Plan');
-  }, []);
-  const proAnnualPrice = 39; // $39/mo billed annually ($468/year)
-  const corporatePrice = 999;
+    trackViewPricing('USD', featuredPlan.amount, isPaidBetaEligible ? 'Paid Beta' : 'Pro Plan');
+  }, [featuredPlan.amount, isPaidBetaEligible]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
@@ -84,7 +123,7 @@ const PricingPage: React.FC = () => {
             Ship Your First AI Workflow in 14 Days — Or Get Every Dollar Back
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
-            Choose the path that fits your stage. Free to evaluate, Pro to deploy, Corporate to scale across your team.
+            Choose the path that fits your stage. Free to evaluate, paid beta to test the real onboarding path, Pro to deploy, Corporate to scale across your team.
           </p>
 
           {/* AUDIT: Risk Reversal - 14-Day Build Guarantee */}
@@ -124,11 +163,12 @@ const PricingPage: React.FC = () => {
             </button>
             <button
               onClick={() => setBillingCycle('annual')}
+              disabled={isPaidBetaEligible}
               className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
                 billingCycle === 'annual'
                   ? 'bg-indigo-600 text-white'
                   : 'text-gray-400 hover:text-white'
-              }`}
+              } ${isPaidBetaEligible ? 'cursor-not-allowed opacity-50' : ''}`}
             >
               Annual <span className="text-emerald-400 ml-1">Save 20%</span>
             </button>
@@ -136,19 +176,21 @@ const PricingPage: React.FC = () => {
         </div>
 
         <p className="text-center text-sm text-gray-400 mb-12">
-          Annual saves ${proMonthlyPrice * 12 - proAnnualPrice * 12} versus monthly billing.
+          {isPaidBetaEligible
+            ? 'Paid beta is monthly-only so tester behavior mirrors live subscribers.'
+            : `Annual saves $${proMonthlyPrice * 12 - proAnnualPrice * 12} versus monthly billing.`}
         </p>
 
         <div className="mb-8 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-5 text-center text-sm text-cyan-100">
-          <p className="font-semibold uppercase tracking-[0.18em] text-cyan-200">Founding Cohort Alignment</p>
+          <p className="font-semibold uppercase tracking-[0.18em] text-cyan-200">Pioneer Cohort Alignment</p>
           <p className="mt-3 max-w-3xl mx-auto leading-7">
-            <code>PIONEER</code> is the main 20-seat cohort code and does not bypass the $49/mo membership. Separate private scholarship codes can activate complimentary premium access for invited builders without a credit card.
+            <code>PIONEER</code> and approved cohort invite codes now attach a paid beta plan at $29.99/mo. Cohort codes no longer bypass checkout.
           </p>
         </div>
 
         <div className="mb-10 text-center">
           <p className="text-sm text-cyan-300">
-            Already have <code>PIONEER</code>, a scholarship code, or a founding code? Create your account first. <code>PIONEER</code> claims a cohort seat, scholarship codes can waive checkout, and separate founding codes are redeemed after account creation.
+            Already have <code>PIONEER</code>, an approved cohort code, or a founding code? Create your account first. Cohort codes tag the account and route you into the paid beta checkout. Founding codes remain a separate redemption step after account creation.
           </p>
         </div>
 
@@ -229,18 +271,27 @@ const PricingPage: React.FC = () => {
             </div>
 
             <div className="mb-6">
-              <h3 className="text-xl font-semibold text-white mb-2">Pro</h3>
-              <p className="text-gray-400">Everything you need to build with AI</p>
+              <h3 className="text-xl font-semibold text-white mb-2">{isPaidBetaEligible ? 'Paid Beta' : 'Pro'}</h3>
+              <p className="text-gray-400">
+                {isPaidBetaEligible ? 'Launch-week testing with real billing behavior' : 'Everything you need to build with AI'}
+              </p>
             </div>
-            <p className="mb-6 text-sm text-indigo-100">Best for solo builders, operators, and founders who want one production-ready workflow this month.</p>
+            <p className="mb-6 text-sm text-indigo-100">
+              {isPaidBetaEligible
+                ? 'Best for paid testers who should behave like production customers while still getting a tighter feedback loop and launch-week support.'
+                : 'Best for solo builders, operators, and founders who want one production-ready workflow this month.'}
+            </p>
             
             <div className="mb-6">
               <span className="text-4xl font-bold text-white">
-                ${billingCycle === 'monthly' ? proMonthlyPrice : proAnnualPrice}
+                ${formatPlanPrice(featuredPlan.amount)}
               </span>
               <span className="text-gray-400">/month</span>
-              {billingCycle === 'annual' && (
+              {!isPaidBetaEligible && billingCycle === 'annual' && (
                 <p className="text-sm text-emerald-400 mt-1">Billed annually (${proAnnualPrice * 12}/year)</p>
+              )}
+              {isPaidBetaEligible && (
+                <p className="text-sm text-cyan-300 mt-1">Paid beta is monthly-only and intentionally mirrors live subscriber billing.</p>
               )}
             </div>
 
@@ -279,22 +330,29 @@ const PricingPage: React.FC = () => {
                 <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                <span>Monthly Live Q&A Sessions</span>
+                <span>{isPaidBetaEligible ? 'Priority bug reporting + direct beta feedback lane' : 'Monthly Live Q&A Sessions'}</span>
+              </li>
+              <li className="flex items-start gap-3 text-gray-300">
+                <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>{isPaidBetaEligible ? 'Same paid access model you expect from launch users' : 'Private Community Access'}</span>
               </li>
             </ul>
 
             {/* AUDIT: Primary CTA - "Start Building Now" */}
-            {isFounding ? (
+            {isFounding || hasPaidBetaAccess ? (
               <Link
                 to="/welcome"
                 className="block w-full text-center py-3 px-6 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold transition-colors"
               >
-                Open Founding Dashboard
+                {isFounding ? 'Open Founding Dashboard' : 'Open Beta Dashboard'}
               </Link>
             ) : currentUser ? (
               <SubscribeButton
-                priceId={billingCycle === 'monthly' ? 'price_pro_monthly' : 'price_pro_annual'}
-                buttonText="Start Building Now"
+                planKey={featuredPlanKey}
+                priceId={featuredPlan.priceId}
+                buttonText={isPaidBetaEligible ? 'Activate Paid Beta' : 'Start Building Now'}
                 className="w-full py-3 px-6 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors"
               />
             ) : (
@@ -302,14 +360,18 @@ const PricingPage: React.FC = () => {
                 to="/signup"
                 className="block w-full text-center py-3 px-6 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors"
               >
-                Start Building Now
+                {isPaidBetaEligible ? 'Activate Paid Beta' : 'Start Building Now'}
               </Link>
             )}
 
             <p className="text-center text-sm text-gray-400 mt-4">
-              {isFounding ? 'Permanent access active on this account' : '7-day free trial • Cancel anytime'}
+              {isFounding
+                ? 'Permanent access active on this account'
+                : isPaidBetaEligible
+                  ? '$29.99/mo paid beta • No free bypass • Cancel anytime'
+                  : '7-day free trial • Cancel anytime'}
             </p>
-            {!isFounding && (
+            {!isFounding && !isPaidBetaEligible && (
               <div className="mt-3 flex justify-center">
                 <RoiGuaranteeBadge />
               </div>

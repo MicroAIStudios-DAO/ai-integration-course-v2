@@ -24,6 +24,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://aiintegrationcourse.com/blogs</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://aiintegrationcourse.com/login</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -60,6 +65,11 @@
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/library/openai-vs-anthropic-for-automation</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/blogs/workflow-complete-guide</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

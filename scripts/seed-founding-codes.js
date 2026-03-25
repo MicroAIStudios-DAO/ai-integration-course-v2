@@ -32,23 +32,33 @@ const codes = [
 ];
 
 async function main() {
-  const batch = db.batch();
   const ref = db.collection('founding_codes');
-  const expiresAt = admin.firestore.Timestamp.fromDate(
-    new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-  );
-  codes.forEach((code) => {
-    batch.set(
-      ref.doc(code),
+  const expiresAt = admin.firestore.Timestamp.fromDate(new Date('2099-12-31T23:59:59.000Z'));
+
+  for (const code of codes) {
+    const docRef = ref.doc(code);
+    const snap = await docRef.get();
+    const data = snap.data() || {};
+    const used = Boolean(data.usedBy);
+
+    await docRef.set(
       {
         code,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
         expiresAt,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        ...(snap.exists
+          ? {}
+          : {
+              active: true,
+              createdAt: admin.firestore.FieldValue.serverTimestamp(),
+              status: 'available',
+            }),
+        ...(used ? {} : { active: true, status: 'available' }),
       },
       { merge: true }
     );
-  });
-  await batch.commit();
+  }
+
   console.log('Seeded founding codes:', codes.join(', '));
 }
 

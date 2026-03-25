@@ -69,7 +69,14 @@ const PaymentSuccessPage: React.FC = () => {
     };
   }, [currentUser]);
 
-  const isPioneerCohort = useMemo(() => profile?.isBetaTester === true, [profile]);
+  const isPioneerCohort = useMemo(
+    () => profile?.isBetaTester === true || profile?.foundingMember === true,
+    [profile]
+  );
+  const isPaidBeta = useMemo(
+    () => profile?.isBetaTester === true && profile?.foundingMember !== true,
+    [profile]
+  );
 
   if (loading) {
     return (
@@ -116,22 +123,24 @@ const PaymentSuccessPage: React.FC = () => {
 
         {/* Success Message */}
         <h1 className="text-3xl font-bold text-white mb-4">
-          {isPioneerCohort ? 'Vanguard Access Confirmed' : 'Welcome to Pro! 🎉'}
+          {isPioneerCohort ? 'Pioneer Cohort Access Confirmed' : 'Welcome to Pro! 🎉'}
         </h1>
         <p className="text-gray-300 mb-2">
           {isPioneerCohort
-            ? 'Your $49/mo founding rate is active. The Pioneer cohort tag now unlocks the paid dashboard, feedback lane, and build path.'
+            ? isPaidBeta
+              ? 'Your $29.99/mo paid beta rate is active. The Pioneer cohort tag now unlocks the paid dashboard, feedback lane, and beta track.'
+              : 'Your founding access is active. The Pioneer cohort tag now unlocks the paid dashboard, feedback lane, and build path.'
             : 'Your payment was successful and your account has been upgraded.'}
         </p>
         <p className="text-sm text-gray-500 mb-6">Transaction ID: {sessionId}</p>
 
         {isPioneerCohort && (
           <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-4 mb-6 text-left">
-            <h3 className="font-semibold text-cyan-300 mb-2">Founder's Scholarship Layer</h3>
+            <h3 className="font-semibold text-cyan-300 mb-2">Paid Beta Operating Rules</h3>
             <ul className="space-y-2 text-sm text-gray-300">
-              <li>$50 in builder credits is the gift, not free site access.</li>
-              <li>Use the credits to reduce the cost of Gemini, search, and experimentation in the first month.</li>
-              <li>Complete the first 4 modules and a 15-minute feedback call to earn month 2 back as a credit.</li>
+              <li>Paid beta stays paid so tester behavior matches launch customers.</li>
+              <li>Use the direct feedback lane aggressively for bugs, onboarding friction, and missing lessons.</li>
+              <li>Beta-only lessons live in the beta track, not in the default curriculum list.</li>
             </ul>
           </div>
         )}
@@ -153,15 +162,15 @@ const PaymentSuccessPage: React.FC = () => {
           <ol className="space-y-2 text-sm text-gray-300">
             <li className="flex items-start gap-2">
               <span className="bg-indigo-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
-              <span>{isPioneerCohort ? 'Open the Vanguard dashboard and launch Content Architect v1.1' : 'Start the "Build Your First Bot" lesson to claim your guarantee'}</span>
+              <span>{isPioneerCohort ? 'Open the Vanguard dashboard and launch the beta track from the direct access panel' : 'Start the "Build Your First Bot" lesson to claim your guarantee'}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="bg-indigo-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
-              <span>{isPioneerCohort ? 'Request your builder-credit pack and begin the first implementation sprint' : 'Set up your AI tools (Gmail, Zapier, OpenAI)'}</span>
+              <span>{isPioneerCohort ? 'Use the feedback lane to report bugs and onboarding friction while you build' : 'Set up your AI tools (Gmail, Zapier, OpenAI)'}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="bg-indigo-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
-              <span>{isPioneerCohort ? 'Complete 4 modules and book the 15-minute feedback call to earn your month 2 credit' : 'Deploy your first customer service email bot'}</span>
+              <span>{isPioneerCohort ? 'Stay in the paid beta loop so your usage reflects real customer commitment' : 'Deploy your first customer service email bot'}</span>
             </li>
           </ol>
         </div>

@@ -2,14 +2,17 @@ import React from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../context/AuthContext';
 import { functions } from '../../config/firebase';
+import { CheckoutPlanKey, getCheckoutPlan } from '../../config/pricing';
 
 interface SubscribeButtonProps {
+  planKey?: CheckoutPlanKey;
   priceId?: string;
   buttonText?: string;
   className?: string;
 }
 
 const SubscribeButton: React.FC<SubscribeButtonProps> = ({ 
+  planKey = 'pro_monthly',
   priceId,
   buttonText = "Subscribe Now",
   className = "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
@@ -19,9 +22,11 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
     try {
       if (!currentUser) { alert('Please log in first.'); return; }
       const origin = window.location.origin;
+      const plan = getCheckoutPlan(planKey);
       const createCheckoutSession = httpsCallable(functions, 'createCheckoutSessionV2');
       const result = await createCheckoutSession({
-        priceId: priceId || "price_1SmgMKKnsQ10RdBLEWL2w8e4",
+        planKey,
+        priceId: priceId || plan.priceId,
         successUrl: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${origin}/payment-cancel`
       });

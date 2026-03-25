@@ -97,6 +97,15 @@ const Header: React.FC = () => {
                   Courses
                 </NavLink>
                 <NavLink
+                  to="/blogs"
+                  onClick={() => setMenuOpen(false)}
+                  className={({ isActive }) =>
+                    `block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100 ${isActive ? 'text-blue-700' : ''}`
+                  }
+                >
+                  Blog
+                </NavLink>
+                <NavLink
                   to="/library"
                   onClick={() => setMenuOpen(false)}
                   className={({ isActive }) =>
@@ -159,7 +168,7 @@ const Header: React.FC = () => {
                           </span>
                           <div className="absolute right-full top-0 mr-2 hidden group-hover/module:block">
                             <div className="w-72 rounded-md bg-white text-gray-900 shadow-lg ring-1 ring-black/10">
-                              {module.lessons?.map((lesson) => (
+                              {module.lessons?.filter((lesson) => lesson.tier !== 'founders').map((lesson) => (
                                 <NavLink
                                   key={lesson.id}
                                   to={courseId ? `/courses/${courseId}/modules/${module.id}/lessons/${lesson.id}` : '/courses'}
@@ -239,6 +248,13 @@ const Layout: React.FC = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm">© 2025 MicroAI Studios™ — All rights reserved.</p>
             <div className="flex gap-6 text-sm">
+              <NavLink
+                to="/blogs"
+                className="hover:text-blue-300 transition-colors underline"
+                aria-label="View blog articles"
+              >
+                Blog
+              </NavLink>
               <NavLink
                 to="/library"
                 className="hover:text-blue-300 transition-colors underline"

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCourses, getUserCourseProgress, getUserProfile, isFoundersLesson, isFreeLesson, isAdminProfile, userHasFounderAccess } from '../firebaseService';
-import { Course, Module, Lesson, UserCourseProgress, UserProfile } from '../types/course';
+import { getCourses, getUserCourseProgress, isFoundersLesson, isFreeLesson } from '../firebaseService';
+import { Course, Module, Lesson, UserCourseProgress } from '../types/course';
 import { useAuth } from '../context/AuthContext';
 import CourseSchema from '../components/seo/CourseSchema';
 import SEO from '../components/SEO';
@@ -56,7 +56,6 @@ const CourseOverviewPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [userProgress, setUserProgress] = useState<UserCourseProgress | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   // Accordion: track which modules are expanded (all open by default)
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
   const toggleModule = (moduleId: string) => {
@@ -74,7 +73,6 @@ const CourseOverviewPage: React.FC = () => {
   const modulesWithDisplayLessons = useMemo<DisplayModule[]>(() => {
     if (!course) return [];
 
-    const hasFounderVisibility = userHasFounderAccess(userProfile) || isAdminProfile(userProfile);
     let fallbackNumber = 1;
 
     return [...course.modules]
@@ -83,7 +81,7 @@ const CourseOverviewPage: React.FC = () => {
         const sortedLessons = [...module.lessons].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
         const displayLessons = sortedLessons
           .filter((lesson) => !isPlaceholderOnlyLesson(lesson))
-          .filter((lesson) => !isFoundersLesson(lesson) || hasFounderVisibility)
+          .filter((lesson) => !isFoundersLesson(lesson))
           .map((lesson) => {
             const lessonNumber = resolveLessonNumber(lesson, fallbackNumber);
             if (!isFoundersLesson(lesson)) {
@@ -101,7 +99,7 @@ const CourseOverviewPage: React.FC = () => {
         };
       })
       .filter((module) => module.displayLessons.length > 0);
-  }, [course, userProfile]);
+  }, [course]);
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -113,15 +111,10 @@ const CourseOverviewPage: React.FC = () => {
           const fetchedCourse = courses[0];
           setCourse(fetchedCourse);
           if (currentUser && fetchedCourse.id) {
-            const [progress, profile] = await Promise.all([
-              fetchUserProgress(fetchedCourse.id),
-              getUserProfile(currentUser.uid),
-            ]);
+            const progress = await fetchUserProgress(fetchedCourse.id);
             setUserProgress(progress);
-            setUserProfile(profile);
           } else {
             setUserProgress(null);
-            setUserProfile(null);
           }
         } else {
           setError('No courses available. Please try again later.');

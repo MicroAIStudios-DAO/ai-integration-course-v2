@@ -62,8 +62,13 @@ export interface UserProfile {
   isBetaTester?: boolean;
   betaCohort?: string;
   betaAccessCode?: string;
-  betaScholarshipCode?: string;
-  betaScholarshipGrantedAt?: Date | { toDate?: () => Date } | string | null;
+  betaAccessSource?: string;
+  betaProgramStatus?: 'awaiting_checkout' | 'checkout_started' | 'active' | 'cancelled';
+  betaPlanKey?: 'beta_monthly' | 'pro_monthly' | 'pro_annual';
+  betaPriceCents?: number;
+  scholarshipAccessCode?: string;
+  scholarshipAccessSource?: string;
+  scholarshipGrantedAt?: Date | { toDate?: () => Date } | string | null;
   // Admin role fields for testing and administration
   isAdmin?: boolean; // Simple admin flag
   role?: 'user' | 'admin' | 'moderator'; // Role-based access control
