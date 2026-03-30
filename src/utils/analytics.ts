@@ -1,5 +1,5 @@
 /**
- * GA4 Analytics Utility for AI Integration Course
+ * GA4 + Google Ads Analytics Utility for AI Integration Course
  * 
  * Events tracked per Gemini Growth Audit:
  * - sign_up: User registration (method: Google/Email)
@@ -8,6 +8,10 @@
  * - purchase: Stripe webhook / Success page (transaction_id, value, tax)
  * - lesson_start: Video play (lesson_id, module)
  * - lesson_complete: Button click / Video end (lesson_id)
+ * 
+ * Google Ads Conversion Tracking:
+ * - Sign-up / Welcome Page conversion (AW-17956658756/YJI_CJzD95EcEMS8s_JC)
+ *   Fires on /welcome page load to track successful signups
  * 
  * Audience Segments:
  * - Window Shoppers: Viewed Pricing > 0 AND Checkout = 0
@@ -18,6 +22,10 @@
 // GA4 Measurement ID
 const GA4_MEASUREMENT_ID = 'G-15SDDF1S5S';
 
+// Google Ads Conversion ID and Labels
+const GOOGLE_ADS_ID = 'AW-17956658756';
+const GOOGLE_ADS_SIGNUP_LABEL = 'YJI_CJzD95EcEMS8s_JC';
+
 // Type definitions for gtag
 declare global {
   interface Window {
@@ -27,13 +35,13 @@ declare global {
 }
 
 /**
- * Initialize GA4 tracking
+ * Initialize GA4 + Google Ads tracking
  * Call this once in App.tsx or index.tsx
  */
 export const initGA4 = (): void => {
   // Check if already initialized
   if (typeof window !== 'undefined' && !window.gtag) {
-    // Add gtag script
+    // Add gtag script (use GA4 ID as primary; Google Ads config piggybacks)
     const script = document.createElement('script');
     script.async = true;
     script.src = `https://www.googletagmanager.com/gtag/js?id=${GA4_MEASUREMENT_ID}`;
@@ -45,12 +53,18 @@ export const initGA4 = (): void => {
       window.dataLayer.push(arguments);
     };
     window.gtag('js', new Date());
+
+    // Configure GA4
     window.gtag('config', GA4_MEASUREMENT_ID, {
       send_page_view: true,
       cookie_flags: 'SameSite=None;Secure',
     });
 
+    // Configure Google Ads conversion tracking (remarketing + conversion linker)
+    window.gtag('config', GOOGLE_ADS_ID);
+
     console.log('[Analytics] GA4 initialized:', GA4_MEASUREMENT_ID);
+    console.log('[Analytics] Google Ads initialized:', GOOGLE_ADS_ID);
   }
 };
 
@@ -95,6 +109,33 @@ export const trackSignUp = (method: 'Google' | 'Email' | 'GitHub' | string): voi
       method: method,
     });
     console.log('[Analytics] sign_up:', method);
+  }
+};
+
+/**
+ * Track Google Ads Sign-up conversion
+ * Fires on /welcome page load to match the Google Ads conversion action
+ * "Sign-up - Welcome Page" (Page load: aiintegrationcourse.com/welcome)
+ * 
+ * Conversion ID: AW-17956658756
+ * Conversion Label: YJI_CJzD95EcEMS8s_JC
+ * Value: $49 (Pro plan price)
+ */
+export const trackGoogleAdsSignupConversion = (
+  value: number = 49,
+  currency: string = 'USD'
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'conversion', {
+      send_to: `${GOOGLE_ADS_ID}/${GOOGLE_ADS_SIGNUP_LABEL}`,
+      value: value,
+      currency: currency,
+    });
+    console.log('[Analytics] Google Ads conversion fired:', {
+      send_to: `${GOOGLE_ADS_ID}/${GOOGLE_ADS_SIGNUP_LABEL}`,
+      value,
+      currency,
+    });
   }
 };
 
@@ -330,6 +371,7 @@ const analytics = {
   trackPageView,
   trackCustomEvent,
   trackSignUp,
+  trackGoogleAdsSignupConversion,
   trackViewPricing,
   trackBeginCheckout,
   trackPurchase,

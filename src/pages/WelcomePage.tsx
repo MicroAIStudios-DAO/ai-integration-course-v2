@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { getUserProfile, userHasPaidAccess } from "../firebaseService";
 import { UserProfile } from "../types/course";
 import { openBetaFeedback } from "../components/UserJotWidget";
+import { trackGoogleAdsSignupConversion } from "../utils/analytics";
 
 const DISCORD_URL = process.env.REACT_APP_FOUNDING_DISCORD_URL || "";
 
@@ -77,6 +78,12 @@ const resolveMemberName = (profile: UserProfile | null, email: string | null | u
 const WelcomePage: React.FC = () => {
   const { currentUser } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+
+  // Fire Google Ads conversion on /welcome page load
+  // Matches conversion action: "Sign-up - Welcome Page" (Page load: aiintegrationcourse.com/welcome)
+  useEffect(() => {
+    trackGoogleAdsSignupConversion(49, 'USD');
+  }, []);
 
   useEffect(() => {
     let active = true;

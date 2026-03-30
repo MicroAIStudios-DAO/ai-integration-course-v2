@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getUserProfile } from '../firebaseService';
 import { UserProfile } from '../types/course';
-import { trackPurchase, setUserProperties } from '../utils/analytics';
+import { trackPurchase, setUserProperties, trackGoogleAdsSignupConversion } from '../utils/analytics';
 
 const PaymentSuccessPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -30,6 +30,10 @@ const PaymentSuccessPage: React.FC = () => {
         'Pro Plan',    // plan name
         'pro_monthly'  // plan id
       );
+
+      // Fire Google Ads conversion (also fires on /welcome, but belt-and-suspenders
+      // for users who reach payment-success directly without hitting /welcome first)
+      trackGoogleAdsSignupConversion(49, 'USD');
 
       // Update user properties for audience segmentation
       setUserProperties({
