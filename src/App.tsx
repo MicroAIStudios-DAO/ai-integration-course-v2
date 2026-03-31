@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import Layout from './components/layout/Layout'; // Import the Layout component
 import HomePage from './pages/HomePage';
 import NewLandingPage from './pages/NewLandingPage';
+import PaidTrafficLandingPage from './pages/PaidTrafficLandingPage';
 import PricingPage from './pages/PricingPage';
 import CourseOverviewPage from './pages/CourseOverviewPage';
 import LessonPage from './pages/LessonPage';
@@ -59,6 +60,8 @@ const App: React.FC = () => {
         <Route path="/" element={<HomePage />} />
         {/* NewLandingPage renders without Layout for full-screen landing page */}
         <Route path="/new-landing" element={<NewLandingPage />} />
+        {/* Paid traffic landing page — single CTA, plain language, free-first */}
+        <Route path="/start" element={<PaidTrafficLandingPage />} />
         {/* PricingPage renders without Layout for full-screen pricing page */}
         <Route path="/pricing" element={<PricingPage />} />
         {/* Admin page for adding lessons - hidden route */}
