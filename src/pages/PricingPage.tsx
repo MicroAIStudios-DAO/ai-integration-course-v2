@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import SubscribeButton from '../components/payment/SubscribeButton';
 import { trackViewPricing } from '../utils/analytics';
 import useFoundingAccess from '../hooks/useFoundingAccess';
-import FoundingAccessFloatingButton from '../components/founding/FoundingAccessFloatingButton';
 import SEO from '../components/SEO';
 import RoiGuaranteeBadge from '../components/conversion/RoiGuaranteeBadge';
 import ExitIntentLeadMagnet from '../components/lead-magnet/ExitIntentLeadMagnet';
@@ -123,7 +122,7 @@ const PricingPage: React.FC = () => {
             Ship Your First AI Workflow in 14 Days — Or Get Every Dollar Back
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
-            Choose the path that fits your stage. Free to evaluate, paid beta to test the real onboarding path, Pro to deploy, Corporate to scale across your team.
+            Choose the path that fits your stage. Free to evaluate, Pro to deploy, Corporate to scale across your team.
           </p>
 
           {/* AUDIT: Risk Reversal - 14-Day Build Guarantee */}
@@ -181,18 +180,6 @@ const PricingPage: React.FC = () => {
             : `Annual saves $${proMonthlyPrice * 12 - proAnnualPrice * 12} versus monthly billing.`}
         </p>
 
-        <div className="mb-8 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-5 text-center text-sm text-cyan-100">
-          <p className="font-semibold uppercase tracking-[0.18em] text-cyan-200">Pioneer Cohort Alignment</p>
-          <p className="mt-3 max-w-3xl mx-auto leading-7">
-            <code>PIONEER</code> and approved cohort invite codes now attach a paid beta plan at $29.99/mo. Cohort codes no longer bypass checkout.
-          </p>
-        </div>
-
-        <div className="mb-10 text-center">
-          <p className="text-sm text-cyan-300">
-            Already have <code>PIONEER</code>, an approved cohort code, or a founding code? Create your account first. Cohort codes tag the account and route you into the paid beta checkout. Founding codes remain a separate redemption step after account creation.
-          </p>
-        </div>
 
         {isFounding && (
           <div className="mb-10 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-6 text-center">
@@ -585,7 +572,6 @@ const PricingPage: React.FC = () => {
           )}
         </div>
       </main>
-      <FoundingAccessFloatingButton />
       <ExitIntentLeadMagnet source="pricing_exit_intent" />
 
       {/* Footer */}

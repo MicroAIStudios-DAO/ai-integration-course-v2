@@ -4,7 +4,6 @@ import { useAuth } from "../../context/AuthContext"; // Corrected path
 import { getAuth, sendPasswordResetEmail } from "firebase/auth";
 import { useReCaptcha } from "../../hooks/useReCaptcha";
 import ReactPlayer from "react-player";
-import FoundingAccessFloatingButton from "../founding/FoundingAccessFloatingButton";
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -64,7 +63,7 @@ const LoginPage: React.FC = () => {
             Sign in to your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 font-body">
-            Welcome back. Pioneer cohort members sign in normally. Your rate lock, feedback lane, and cohort dashboard stay attached to this account once the membership is active.
+            Welcome back. Sign in to continue your curriculum.
           </p>
         </div>
         {/* Regular Login Form */}
@@ -181,7 +180,6 @@ const LoginPage: React.FC = () => {
           </p>
         </div>
       </div>
-      <FoundingAccessFloatingButton />
     </div>
   );
 };

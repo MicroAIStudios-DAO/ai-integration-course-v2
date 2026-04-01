@@ -2,7 +2,6 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import AnimatedAvatar from '../components/layout/AnimatedAvatar';
 import FeedbackDrawer from '../components/feedback/FeedbackDrawer';
-import FoundingAccessFloatingButton from '../components/founding/FoundingAccessFloatingButton';
 import LeadMagnetForm from '../components/lead-magnet/LeadMagnetForm';
 import ExitIntentLeadMagnet from '../components/lead-magnet/ExitIntentLeadMagnet';
 import { topWorkflowsLeadMagnet } from '../content/leadMagnets';
@@ -143,7 +142,6 @@ const NewLandingPage: React.FC = () => {
         <p>© {new Date().getFullYear()} AI Integration Course. Guided by humans, built by AI.</p>
       </div>
 
-      <FoundingAccessFloatingButton />
       <FeedbackDrawer />
       <ExitIntentLeadMagnet source="new_landing_exit_intent" />
     </div>

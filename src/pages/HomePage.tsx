@@ -4,7 +4,6 @@ import { appConfig } from '../config/environment';
 import SEO from '../components/SEO';
 import CourseSchema from '../components/seo/CourseSchema';
 import FeedbackDrawer from '../components/feedback/FeedbackDrawer';
-import FoundingAccessFloatingButton from '../components/founding/FoundingAccessFloatingButton';
 import LeadMagnetForm from '../components/lead-magnet/LeadMagnetForm';
 import ExitIntentLeadMagnet from '../components/lead-magnet/ExitIntentLeadMagnet';
 import { topWorkflowsLeadMagnet, agenticReadinessScorecard } from '../content/leadMagnets';
@@ -51,7 +50,7 @@ const HomePage: React.FC = () => {
     <>
       <SEO
         title="Stop Chatting, Start Architecting | AI Integration Course"
-        description="Join the Founding 20 Pioneers learning to build, deploy, and govern autonomous AI workflows. Practical agentic systems training for operators and developers."
+        description="Learn to build, deploy, and govern autonomous AI workflows. Practical agentic systems training for operators and developers."
         url="/"
         keywords={[
           'How to build agentic workflows with LiteLLM',
@@ -91,7 +90,7 @@ const HomePage: React.FC = () => {
             href={nav.pricing}
             className="hidden md:inline-flex rounded-xl bg-cyan-500 px-5 py-2.5 text-sm font-bold uppercase tracking-[0.1em] text-slate-950 shadow-lg shadow-cyan-500/25 hover:bg-cyan-400 transition-colors"
           >
-            Claim Pioneer Seat
+            Get Started
           </a>
           <button className="md:hidden text-white" aria-label="Menu">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
@@ -104,7 +103,7 @@ const HomePage: React.FC = () => {
             <AnimatedAvatar size={100} />
           </div>
           <p className="mb-6 inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-5 py-1.5 text-xs font-bold uppercase tracking-[0.24em] text-cyan-200">
-            Pioneer Cohort \u2014 20 Seats Only
+            Hands-On AI Training \u2014 Build Real Workflows
           </p>
 
           <h1 className="mx-auto max-w-4xl text-5xl font-black uppercase leading-[1.08] tracking-tight text-white md:text-7xl lg:text-8xl">
@@ -116,8 +115,8 @@ const HomePage: React.FC = () => {
           </h1>
 
           <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-slate-300 md:text-xl">
-            The internet is moving from LLMs to Agentic Systems. Join the Founding 20 Pioneers
-            learning to build, deploy, and govern autonomous AI workflows.
+            The internet is moving from LLMs to Agentic Systems. Learn to build, deploy,
+            and govern autonomous AI workflows that run your business operations.
           </p>
 
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -125,7 +124,7 @@ const HomePage: React.FC = () => {
               href={nav.pricing}
               className="inline-flex items-center rounded-2xl bg-cyan-500 px-8 py-4 text-base font-bold uppercase tracking-[0.1em] text-slate-950 shadow-xl shadow-cyan-500/20 transition-all hover:bg-cyan-400 hover:shadow-cyan-400/30 hover:scale-[1.02]"
             >
-              Access The Forge \u2014 $49/mo Locked for Life
+              Start Building \u2014 $49/mo
             </a>
             <a
               href="#demo"
@@ -294,26 +293,26 @@ const HomePage: React.FC = () => {
             </a>
           </div>
         </section>
-        {/* PIONEER GUARANTEE */}
+        {/* PRICING CTA */}
         <section className="relative z-10 mx-auto max-w-4xl px-6 pb-24">
           <div className="rounded-3xl border border-cyan-400/20 bg-[linear-gradient(135deg,rgba(6,182,212,0.10),rgba(16,185,129,0.06),transparent_60%)] p-10 text-center md:p-14">
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">The Pioneer Guarantee</p>
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">Your Investment</p>
             <h2 className="mt-4 text-3xl font-black uppercase tracking-tight text-white md:text-5xl">
-              Lock in $49/mo for life.
+              Build one workflow. Then decide.
             </h2>
             <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-slate-300">
-              Co-build the roadmap. Get direct access to the builder. 20 seats only.
-              The price locks the moment you join and never increases \u2014 even as modules,
-              tools, and cohort value grow.
+              Try the free lessons first. When you're ready to go deeper, Pro unlocks
+              the full curriculum, AI tutor, and live Q&amp;A &mdash; backed by a 14-day
+              money-back guarantee.
             </p>
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
               <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
                 <p className="text-2xl font-black text-cyan-300">$49</p>
-                <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-400">Per month \u2014 forever</p>
+                <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-400">Per month</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
-                <p className="text-2xl font-black text-emerald-300">20</p>
-                <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-400">Total pioneer seats</p>
+                <p className="text-2xl font-black text-emerald-300">50+</p>
+                <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-400">Hours of advanced builds</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
                 <p className="text-2xl font-black text-white">14-Day</p>
@@ -325,13 +324,13 @@ const HomePage: React.FC = () => {
                 href={nav.pricing}
                 className="inline-flex items-center rounded-2xl bg-cyan-500 px-8 py-4 text-base font-bold uppercase tracking-[0.1em] text-slate-950 shadow-xl shadow-cyan-500/20 transition-all hover:bg-cyan-400 hover:scale-[1.02]"
               >
-                Lock Your $49/mo Rate
+                View Plans
               </a>
               <a
                 href={nav.signup}
                 className="inline-flex items-center rounded-2xl border border-white/15 bg-white/5 px-8 py-4 text-base font-semibold uppercase tracking-[0.1em] text-white transition-all hover:border-white/25 hover:bg-white/10"
               >
-                Join the Vanguard Cohort
+                Try Free Lessons First
               </a>
             </div>
           </div>
@@ -383,7 +382,7 @@ const HomePage: React.FC = () => {
               href={nav.pricing}
               className="inline-flex items-center rounded-2xl bg-cyan-500 px-10 py-4 text-lg font-bold uppercase tracking-[0.1em] text-slate-950 shadow-xl shadow-cyan-500/20 transition-all hover:bg-cyan-400 hover:scale-[1.02]"
             >
-              Claim Your Pioneer Access
+              Start Building Today
             </a>
           </div>
         </section>
@@ -411,11 +410,10 @@ const HomePage: React.FC = () => {
             href={nav.pricing}
             className="flex w-full items-center justify-center rounded-xl bg-cyan-500 py-3 text-sm font-bold uppercase tracking-[0.1em] text-slate-950 shadow-lg shadow-cyan-500/25 transition-colors hover:bg-cyan-400"
           >
-            Claim Pioneer Seat &mdash; $49/mo
+            Get Started &mdash; $49/mo
           </a>
         </div>
 
-        <FoundingAccessFloatingButton />
         <FeedbackDrawer />
         <ExitIntentLeadMagnet source="homepage_exit_intent" />
       </div>

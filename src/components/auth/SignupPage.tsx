@@ -6,7 +6,6 @@ import { functions } from "../../config/firebase";
 import { useReCaptcha } from "../../hooks/useReCaptcha";
 import { trackSignUp, trackBeginCheckout } from "../../utils/analytics";
 import ReactPlayer from "react-player";
-import FoundingAccessFloatingButton from "../founding/FoundingAccessFloatingButton";
 import SEO from "../SEO";
 import RoiGuaranteeBadge from "../conversion/RoiGuaranteeBadge";
 import { CheckoutPlanKey, getCheckoutPlan } from "../../config/pricing";
@@ -26,7 +25,7 @@ type AccessCodeClaimResult = {
 const SignupPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [offerCode, setOfferCode] = useState("");
+  const offerCode = ""; // Offer code UI hidden from public — backend logic preserved
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -123,14 +122,13 @@ const SignupPage: React.FC = () => {
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50 py-12 px-4 sm:px-6 lg:px-8 font-body">
       <SEO
         title="Sign Up"
-        description="Create your AI Integration Course account. Use PIONEER or an approved cohort code to unlock the $29.99/mo tester rate, or join the standard Pro path."
+        description="Create your AI Integration Course account. Start with free lessons or go Pro for the full curriculum, AI tutor, and live Q&A."
         url="/signup"
         keywords={[
           'AI Integration Course signup',
-          'PIONEER beta signup',
-          'paid beta testing',
-          'beta cohort pricing',
-          'AI course account creation'
+          'AI course account creation',
+          'AI automation training',
+          'learn AI integration'
         ]}
         author="Blaine Casey"
       />
@@ -152,16 +150,8 @@ const SignupPage: React.FC = () => {
             Create your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 font-body">
-            `PIONEER` and approved cohort codes unlock the paid tester rate at $29.99/mo. Standard signup still flows into the normal Pro checkout.
+            Create your account to access free lessons. Ready for more? Continue to Pro checkout.
           </p>
-        </div>
-        <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5 text-sm text-blue-900">
-          <p className="font-semibold">Choose the right path:</p>
-          <ul className="mt-3 space-y-2">
-            <li>1. Standard signup: create your account, then continue to checkout.</li>
-            <li>2. Cohort signup: enter `PIONEER` or your approved invite code to claim the $29.99/mo tester rate, then continue straight to checkout.</li>
-            <li>3. Founding member: create your account first, then redeem the separate founding code in the next step.</li>
-          </ul>
         </div>
         {checkoutCancelled && (
           <div className="rounded-md bg-yellow-50 p-4 mt-4">
@@ -198,7 +188,7 @@ const SignupPage: React.FC = () => {
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm font-body pr-12"
+                  className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm font-body pr-12"
                   placeholder="Password (min. 6 characters)"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -224,24 +214,7 @@ const SignupPage: React.FC = () => {
                 )}
               </button>
             </div>
-            <div>
-              <label htmlFor="offer-code" className="sr-only">
-                Offer Code
-              </label>
-              <input
-                id="offer-code"
-                name="offerCode"
-                type="text"
-                autoComplete="off"
-                className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm font-body"
-                placeholder="Offer code (optional) - e.g. PIONEER"
-                value={offerCode}
-                onChange={(e) => setOfferCode(e.target.value.toUpperCase())}
-              />
-              <p className="mt-2 text-xs text-gray-500">
-                Use `PIONEER` or your approved invite code for the paid tester path at $29.99/mo.
-              </p>
-            </div>
+            {/* Offer code field hidden from public UI — backend logic preserved */}
           </div>
 
           {error && (
@@ -307,7 +280,6 @@ const SignupPage: React.FC = () => {
           </p>
         </div>
       </div>
-      <FoundingAccessFloatingButton />
     </div>
   );
 };
