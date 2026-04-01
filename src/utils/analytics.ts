@@ -74,6 +74,9 @@ export const logPageView = () => trackPageView(window.location.pathname);
 export const logEvent = (category: string, action: string, label?: string) => {
   trackCustomEvent(category, action, label);
 };
+export const trackEvent = (action: string, category: string, label?: string) => {
+  trackCustomEvent(category, action, label);
+};
 
 /**
  * Track page views (automatic with config, but can be called manually for SPAs)
@@ -368,6 +371,7 @@ const analytics = {
   initGA,
   logPageView,
   logEvent,
+  trackEvent,
   trackPageView,
   trackCustomEvent,
   trackSignUp,
