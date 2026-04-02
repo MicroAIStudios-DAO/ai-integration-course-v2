@@ -1,17 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { getUserProfile } from '../firebaseService';
-import { UserProfile } from '../types/course';
 import { trackPurchase, setUserProperties, trackGoogleAdsSignupConversion } from '../utils/analytics';
 
 const PaymentSuccessPage: React.FC = () => {
-  const { currentUser } = useAuth();
   const location = useLocation();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
@@ -48,39 +43,7 @@ const PaymentSuccessPage: React.FC = () => {
     }
   }, [location]);
 
-  useEffect(() => {
-    let active = true;
 
-    const loadProfile = async () => {
-      if (!currentUser) {
-        setProfile(null);
-        return;
-      }
-
-      try {
-        const nextProfile = await getUserProfile(currentUser.uid);
-        if (active) {
-          setProfile(nextProfile);
-        }
-      } catch (profileError) {
-        console.error('Failed to load payment success profile:', profileError);
-      }
-    };
-
-    void loadProfile();
-    return () => {
-      active = false;
-    };
-  }, [currentUser]);
-
-  const isPioneerCohort = useMemo(
-    () => profile?.isBetaTester === true || profile?.foundingMember === true,
-    [profile]
-  );
-  const isPaidBeta = useMemo(
-    () => profile?.isBetaTester === true && profile?.foundingMember !== true,
-    [profile]
-  );
 
   if (loading) {
     return (
@@ -127,27 +90,12 @@ const PaymentSuccessPage: React.FC = () => {
 
         {/* Success Message */}
         <h1 className="text-3xl font-bold text-white mb-4">
-          {isPioneerCohort ? 'Pioneer Cohort Access Confirmed' : 'Welcome to Pro! 🎉'}
+          Welcome to Pro!
         </h1>
         <p className="text-gray-300 mb-2">
-          {isPioneerCohort
-            ? isPaidBeta
-              ? 'Your $29.99/mo paid beta rate is active. The Pioneer cohort tag now unlocks the paid dashboard, feedback lane, and beta track.'
-              : 'Your founding access is active. The Pioneer cohort tag now unlocks the paid dashboard, feedback lane, and build path.'
-            : 'Your payment was successful and your account has been upgraded.'}
+          Your payment was successful and your account has been upgraded.
         </p>
         <p className="text-sm text-gray-500 mb-6">Transaction ID: {sessionId}</p>
-
-        {isPioneerCohort && (
-          <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-4 mb-6 text-left">
-            <h3 className="font-semibold text-cyan-300 mb-2">Paid Beta Operating Rules</h3>
-            <ul className="space-y-2 text-sm text-gray-300">
-              <li>Paid beta stays paid so tester behavior matches launch customers.</li>
-              <li>Use the direct feedback lane aggressively for bugs, onboarding friction, and missing lessons.</li>
-              <li>Beta-only lessons live in the beta track, not in the default curriculum list.</li>
-            </ul>
-          </div>
-        )}
 
         {/* 14-Day Guarantee Reminder */}
         <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4 mb-6">
@@ -162,30 +110,30 @@ const PaymentSuccessPage: React.FC = () => {
 
         {/* Next Steps */}
         <div className="bg-slate-700/50 rounded-xl p-4 mb-6 text-left">
-          <h3 className="font-semibold text-white mb-3">🚀 Your Next Steps:</h3>
+          <h3 className="font-semibold text-white mb-3">Your Next Steps:</h3>
           <ol className="space-y-2 text-sm text-gray-300">
             <li className="flex items-start gap-2">
               <span className="bg-indigo-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
-              <span>{isPioneerCohort ? 'Open the Vanguard dashboard and launch the beta track from the direct access panel' : 'Start the "Build Your First Bot" lesson to claim your guarantee'}</span>
+              <span>Start the "Build Your First Bot" lesson to claim your guarantee</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="bg-indigo-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
-              <span>{isPioneerCohort ? 'Use the feedback lane to report bugs and onboarding friction while you build' : 'Set up your AI tools (Gmail, Zapier, OpenAI)'}</span>
+              <span>Set up your AI tools (Gmail, Zapier, OpenAI)</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="bg-indigo-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
-              <span>{isPioneerCohort ? 'Stay in the paid beta loop so your usage reflects real customer commitment' : 'Deploy your first customer service email bot'}</span>
+              <span>Deploy your first customer service email bot</span>
             </li>
           </ol>
         </div>
 
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link 
-            to={isPioneerCohort ? "/welcome" : "/courses"} 
+          <Link
+            to="/courses"
             className="inline-flex items-center justify-center px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition-colors"
           >
-            {isPioneerCohort ? 'Open Vanguard Dashboard →' : 'Start Building Now →'}
+            Start Building Now
           </Link>
           <Link 
             to="/" 
