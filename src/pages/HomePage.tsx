@@ -103,7 +103,7 @@ const HomePage: React.FC = () => {
             <AnimatedAvatar size={100} />
           </div>
           <p className="mb-6 inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-5 py-1.5 text-xs font-bold uppercase tracking-[0.24em] text-cyan-200">
-            Hands-On AI Training \u2014 Build Real Workflows
+            Hands-On AI Training. Build Real Workflows Today
           </p>
 
           <h1 className="mx-auto max-w-4xl text-5xl font-black uppercase leading-[1.08] tracking-tight text-white md:text-7xl lg:text-8xl">
@@ -122,9 +122,10 @@ const HomePage: React.FC = () => {
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <a
               href={nav.pricing}
-              className="inline-flex items-center rounded-2xl bg-cyan-500 px-8 py-4 text-base font-bold uppercase tracking-[0.1em] text-slate-950 shadow-xl shadow-cyan-500/20 transition-all hover:bg-cyan-400 hover:shadow-cyan-400/30 hover:scale-[1.02]"
+              className="inline-flex flex-col items-center rounded-2xl bg-cyan-500 px-8 py-4 text-slate-950 shadow-xl shadow-cyan-500/20 transition-all hover:bg-cyan-400 hover:shadow-cyan-400/30 hover:scale-[1.02]"
             >
-              Start Building \u2014 $49/mo
+              <span className="text-base font-bold uppercase tracking-[0.1em]">Stop Scrolling Start Building</span>
+              <span className="text-xs font-semibold mt-1 opacity-80">Click Here</span>
             </a>
             <a
               href="#demo"
@@ -134,33 +135,6 @@ const HomePage: React.FC = () => {
             </a>
           </div>
 
-          {/* Trust Badges */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-300">
-              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-              14-Day Money-Back Guarantee
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-slate-300">
-              <svg className="h-3.5 w-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-              Secure Checkout via Stripe
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-slate-300">
-              <svg className="h-3.5 w-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-              Cancel Anytime
-            </span>
-          </div>
-        </section>
-        {/* SOCIAL PROOF / AUTHORITY */}
-        <section className="relative z-10 mx-auto max-w-4xl px-6 pb-20 text-center">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-8 py-6 backdrop-blur">
-            <p className="text-sm font-medium tracking-wide text-slate-400">
-              Built by <span className="font-semibold text-white">Blaine Casey</span> \u2014
-              Governance &middot; Robotics &middot; Systems Architecture
-            </p>
-            <p className="mt-3 text-sm text-slate-400">
-              Not another prompting course. This is the <span className="text-cyan-200 font-semibold">Blue Collar Developer</span> path — high-level technical capability packaged for business ROI. Python, APIs, and agents focused on deployment, not theory.
-            </p>
-          </div>
         </section>
 
         {/* PROBLEM / SOLUTION SPLIT */}
