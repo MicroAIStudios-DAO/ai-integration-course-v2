@@ -413,6 +413,48 @@ const CourseOverviewPage: React.FC = () => {
           )}
           </div>{/* end flex-1 main content */}
         </div>
+
+        {/* CROSS-SELL: MicroAI Studios Ecosystem */}
+        <div className="mt-12 rounded-2xl border border-white/10 bg-gradient-to-r from-slate-800/60 via-indigo-900/30 to-slate-800/60 p-6 md:p-8">
+          <p className="text-xs uppercase tracking-[0.2em] text-cyan-400 mb-2">From the MicroAI Studios Ecosystem</p>
+          <h3 className="text-xl font-bold text-white mb-2">Ready to Deploy What You've Learned?</h3>
+          <p className="text-sm text-slate-400 mb-6">The course teaches the skills. These tools let you ship them at scale.</p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <a
+              href="https://buy.stripe.com/8wMeYG9Yz0Vb2Oc7sH"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 hover:border-amber-500/40 transition-colors"
+            >
+              <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Founder Autopilot</p>
+                <p className="text-xs text-slate-400">17 AI agents for CRM, scheduling &amp; invoicing &mdash; from $39/mo</p>
+              </div>
+            </a>
+            <a
+              href="https://buy.stripe.com/5kA4k2caN1Zf6asfZd"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4 hover:border-cyan-500/40 transition-colors"
+            >
+              <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">ProofGuard AI</p>
+                <p className="text-xs text-slate-400">AI compliance &amp; audit trails &mdash; from $299/mo</p>
+              </div>
+            </a>
+          </div>
+        </div>
+
       </div>
     </div>
   );

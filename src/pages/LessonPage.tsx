@@ -385,6 +385,49 @@ The detailed content for this lesson is being prepared. Please check back soon o
               />
             </div>
           </div>
+
+          {/* CROSS-SELL: What's Next — shown after lesson completion */}
+          {isLessonCompleted() && (
+            <div className="mt-8 rounded-2xl border border-indigo-500/20 bg-gradient-to-r from-slate-800/80 via-indigo-900/30 to-slate-800/80 p-6">
+              <h3 className="text-lg font-bold text-white mb-1">What's Next?</h3>
+              <p className="text-sm text-slate-400 mb-4">You've completed this lesson. Take the next step in your AI journey.</p>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <a
+                  href="https://buy.stripe.com/8wMeYG9Yz0Vb2Oc7sH"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 hover:border-amber-500/40 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Founder Autopilot</p>
+                    <p className="text-xs text-slate-400">Deploy 17 AI agents for your business</p>
+                  </div>
+                </a>
+                <a
+                  href="https://buy.stripe.com/5kA4k2caN1Zf6asfZd"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">ProofGuard AI</p>
+                    <p className="text-xs text-slate-400">AI compliance &amp; governance</p>
+                  </div>
+                </a>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
     </div>
