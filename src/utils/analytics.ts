@@ -122,10 +122,10 @@ export const trackSignUp = (method: 'Google' | 'Email' | 'GitHub' | string): voi
  * 
  * Conversion ID: AW-17956658756
  * Conversion Label: YJI_CJzD95EcEMS8s_JC
- * Value: $49 (Pro plan price)
+ * Value: Dynamic (based on plan selected, default $239.88 for Pro Annual)
  */
 export const trackGoogleAdsSignupConversion = (
-  value: number = 49,
+  value: number = 239.88,
   currency: string = 'USD'
 ): void => {
   if (typeof window !== 'undefined' && window.gtag) {
@@ -149,8 +149,8 @@ export const trackGoogleAdsSignupConversion = (
  */
 export const trackViewPricing = (
   currency: string = 'USD',
-  value: number = 49,
-  itemName: string = 'Pro Plan'
+  value: number = 19.99,
+  itemName: string = 'Pro (Annual)'
 ): void => {
   if (typeof window !== 'undefined' && window.gtag) {
     window.gtag('event', 'view_item', {

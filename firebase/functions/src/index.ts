@@ -165,6 +165,8 @@ export const createCheckoutSession = functions
     client_reference_id: uid,
     mode: 'subscription',
     payment_method_types: ['card'],
+    // CRITICAL: Always collect payment method, even for free trials
+    payment_method_collection: 'always' as any,
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: successUrl,
     cancel_url: cancelUrl,
@@ -176,6 +178,12 @@ export const createCheckoutSession = functions
       metadata: {
         firebaseUID: uid,
         firebase_uid: uid,
+      },
+      // Cancel subscription if payment method goes missing after trial
+      trial_settings: {
+        end_behavior: {
+          missing_payment_method: 'cancel',
+        },
       },
     },
   });

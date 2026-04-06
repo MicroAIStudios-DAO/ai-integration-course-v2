@@ -16,7 +16,7 @@ const PLAYBOOK_DOWNLOAD_URL = 'https://aiintegrationcourse.com/assets/AI_Prompt_
 const PLAYBOOK_FALLBACK_URL = 'https://ai-integra-course-v2.web.app/assets/AI_Prompt_Engineering_Automation_Playbook_FULL.pdf';
 let stripe: Stripe | null = null;
 
-type CheckoutPlanKey = 'pro_monthly' | 'pro_annual' | 'beta_monthly';
+type CheckoutPlanKey = 'explorer_monthly' | 'pro_annual' | 'corporate_monthly' | 'pro_monthly' | 'beta_monthly';
 
 type CheckoutPlanDefinition = {
   amount: number;
@@ -26,19 +26,36 @@ type CheckoutPlanDefinition = {
 };
 
 const CHECKOUT_PLANS: Record<CheckoutPlanKey, CheckoutPlanDefinition> = {
+  explorer_monthly: {
+    amount: 29.99,
+    name: 'Explorer',
+    priceId:
+      process.env.STRIPE_PRICE_EXPLORER_MONTHLY ||
+      'price_1TJKN0KnsQ10RdBLouqbpgBK',
+  },
+  pro_annual: {
+    amount: 239.88,
+    name: 'Pro (Annual)',
+    priceId:
+      process.env.STRIPE_PRICE_PRO_ANNUAL ||
+      'price_1TJKN0KnsQ10RdBLZx1iXlTA',
+  },
+  corporate_monthly: {
+    amount: 149,
+    name: 'Corporate',
+    priceId:
+      process.env.STRIPE_PRICE_CORPORATE_MONTHLY ||
+      'price_1TJKN1KnsQ10RdBLppS1qfoy',
+  },
+  // Legacy plans — kept for existing subscriber compatibility
   pro_monthly: {
     amount: 49,
-    name: 'Pro Plan',
+    name: 'Pro Plan (Legacy Monthly)',
     priceId:
       process.env.STRIPE_PRICE_PRO_MONTHLY ||
       process.env.STRIPE_PRICE_ID ||
       process.env.REACT_APP_STRIPE_PRICE_ID ||
       'price_1SmgMKKnsQ10RdBLEWL2w8e4',
-  },
-  pro_annual: {
-    amount: 39,
-    name: 'Pro Annual',
-    priceId: process.env.STRIPE_PRICE_PRO_ANNUAL || 'price_pro_annual',
   },
   beta_monthly: {
     amount: 29.99,
@@ -62,8 +79,10 @@ const getPlanConfig = (planKey: CheckoutPlanKey): CheckoutPlanDefinition => {
 const resolvePlanKey = (payload: Record<string, any> | undefined): CheckoutPlanKey => {
   const requestedPlanKey = payload?.planKey;
   if (
-    requestedPlanKey === 'pro_monthly' ||
+    requestedPlanKey === 'explorer_monthly' ||
     requestedPlanKey === 'pro_annual' ||
+    requestedPlanKey === 'corporate_monthly' ||
+    requestedPlanKey === 'pro_monthly' ||
     requestedPlanKey === 'beta_monthly'
   ) {
     return requestedPlanKey;
@@ -391,7 +410,7 @@ export const createCheckoutSessionV2 = onCall(
     const customerId = await ensureStrictMapping(uid, email);
 
     const baseUrl = 'https://aiintegrationcourse.com';
-    const successUrl = request.data?.successUrl || `${baseUrl}/dashboard?session_id={CHECKOUT_SESSION_ID}`;
+    const successUrl = request.data?.successUrl || `${baseUrl}/dashboard?session_id={CHECKOUT_SESSION_ID}&plan=${planKey}`;
     const cancelUrl = request.data?.cancelUrl || `${baseUrl}/pricing`;
 
     const session = await stripe.checkout.sessions.create({
@@ -399,6 +418,8 @@ export const createCheckoutSessionV2 = onCall(
       client_reference_id: uid,
       mode: 'subscription',
       payment_method_types: ['card'],
+      // CRITICAL: Always collect payment method, even for free trials
+      payment_method_collection: 'always',
       line_items: [{ price: planConfig.priceId, quantity: 1 }],
       success_url: successUrl,
       cancel_url: cancelUrl,
@@ -407,6 +428,7 @@ export const createCheckoutSessionV2 = onCall(
         firebase_uid: uid,
         planKey,
         requestedPriceId: planConfig.priceId,
+        chargeAmount: String(planConfig.amount),
       },
       subscription_data: {
         metadata: {
@@ -414,6 +436,12 @@ export const createCheckoutSessionV2 = onCall(
           firebase_uid: uid,
           planKey,
           requestedPriceId: planConfig.priceId,
+        },
+        // If trial is offered, cancel subscription if payment method is missing
+        trial_settings: {
+          end_behavior: {
+            missing_payment_method: 'cancel',
+          },
         },
       },
     });

@@ -137,7 +137,7 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
 
         {/* Trial info */}
         <p className="text-sm text-gray-500 mt-6">
-          7-day free trial • Cancel anytime • No credit card required to start
+          7-day free trial • Cancel anytime • Payment info required to start
         </p>
       </div>
     </div>

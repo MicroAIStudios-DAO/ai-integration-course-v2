@@ -28,23 +28,19 @@ import { CheckoutPlanKey, formatPlanPrice, getCheckoutPlan } from '../config/pri
  */
 const PricingPage: React.FC = () => {
   const { currentUser } = useAuth();
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
-  const proMonthlyPlan = getCheckoutPlan('pro_monthly');
+  const explorerPlan = getCheckoutPlan('explorer_monthly');
   const proAnnualPlan = getCheckoutPlan('pro_annual');
-  const proMonthlyPrice = proMonthlyPlan.amount;
+  const corporatePlan = getCheckoutPlan('corporate_monthly');
   const { isFounding } = useFoundingAccess();
-  const proAnnualPrice = proAnnualPlan.amount;
   const isPaidBetaEligible = profile?.isBetaTester === true && profile?.foundingMember !== true;
   const hasPaidBetaAccess = isPaidBetaEligible && userHasPaidAccess(profile);
+  // Pro Annual is now the default featured plan
   const featuredPlanKey: CheckoutPlanKey = isPaidBetaEligible
     ? 'beta_monthly'
-    : billingCycle === 'monthly'
-      ? 'pro_monthly'
-      : 'pro_annual';
+    : 'pro_annual';
   const featuredPlan = getCheckoutPlan(featuredPlanKey);
-  const corporatePrice = 999;
 
   useEffect(() => {
     let active = true;
@@ -147,38 +143,19 @@ const PricingPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Billing Toggle */}
+        {/* Annual savings callout */}
         <div className="flex justify-center mb-12">
-          <div className="bg-slate-800 rounded-lg p-1 inline-flex">
-            <button
-              onClick={() => setBillingCycle('monthly')}
-              className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
-                billingCycle === 'monthly'
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBillingCycle('annual')}
-              disabled={isPaidBetaEligible}
-              className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
-                billingCycle === 'annual'
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-gray-400 hover:text-white'
-              } ${isPaidBetaEligible ? 'cursor-not-allowed opacity-50' : ''}`}
-            >
-              Annual <span className="text-emerald-400 ml-1">Save 20%</span>
-            </button>
+          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-6 py-3 inline-flex items-center gap-2">
+            <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-sm text-emerald-300 font-medium">
+              {isPaidBetaEligible
+                ? 'Paid beta mirrors live subscriber billing.'
+                : 'Pro plan saves $348/yr vs monthly — best value for serious builders.'}
+            </span>
           </div>
         </div>
-
-        <p className="text-center text-sm text-gray-400 mb-12">
-          {isPaidBetaEligible
-            ? 'Paid beta is monthly-only so tester behavior mirrors live subscribers.'
-            : `Annual saves $${proMonthlyPrice * 12 - proAnnualPrice * 12} versus monthly billing.`}
-        </p>
 
 
         {isFounding && (
@@ -193,17 +170,18 @@ const PricingPage: React.FC = () => {
 
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {/* Free Tier - View Curriculum */}
+          {/* Explorer Tier - $29.99/mo */}
           <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-8">
             <div className="mb-6">
               <h3 className="text-xl font-semibold text-white mb-2">Explorer</h3>
-              <p className="text-gray-400">Get started with free lessons</p>
+              <p className="text-gray-400">Start building with guided access</p>
             </div>
-            <p className="mb-6 text-sm text-gray-400">Best for evaluating the teaching style, lesson quality, and your first workflow idea before upgrading.</p>
+            <p className="mb-6 text-sm text-gray-400">Best for evaluating the teaching style, running your first workflow, and deciding if the full Pro path is right for you.</p>
             
             <div className="mb-6">
-              <span className="text-4xl font-bold text-white">$0</span>
-              <span className="text-gray-400">/forever</span>
+              <span className="text-4xl font-bold text-white">${formatPlanPrice(explorerPlan.displayMonthlyPrice)}</span>
+              <span className="text-gray-400">/month</span>
+              <p className="text-xs text-gray-500 mt-1">Billed monthly</p>
             </div>
 
             <ul className="space-y-4 mb-8">
@@ -211,7 +189,7 @@ const PricingPage: React.FC = () => {
                 <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                <span>5 Free Introductory Lessons</span>
+                <span>All Introductory Lessons</span>
               </li>
               <li className="flex items-start gap-3 text-gray-300">
                 <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -225,11 +203,17 @@ const PricingPage: React.FC = () => {
                 </svg>
                 <span>Basic AI Tools Overview</span>
               </li>
+              <li className="flex items-start gap-3 text-gray-300">
+                <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>1 Guided Build Project</span>
+              </li>
               <li className="flex items-start gap-3 text-gray-500">
                 <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
-                <span>Premium Lessons</span>
+                <span>Advanced Premium Lessons</span>
               </li>
               <li className="flex items-start gap-3 text-gray-500">
                 <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -239,13 +223,22 @@ const PricingPage: React.FC = () => {
               </li>
             </ul>
 
-            {/* AUDIT: Secondary CTA - "View Curriculum" */}
-            <Link
-              to="/courses"
-              className="block w-full text-center py-3 px-6 rounded-lg border border-slate-600 text-gray-300 hover:border-slate-500 hover:text-white font-medium transition-colors"
-            >
-              Start Free Curriculum
-            </Link>
+            {currentUser ? (
+              <SubscribeButton
+                planKey="explorer_monthly"
+                priceId={explorerPlan.priceId}
+                buttonText="Start Explorer"
+                className="w-full py-3 px-6 rounded-lg border border-slate-600 text-gray-300 hover:border-slate-500 hover:text-white font-medium transition-colors"
+              />
+            ) : (
+              <Link
+                to="/signup"
+                className="block w-full text-center py-3 px-6 rounded-lg border border-slate-600 text-gray-300 hover:border-slate-500 hover:text-white font-medium transition-colors"
+              >
+                Start Explorer
+              </Link>
+            )}
+            <p className="text-center text-xs text-gray-500 mt-3">Payment info required • Cancel anytime</p>
           </div>
 
           {/* Pro Tier - FEATURED */}
@@ -270,15 +263,28 @@ const PricingPage: React.FC = () => {
             </p>
             
             <div className="mb-6">
-              <span className="text-4xl font-bold text-white">
-                ${formatPlanPrice(featuredPlan.amount)}
-              </span>
-              <span className="text-gray-400">/month</span>
-              {!isPaidBetaEligible && billingCycle === 'annual' && (
-                <p className="text-sm text-emerald-400 mt-1">Billed annually (${proAnnualPrice * 12}/year)</p>
+              {/* Price anchoring: show $49 slashed, $19.99 prominent */}
+              {!isPaidBetaEligible && (
+                <div className="flex items-baseline gap-3">
+                  <span className="text-2xl font-bold text-gray-500 line-through decoration-red-500/70 decoration-2">${formatPlanPrice(49)}</span>
+                  <span className="text-5xl font-black text-white">${formatPlanPrice(proAnnualPlan.displayMonthlyPrice)}</span>
+                  <span className="text-gray-400">/mo</span>
+                </div>
+              )}
+              {isPaidBetaEligible && (
+                <div>
+                  <span className="text-4xl font-bold text-white">${formatPlanPrice(featuredPlan.amount)}</span>
+                  <span className="text-gray-400">/month</span>
+                </div>
+              )}
+              {!isPaidBetaEligible && (
+                <p className="text-xs text-gray-400 mt-2">Paid annually ($239.88/yr)</p>
               )}
               {isPaidBetaEligible && (
                 <p className="text-sm text-cyan-300 mt-1">Paid beta is monthly-only and intentionally mirrors live subscriber billing.</p>
+              )}
+              {!isPaidBetaEligible && (
+                <p className="text-xs text-emerald-400 mt-1 font-medium">Save $348/yr vs monthly</p>
               )}
             </div>
 
@@ -356,7 +362,7 @@ const PricingPage: React.FC = () => {
                 ? 'Permanent access active on this account'
                 : isPaidBetaEligible
                   ? '$29.99/mo paid beta • No free bypass • Cancel anytime'
-                  : '7-day free trial • Cancel anytime'}
+                  : '7-day free trial • Payment info required • Cancel anytime'}
             </p>
             {!isFounding && !isPaidBetaEligible && (
               <div className="mt-3 flex justify-center">
@@ -365,7 +371,7 @@ const PricingPage: React.FC = () => {
             )}
           </div>
 
-          {/* AUDIT: Corporate Tier - $999 Anchoring */}
+          {/* Corporate Tier - $149/mo with Stripe checkout */}
           <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-8">
             <div className="mb-6">
               <h3 className="text-xl font-semibold text-white mb-2">Corporate</h3>
@@ -374,7 +380,7 @@ const PricingPage: React.FC = () => {
             <p className="mb-6 text-sm text-gray-400">Best for organizations that need team rollout, private workshops, and direct implementation support.</p>
             
             <div className="mb-6">
-              <span className="text-4xl font-bold text-white">${corporatePrice}</span>
+              <span className="text-4xl font-bold text-white">${formatPlanPrice(corporatePlan.displayMonthlyPrice)}</span>
               <span className="text-gray-400">/month</span>
               <p className="text-sm text-gray-500 mt-1">Per team (up to 25 seats)</p>
             </div>
@@ -424,12 +430,22 @@ const PricingPage: React.FC = () => {
               </li>
             </ul>
 
-            <a
-              href="mailto:enterprise@aiintegrationcourse.com?subject=Corporate%20Plan%20Inquiry"
-              className="block w-full text-center py-3 px-6 rounded-lg border border-slate-600 text-gray-300 hover:border-slate-500 hover:text-white font-medium transition-colors"
-            >
-              Contact Sales
-            </a>
+            {currentUser ? (
+              <SubscribeButton
+                planKey="corporate_monthly"
+                priceId={corporatePlan.priceId}
+                buttonText="Start Corporate Plan"
+                className="w-full py-3 px-6 rounded-lg border border-slate-600 text-gray-300 hover:border-slate-500 hover:text-white font-medium transition-colors"
+              />
+            ) : (
+              <Link
+                to="/signup"
+                className="block w-full text-center py-3 px-6 rounded-lg border border-slate-600 text-gray-300 hover:border-slate-500 hover:text-white font-medium transition-colors"
+              >
+                Start Corporate Plan
+              </Link>
+            )}
+            <p className="text-center text-xs text-gray-500 mt-3">Payment info required • Cancel anytime</p>
           </div>
         </div>
 

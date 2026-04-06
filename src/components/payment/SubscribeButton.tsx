@@ -27,7 +27,7 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
       const result = await createCheckoutSession({
         planKey,
         priceId: priceId || plan.priceId,
-        successUrl: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        successUrl: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&plan=${planKey}`,
         cancelUrl: `${origin}/payment-cancel`
       });
       const data = result.data as { url?: string };

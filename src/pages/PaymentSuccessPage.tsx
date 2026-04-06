@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { trackPurchase, setUserProperties, trackGoogleAdsSignupConversion } from '../utils/analytics';
+import { getCheckoutPlan, type CheckoutPlanKey } from '../config/pricing';
 
 const PaymentSuccessPage: React.FC = () => {
   const location = useLocation();
@@ -14,21 +15,27 @@ const PaymentSuccessPage: React.FC = () => {
     setSessionId(sId);
 
     if (sId) {
+      // Resolve the plan from URL params for dynamic conversion tracking
+      const planKey = (queryParams.get('plan') || 'pro_annual') as CheckoutPlanKey;
+      const plan = getCheckoutPlan(planKey);
+      const conversionValue = plan?.chargeAmount ?? plan?.amount ?? 49;
+      const planName = plan?.name ?? 'Pro';
+
       // Track purchase event (GA4)
       // NOTE: Server-side tracking via Stripe webhook is preferred for accuracy
       // This is a fallback for client-side tracking
       trackPurchase(
-        sId,           // transaction_id
-        49,            // value (Pro plan price)
-        'USD',         // currency
-        0,             // tax
-        'Pro Plan',    // plan name
-        'pro_monthly'  // plan id
+        sId,              // transaction_id
+        conversionValue,  // value (dynamic based on plan)
+        'USD',            // currency
+        0,                // tax
+        planName,         // plan name
+        planKey           // plan id
       );
 
-      // Fire Google Ads conversion (also fires on /welcome, but belt-and-suspenders
-      // for users who reach payment-success directly without hitting /welcome first)
-      trackGoogleAdsSignupConversion(49, 'USD');
+      // Fire Google Ads conversion with dynamic value
+      // Conversion label: YJI_CJzD95EcEMS8s_JC
+      trackGoogleAdsSignupConversion(conversionValue, 'USD');
 
       // Update user properties for audience segmentation
       setUserProperties({

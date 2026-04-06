@@ -361,9 +361,92 @@ const HomePage: React.FC = () => {
           </div>
         </section>
 
+        {/* CROSS-SELL: MicroAI Studios Ecosystem */}
+        <section className="relative z-10 mx-auto max-w-6xl px-6 pb-24">
+          <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/80 via-indigo-950/40 to-slate-900/80 p-8 md:p-12">
+            <div className="text-center mb-10">
+              <p className="text-xs uppercase tracking-[0.2em] text-cyan-400 mb-3">From the MicroAI Studios Ecosystem</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-white">Ready to Go Beyond the Course?</h2>
+              <p className="mt-3 text-slate-400 max-w-2xl mx-auto">
+                The AI Integration Course teaches you the skills. These tools let you deploy them at scale.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Founder Autopilot */}
+              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-6 hover:border-amber-500/40 transition-colors">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">Founder Autopilot</h3>
+                    <p className="text-xs text-amber-400">Launch &amp; Scale</p>
+                  </div>
+                </div>
+                <p className="text-sm text-slate-300 mb-4">
+                  17 AI agents that handle your CRM, scheduling, invoicing, and client management — so you can focus on building, not admin.
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-400">From <span className="text-white font-semibold">$39/mo</span></span>
+                  <a
+                    href="https://buy.stripe.com/8wMeYG9Yz0Vb2Oc7sH"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-sm font-medium text-amber-400 hover:text-amber-300 transition-colors"
+                  >
+                    Learn More
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+
+              {/* ProofGuard AI */}
+              <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-6 hover:border-cyan-500/40 transition-colors">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">ProofGuard AI</h3>
+                    <p className="text-xs text-cyan-400">Compliance &amp; Trust</p>
+                  </div>
+                </div>
+                <p className="text-sm text-slate-300 mb-4">
+                  AI-powered compliance attestation and audit trails. Prove your AI systems are trustworthy, transparent, and regulation-ready.
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-400">From <span className="text-white font-semibold">$299/mo</span></span>
+                  <a
+                    href="https://buy.stripe.com/5kA4k2caN1Zf6asfZd"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-sm font-medium text-cyan-400 hover:text-cyan-300 transition-colors"
+                  >
+                    Learn More
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-center text-xs text-slate-500 mt-6">
+              Part of the <span className="text-slate-400">MicroAI Studios</span> ecosystem &mdash; tools built by the same team behind this course.
+            </p>
+          </div>
+        </section>
+
         {/* FOOTER */}
         <footer className="relative z-10 border-t border-white/10 px-6 py-10 text-center text-sm text-slate-500">
-          <p>&copy; {new Date().getFullYear()} AI Integration Course. Built by humans, powered by agents.</p>
+          <p>&copy; {new Date().getFullYear()} MicroAI Studios&trade; &mdash; AI Integration Course. Built by humans, powered by agents.</p>
           <p className="mt-2 text-xs text-slate-600">San Diego, California &mdash; AI consulting, workshops, and integration training</p>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-6">
             <a href={nav.courses} className="hover:text-cyan-300 transition-colors">Curriculum</a>
@@ -384,7 +467,7 @@ const HomePage: React.FC = () => {
             href={nav.pricing}
             className="flex w-full items-center justify-center rounded-xl bg-cyan-500 py-3 text-sm font-bold uppercase tracking-[0.1em] text-slate-950 shadow-lg shadow-cyan-500/25 transition-colors hover:bg-cyan-400"
           >
-            Get Started &mdash; $49/mo
+            Get Started &mdash; $19.99/mo
           </a>
         </div>
 
