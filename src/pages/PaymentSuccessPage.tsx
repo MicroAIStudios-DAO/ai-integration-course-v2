@@ -35,7 +35,7 @@ const PaymentSuccessPage: React.FC = () => {
 
     if (sId) {
       if (isTrial) {
-        // Explorer trial start — NOT a paid conversion
+        // Explorer or Pro trial start — NOT a paid conversion yet
         trackCustomEvent('subscription', 'trial_start', planKey);
         setUserProperties({
           subscription_status: 'trial',

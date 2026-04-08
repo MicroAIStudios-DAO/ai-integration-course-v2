@@ -75,7 +75,7 @@ const getPlanConfig = (planKey: CheckoutPlanKey): CheckoutPlanDefinition => {
       stripePriceId: getStripePriceId('STRIPE_PRICE_PRO_ANNUAL'),
       tier: 'pro',
       billingInterval: 'year',
-      trialDays: 0,
+      trialDays: 7,
       seatCount: 1,
       displayPrice: 239.88,
       displayMonthlyEquivalent: 19.99,
@@ -437,7 +437,7 @@ export const createCheckoutSessionV2 = onCall(
     const customerId = await ensureStrictMapping(uid, email);
 
     const baseUrl = 'https://aiintegrationcourse.com';
-    const successUrl = request.data?.successUrl || `${baseUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`;
+    const successUrl = request.data?.successUrl || `${baseUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}&plan=${planKey}`;
     const cancelUrl = request.data?.cancelUrl || `${baseUrl}/pricing`;
 
     // Build subscription_data with metadata and optional trial
@@ -452,9 +452,14 @@ export const createCheckoutSessionV2 = onCall(
       },
     };
 
-    // Apply trial ONLY for Explorer — do not grant trials on other tiers
+    // Apply trial for Explorer and Pro — cancel subscription if no payment method collected
     if (plan.trialDays > 0) {
       subscriptionData.trial_period_days = plan.trialDays;
+      subscriptionData.trial_settings = {
+        end_behavior: {
+          missing_payment_method: 'cancel',
+        },
+      };
     }
 
     const session = await stripe.checkout.sessions.create({

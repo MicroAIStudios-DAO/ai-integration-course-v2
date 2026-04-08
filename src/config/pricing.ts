@@ -65,15 +65,15 @@ export const plans: Record<PlanKey, PlanDefinition> = {
   pro: {
     key: 'pro',
     name: 'Pro AI Architect',
-    tagline: 'Best value for serious builders',
+    tagline: 'Annual plan with a 7-day starter trial',
     displayPrice: 239.88,
     intervalLabel: '/year',
     billingInterval: 'year',
     monthlyEquivalent: 19.99,
     anchorMonthlyPrice: 39.99,
-    trialDays: 0,
+    trialDays: 7,
     seatCount: 1,
-    ctaText: 'Start Building Now',
+    ctaText: 'Start 7-Day Trial',
     featured: true,
     analyticsValue: 239.88,
     features: [
