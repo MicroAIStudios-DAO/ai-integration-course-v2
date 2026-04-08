@@ -31,5 +31,14 @@
     "@types/node-fetch": "^2.6.13",
     "typescript": "^5.7.3"
   },
+  "overrides": {
+    "ajv": "^8.18.0",
+    "fast-xml-parser": "^5.5.6",
+    "handlebars": "^4.7.9",
+    "minimatch": "^9.0.7",
+    "node-forge": "^1.4.0",
+    "path-to-regexp": "^0.1.13",
+    "yaml": "^2.8.3"
+  },
   "private": true
 }
