@@ -7,10 +7,10 @@ const PaymentCancelPage = () => {
       <div className="max-w-xl rounded-2xl border border-amber-400/20 bg-slate-900/70 p-8 text-center text-slate-100">
         <h1 className="text-3xl font-bold text-amber-300 mb-4">Checkout Interrupted</h1>
         <p className="text-slate-300 leading-7">
-          Your payment was not processed. If you used <code>PIONEER</code> or another cohort code, your cohort tag is still attached to the account, but paid access has not been activated yet.
+          Your payment was not processed. No charges have been made to your account.
         </p>
         <p className="mt-4 text-sm text-slate-400">
-          Resume checkout to activate your paid beta or membership rate, unlock the dashboard, and continue the onboarding flow.
+          You can resume checkout at any time. Your 14-day build guarantee still applies once you subscribe.
         </p>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Link

@@ -64,7 +64,7 @@ export interface UserProfile {
   betaAccessCode?: string;
   betaAccessSource?: string;
   betaProgramStatus?: 'awaiting_checkout' | 'checkout_started' | 'active' | 'cancelled';
-  betaPlanKey?: 'beta_monthly' | 'pro_monthly' | 'pro_annual';
+  betaPlanKey?: string;
   betaPriceCents?: number;
   scholarshipAccessCode?: string;
   scholarshipAccessSource?: string;

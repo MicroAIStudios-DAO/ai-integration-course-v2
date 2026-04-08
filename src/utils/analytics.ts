@@ -116,13 +116,12 @@ export const trackSignUp = (method: 'Google' | 'Email' | 'GitHub' | string): voi
 };
 
 /**
- * Track Google Ads Sign-up conversion
- * Fires on /welcome page load to match the Google Ads conversion action
- * "Sign-up - Welcome Page" (Page load: aiintegrationcourse.com/welcome)
- * 
+ * Track Google Ads conversion for paid subscriptions.
+ * IMPORTANT: Do NOT fire this for Explorer trial starts.
+ * Only fire for actual paid conversions (Pro, Corporate).
+ *
  * Conversion ID: AW-17956658756
  * Conversion Label: YJI_CJzD95EcEMS8s_JC
- * Value: Dynamic (based on plan selected, default $239.88 for Pro Annual)
  */
 export const trackGoogleAdsSignupConversion = (
   value: number = 239.88,
@@ -149,8 +148,8 @@ export const trackGoogleAdsSignupConversion = (
  */
 export const trackViewPricing = (
   currency: string = 'USD',
-  value: number = 19.99,
-  itemName: string = 'Pro (Annual)'
+  value: number = 239.88,
+  itemName: string = 'Pro AI Architect'
 ): void => {
   if (typeof window !== 'undefined' && window.gtag) {
     window.gtag('event', 'view_item', {
@@ -158,7 +157,7 @@ export const trackViewPricing = (
       value: value,
       items: [
         {
-          item_id: 'pro_monthly',
+          item_id: 'pro',
           item_name: itemName,
           price: value,
           quantity: 1,
@@ -171,13 +170,13 @@ export const trackViewPricing = (
 
 /**
  * Track checkout initiation (begin_checkout)
- * Trigger: Click "Upgrade" or "Start Building Now"
+ * Trigger: Click "Start Free Trial", "Start Building Now", or "Start Team Plan"
  */
 export const trackBeginCheckout = (
   price: number,
   currency: string = 'USD',
-  planName: string = 'Pro Plan',
-  planId: string = 'pro_monthly'
+  planName: string = 'Pro AI Architect',
+  planId: string = 'pro'
 ): void => {
   if (typeof window !== 'undefined' && window.gtag) {
     window.gtag('event', 'begin_checkout', {
@@ -197,17 +196,18 @@ export const trackBeginCheckout = (
 };
 
 /**
- * Track successful purchase
+ * Track successful purchase (paid conversions only — NOT trials)
  * Trigger: Stripe Webhook / Payment Success Page
- * NOTE: Prefer server-side tracking for accuracy
+ * NOTE: Prefer server-side tracking for accuracy.
+ * Explorer trial starts should fire trial_start, not purchase.
  */
 export const trackPurchase = (
   transactionId: string,
   value: number,
   currency: string = 'USD',
   tax: number = 0,
-  planName: string = 'Pro Plan',
-  planId: string = 'pro_monthly'
+  planName: string = 'Pro AI Architect',
+  planId: string = 'pro'
 ): void => {
   if (typeof window !== 'undefined' && window.gtag) {
     window.gtag('event', 'purchase', {

@@ -122,7 +122,7 @@ const WelcomePage: React.FC = () => {
     return profile.isBetaTester === true && userHasPaidAccess(profile);
   }, [profile]);
   const canUseDirectLine = hasPaidCohortAccess;
-  const cohortRateLabel = isFoundingAccess ? '$49/mo' : '$29.99/mo';
+  const cohortRateLabel = isFoundingAccess ? 'Founding Access' : '$19.99/mo';
 
   return (
     <div className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.16),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.14),_transparent_24%),linear-gradient(180deg,_#020617_0%,_#0f172a_45%,_#020617_100%)] text-slate-100">
