@@ -208,7 +208,7 @@ The detailed content for this lesson is being prepared. Please check back soon o
      return (
       <div className="container mx-auto px-4 py-8 text-center bg-gray-100 p-10 rounded-lg shadow-md">
         <h2 className="text-2xl font-headings font-semibold mb-4 text-yellow-600">Access Denied</h2>
-        <p className="text-gray-700 font-sans mb-6">{error} Please <Link to="/signup" className="text-blue-600 hover:underline">sign up</Link> or <Link to="/login" className="text-blue-600 hover:underline">log in</Link> to access, or check your subscription.</p>
+        <p className="text-gray-700 font-sans mb-6">{error} Please <Link to="/pricing" className="text-blue-600 hover:underline">choose a plan</Link> or <Link to="/login" className="text-blue-600 hover:underline">log in</Link> to access, or check your subscription.</p>
         <div className="space-y-4">
           <button 
             onClick={() => navigate(-1)} 

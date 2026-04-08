@@ -21,10 +21,10 @@ const HeroCTA: React.FC = () => {
       {/* CTA Buttons */}
       <div className="mt-8 flex flex-col md:flex-row gap-4">
         <a
-          href="/signup"
+          href="/pricing"
           className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3 rounded-full text-lg font-bold shadow-lg transition"
         >
-          Start Building Now
+          See Plans
         </a>
         <a
           href="#free-lesson"

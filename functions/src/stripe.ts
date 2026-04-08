@@ -12,97 +12,122 @@ if (!admin.apps.length) {
 
 const STRIPE_SECRET = defineSecret('STRIPE_SECRET');
 const STRIPE_WEBHOOK_SECRET = defineSecret('STRIPE_WEBHOOK_SECRET');
+const STRIPE_PRICE_EXPLORER_MONTHLY = defineSecret('STRIPE_PRICE_EXPLORER_MONTHLY');
+const STRIPE_PRICE_PRO_ANNUAL = defineSecret('STRIPE_PRICE_PRO_ANNUAL');
+const STRIPE_PRICE_CORPORATE_MONTHLY = defineSecret('STRIPE_PRICE_CORPORATE_MONTHLY');
 const PLAYBOOK_DOWNLOAD_URL = 'https://aiintegrationcourse.com/assets/AI_Prompt_Engineering_Automation_Playbook_FULL.pdf';
 const PLAYBOOK_FALLBACK_URL = 'https://ai-integra-course-v2.web.app/assets/AI_Prompt_Engineering_Automation_Playbook_FULL.pdf';
 let stripe: Stripe | null = null;
 
-type CheckoutPlanKey = 'explorer_monthly' | 'pro_annual' | 'corporate_monthly' | 'pro_monthly' | 'beta_monthly';
+type CheckoutPlanKey = 'explorer' | 'pro' | 'corporate';
 
 type CheckoutPlanDefinition = {
-  amount: number;
-  betaOnly?: boolean;
+  /** Stripe Price ID — MUST come from env, never from client */
+  stripePriceId: string;
+  tier: CheckoutPlanKey;
+  billingInterval: 'month' | 'year';
+  trialDays: number;
+  seatCount: number;
+  /** Amount charged per billing interval (cents-friendly: use dollars here) */
+  displayPrice: number;
+  /** For annual plans shown as monthly equivalent */
+  displayMonthlyEquivalent?: number;
+  /** Strikethrough anchor price for marketing */
+  anchorMonthlyPrice?: number;
   name: string;
-  priceId: string;
+  /** Analytics value — always the per-interval charge in USD */
+  analyticsValue: number;
 };
 
-const CHECKOUT_PLANS: Record<CheckoutPlanKey, CheckoutPlanDefinition> = {
-  explorer_monthly: {
-    amount: 29.99,
-    name: 'Explorer',
-    priceId:
-      process.env.STRIPE_PRICE_EXPLORER_MONTHLY ||
-      'price_1TJKN0KnsQ10RdBLouqbpgBK',
-  },
-  pro_annual: {
-    amount: 239.88,
-    name: 'Pro (Annual)',
-    priceId:
-      process.env.STRIPE_PRICE_PRO_ANNUAL ||
-      'price_1TJKN0KnsQ10RdBLZx1iXlTA',
-  },
-  corporate_monthly: {
-    amount: 149,
-    name: 'Corporate',
-    priceId:
-      process.env.STRIPE_PRICE_CORPORATE_MONTHLY ||
-      'price_1TJKN1KnsQ10RdBLppS1qfoy',
-  },
-  // Legacy plans — kept for existing subscriber compatibility
-  pro_monthly: {
-    amount: 49,
-    name: 'Pro Plan (Legacy Monthly)',
-    priceId:
-      process.env.STRIPE_PRICE_PRO_MONTHLY ||
-      process.env.STRIPE_PRICE_ID ||
-      process.env.REACT_APP_STRIPE_PRICE_ID ||
-      'price_1SmgMKKnsQ10RdBLEWL2w8e4',
-  },
-  beta_monthly: {
-    amount: 29.99,
-    betaOnly: true,
-    name: 'Paid Beta',
-    priceId: process.env.STRIPE_PRICE_BETA_MONTHLY || '',
-  },
+const getStripePriceId = (
+  envName: 'STRIPE_PRICE_EXPLORER_MONTHLY' | 'STRIPE_PRICE_PRO_ANNUAL' | 'STRIPE_PRICE_CORPORATE_MONTHLY'
+): string => {
+  const envValue = process.env[envName];
+  if (envValue) {
+    return envValue;
+  }
+
+  switch (envName) {
+    case 'STRIPE_PRICE_EXPLORER_MONTHLY':
+      return STRIPE_PRICE_EXPLORER_MONTHLY.value() || '';
+    case 'STRIPE_PRICE_PRO_ANNUAL':
+      return STRIPE_PRICE_PRO_ANNUAL.value() || '';
+    case 'STRIPE_PRICE_CORPORATE_MONTHLY':
+      return STRIPE_PRICE_CORPORATE_MONTHLY.value() || '';
+    default:
+      return '';
+  }
 };
 
 const getPlanConfig = (planKey: CheckoutPlanKey): CheckoutPlanDefinition => {
-  const config = CHECKOUT_PLANS[planKey];
+  const planConfig: Record<CheckoutPlanKey, CheckoutPlanDefinition> = {
+    explorer: {
+      stripePriceId: getStripePriceId('STRIPE_PRICE_EXPLORER_MONTHLY'),
+      tier: 'explorer',
+      billingInterval: 'month',
+      trialDays: 7,
+      seatCount: 1,
+      displayPrice: 29.99,
+      name: 'Explorer',
+      analyticsValue: 29.99,
+    },
+    pro: {
+      stripePriceId: getStripePriceId('STRIPE_PRICE_PRO_ANNUAL'),
+      tier: 'pro',
+      billingInterval: 'year',
+      trialDays: 0,
+      seatCount: 1,
+      displayPrice: 239.88,
+      displayMonthlyEquivalent: 19.99,
+      anchorMonthlyPrice: 39.99,
+      name: 'Pro AI Architect',
+      analyticsValue: 239.88,
+    },
+    corporate: {
+      stripePriceId: getStripePriceId('STRIPE_PRICE_CORPORATE_MONTHLY'),
+      tier: 'corporate',
+      billingInterval: 'month',
+      trialDays: 0,
+      seatCount: 5,
+      displayPrice: 149.00,
+      name: 'Team AI Standard',
+      analyticsValue: 149.00,
+    },
+  };
+
+  const config = planConfig[planKey];
   if (!config) {
-    throw new HttpsError('invalid-argument', 'Invalid checkout plan');
+    throw new HttpsError('invalid-argument', `Invalid plan key: ${planKey}`);
   }
-  if (!config.priceId) {
-    throw new HttpsError('failed-precondition', `Checkout plan ${planKey} is not configured`);
+  if (!config.stripePriceId) {
+    throw new HttpsError('failed-precondition', `Stripe price not configured for plan: ${planKey}`);
   }
   return config;
 };
 
+/**
+ * Server resolves plan from a trusted key only.
+ * Never accept a raw Stripe price ID from the client.
+ */
 const resolvePlanKey = (payload: Record<string, any> | undefined): CheckoutPlanKey => {
-  const requestedPlanKey = payload?.planKey;
-  if (
-    requestedPlanKey === 'explorer_monthly' ||
-    requestedPlanKey === 'pro_annual' ||
-    requestedPlanKey === 'corporate_monthly' ||
-    requestedPlanKey === 'pro_monthly' ||
-    requestedPlanKey === 'beta_monthly'
-  ) {
-    return requestedPlanKey;
+  const requested = payload?.planKey;
+  if (requested === 'explorer' || requested === 'pro' || requested === 'corporate') {
+    return requested;
   }
-
-  const requestedPriceId = typeof payload?.priceId === 'string' ? payload.priceId.trim() : '';
-  const matchedPlan = (Object.entries(CHECKOUT_PLANS) as Array<[CheckoutPlanKey, CheckoutPlanDefinition]>)
-    .find(([, config]) => config.priceId && config.priceId === requestedPriceId);
-
-  if (matchedPlan) {
-    return matchedPlan[0];
-  }
-
-  return 'pro_monthly';
+  throw new HttpsError('invalid-argument', 'A valid plan selection is required to start checkout.');
 };
 
 const isActiveSubscriptionStatus = (status: unknown): boolean =>
   status === 'active' || status === 'trialing';
 
-const isBetaPlan = (planKey: string | null | undefined): boolean => planKey === 'beta_monthly';
+/** Check if a plan key maps to the explorer trial tier */
+const _isTrialPlan = (planKey: string | null | undefined): boolean => planKey === 'explorer';
+
+/** Check if a plan key is corporate (multi-seat) */
+const _isCorporatePlan = (planKey: string | null | undefined): boolean => planKey === 'corporate';
+
+// Export for future use in entitlement checks
+export { _isTrialPlan as isTrialPlan, _isCorporatePlan as isCorporatePlan };
 
 function getStripe() {
   const secret = process.env.STRIPE_SECRET || STRIPE_SECRET.value();
@@ -194,29 +219,26 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
   }
 
   let periodEnd: Date | null = null;
-  let planId = (invoice.subscription_details?.metadata?.planKey as string | undefined) || 'pro_monthly';
+  let planKey = (invoice.subscription_details?.metadata?.planKey as string | undefined) || 'explorer';
+  let tier = (invoice.subscription_details?.metadata?.tier as string | undefined) || planKey;
+  let seatCount = 1;
   if (invoice.subscription) {
     const { stripe } = getStripe();
     const subId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription.id;
     const subscription = await stripe.subscriptions.retrieve(subId);
     periodEnd = new Date(subscription.current_period_end * 1000);
-    planId = subscription.metadata?.planKey || subscription.items.data[0]?.price?.lookup_key || planId;
+    planKey = subscription.metadata?.planKey || planKey;
+    tier = subscription.metadata?.tier || planKey;
+    seatCount = parseInt(subscription.metadata?.seatCount || '1', 10);
   }
-
-  const betaPlanActive = isBetaPlan(planId);
 
   await admin.firestore().doc(`users/${uid}`).set(
     {
       premium: true,
       subscriptionStatus: 'active',
+      subscriptionTier: tier,
+      seatCount,
       lastPaymentAt: admin.firestore.FieldValue.serverTimestamp(),
-      ...(betaPlanActive
-        ? {
-            betaProgramStatus: 'active',
-            betaPlanKey: planId,
-            betaPriceCents: 2999,
-          }
-        : {}),
     },
     { merge: true }
   );
@@ -224,7 +246,9 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
   await admin.firestore().doc(`users/${uid}/subscriptions/current`).set(
     {
       status: 'active',
-      plan: planId,
+      plan: planKey,
+      tier,
+      seatCount,
       period_end: periodEnd ? admin.firestore.Timestamp.fromDate(periodEnd) : null,
       lastPaymentAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -384,7 +408,15 @@ export const onUserCreateV2 = onCustomEventPublished(
 );
 
 export const createCheckoutSessionV2 = onCall(
-  { region: 'us-central1', secrets: [STRIPE_SECRET] },
+  {
+    region: 'us-central1',
+    secrets: [
+      STRIPE_SECRET,
+      STRIPE_PRICE_EXPLORER_MONTHLY,
+      STRIPE_PRICE_PRO_ANNUAL,
+      STRIPE_PRICE_CORPORATE_MONTHLY,
+    ],
+  },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Login required');
@@ -397,66 +429,63 @@ export const createCheckoutSessionV2 = onCall(
 
     const uid = request.auth.uid;
     const email = request.auth.token?.email as string | undefined;
-    const planKey = resolvePlanKey(request.data || {});
-    const planConfig = getPlanConfig(planKey);
-    const userRef = admin.firestore().doc(`users/${uid}`);
-    const userSnap = await userRef.get();
-    const userData = userSnap.data() || {};
 
-    if (planConfig.betaOnly && userData.isBetaTester !== true) {
-      throw new HttpsError('permission-denied', 'Beta checkout is reserved for tagged beta testers');
-    }
+    // Server-side plan resolution — client sends planKey only, never a price ID
+    const planKey = resolvePlanKey(request.data || {});
+    const plan = getPlanConfig(planKey);
 
     const customerId = await ensureStrictMapping(uid, email);
 
     const baseUrl = 'https://aiintegrationcourse.com';
-    const successUrl = request.data?.successUrl || `${baseUrl}/dashboard?session_id={CHECKOUT_SESSION_ID}&plan=${planKey}`;
+    const successUrl = request.data?.successUrl || `${baseUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = request.data?.cancelUrl || `${baseUrl}/pricing`;
+
+    // Build subscription_data with metadata and optional trial
+    const subscriptionData: Stripe.Checkout.SessionCreateParams['subscription_data'] = {
+      metadata: {
+        firebaseUID: uid,
+        firebase_uid: uid,
+        planKey,
+        tier: plan.tier,
+        billingInterval: plan.billingInterval,
+        seatCount: String(plan.seatCount),
+      },
+    };
+
+    // Apply trial ONLY for Explorer — do not grant trials on other tiers
+    if (plan.trialDays > 0) {
+      subscriptionData.trial_period_days = plan.trialDays;
+    }
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       client_reference_id: uid,
       mode: 'subscription',
-      payment_method_types: ['card'],
-      // CRITICAL: Always collect payment method, even for free trials
       payment_method_collection: 'always',
-      line_items: [{ price: planConfig.priceId, quantity: 1 }],
+      payment_method_types: ['card'],
+      line_items: [{ price: plan.stripePriceId, quantity: 1 }],
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: {
         firebaseUID: uid,
         firebase_uid: uid,
         planKey,
-        requestedPriceId: planConfig.priceId,
-        chargeAmount: String(planConfig.amount),
+        tier: plan.tier,
+        billingInterval: plan.billingInterval,
+        seatCount: String(plan.seatCount),
+        analyticsValue: String(plan.analyticsValue),
       },
-      subscription_data: {
-        metadata: {
-          firebaseUID: uid,
-          firebase_uid: uid,
-          planKey,
-          requestedPriceId: planConfig.priceId,
-        },
-        // If trial is offered, cancel subscription if payment method is missing
-        trial_settings: {
-          end_behavior: {
-            missing_payment_method: 'cancel',
-          },
-        },
-      },
+      subscription_data: subscriptionData,
+      // Allow promo codes on checkout
+      allow_promotion_codes: true,
     });
 
+    const userRef = admin.firestore().doc(`users/${uid}`);
     await userRef.set(
       {
         pendingCheckoutPlanKey: planKey,
-        ...(planConfig.betaOnly
-          ? {
-              betaProgramStatus: 'checkout_started',
-              betaPlanKey: planKey,
-              betaPriceCents: Math.round(planConfig.amount * 100),
-              betaCheckoutStartedAt: admin.firestore.FieldValue.serverTimestamp(),
-            }
-          : {}),
+        pendingCheckoutTier: plan.tier,
+        checkoutStartedAt: admin.firestore.FieldValue.serverTimestamp(),
       },
       { merge: true }
     );
@@ -513,36 +542,44 @@ export const stripeWebhookV2 = onRequest(
 
           if (uid) {
             let periodEnd: Date | null = null;
-            let planId = (session.metadata?.planKey as string | undefined) || 'pro_monthly';
+            let planKey = (session.metadata?.planKey as string | undefined) || 'explorer';
+            let subStatus: string = 'active';
             if (session.subscription) {
               const subId = typeof session.subscription === 'string' ? session.subscription : session.subscription.id;
               const subscription = await stripe.subscriptions.retrieve(subId);
               periodEnd = new Date(subscription.current_period_end * 1000);
-              planId = subscription.metadata?.planKey || subscription.items.data[0]?.price?.lookup_key || planId;
+              planKey = subscription.metadata?.planKey || planKey;
+              subStatus = subscription.status; // 'active' or 'trialing'
             }
-            const betaPlanActive = isBetaPlan(planId);
+
+            const tier = session.metadata?.tier || planKey;
+            const seatCount = parseInt(session.metadata?.seatCount || '1', 10);
+            const billingInterval = session.metadata?.billingInterval || 'month';
+            const isTrialing = subStatus === 'trialing';
 
             await admin.firestore().doc(`users/${uid}`).set(
               {
                 premium: true,
-                subscriptionStatus: 'active',
-                lastPaymentAt: admin.firestore.FieldValue.serverTimestamp(),
+                subscriptionStatus: subStatus,
+                subscriptionTier: tier,
+                billingInterval,
+                seatCount,
+                lastPaymentAt: isTrialing ? null : admin.firestore.FieldValue.serverTimestamp(),
+                trialStartedAt: isTrialing ? admin.firestore.FieldValue.serverTimestamp() : null,
+                trialEndsAt: isTrialing && periodEnd ? admin.firestore.Timestamp.fromDate(periodEnd) : null,
                 pendingCheckoutPlanKey: admin.firestore.FieldValue.delete(),
-                ...(betaPlanActive
-                  ? {
-                      betaProgramStatus: 'active',
-                      betaPlanKey: planId,
-                      betaPriceCents: 2999,
-                    }
-                  : {}),
+                pendingCheckoutTier: admin.firestore.FieldValue.delete(),
               },
               { merge: true }
             );
 
             await admin.firestore().doc(`users/${uid}/subscriptions/current`).set(
               {
-                status: 'active',
-                plan: planId,
+                status: subStatus,
+                plan: planKey,
+                tier,
+                billingInterval,
+                seatCount,
                 period_end: periodEnd ? admin.firestore.Timestamp.fromDate(periodEnd) : null,
                 stripeSubscriptionId: session.subscription,
                 stripeCustomerId: session.customer,
@@ -559,7 +596,7 @@ export const stripeWebhookV2 = onRequest(
               console.error(`Failed to queue playbook email for user ${uid}:`, emailQueueErr);
             }
 
-            console.log(`Premium activated for user ${uid} with plan ${planId}`);
+            console.log(`Premium activated for user ${uid} with plan ${planKey}, tier: ${tier}`);
           } else {
             console.error('Could not find Firebase UID for checkout session', session.id);
           }
@@ -604,9 +641,6 @@ export const stripeWebhookV2 = onRequest(
                 premium: false,
                 subscriptionStatus: 'cancelled',
                 subscriptionCancelledAt: admin.firestore.FieldValue.serverTimestamp(),
-                ...(isBetaPlan(subscription.metadata?.planKey)
-                  ? { betaProgramStatus: 'cancelled' }
-                  : {}),
               },
               { merge: true }
             );
@@ -620,7 +654,7 @@ export const stripeWebhookV2 = onRequest(
               { merge: true }
             );
 
-            console.log(`Premium cancelled for user ${uid}`);
+            console.log(`Subscription cancelled for user ${uid}`);
           } else {
             console.error('Could not find Firebase UID for subscription', subscription.id);
           }
@@ -650,16 +684,17 @@ export const stripeWebhookV2 = onRequest(
           if (uid) {
             const isActive = isActiveSubscriptionStatus(subscription.status);
             const periodEnd = new Date(subscription.current_period_end * 1000);
-            const planId = subscription.metadata?.planKey || subscription.items.data[0]?.price?.lookup_key || 'pro_monthly';
+            const planKey = subscription.metadata?.planKey || 'explorer';
+            const tier = subscription.metadata?.tier || planKey;
+            const seatCount = parseInt(subscription.metadata?.seatCount || '1', 10);
 
             await admin.firestore().doc(`users/${uid}`).set(
               {
                 premium: isActive,
                 subscriptionStatus: subscription.status,
+                subscriptionTier: tier,
+                seatCount,
                 subscriptionUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
-                ...(isBetaPlan(planId)
-                  ? { betaProgramStatus: isActive ? 'active' : 'cancelled' }
-                  : {}),
               },
               { merge: true }
             );
@@ -667,14 +702,16 @@ export const stripeWebhookV2 = onRequest(
             await admin.firestore().doc(`users/${uid}/subscriptions/current`).set(
               {
                 status: subscription.status,
-                plan: planId,
+                plan: planKey,
+                tier,
+                seatCount,
                 period_end: admin.firestore.Timestamp.fromDate(periodEnd),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp(),
               },
               { merge: true }
             );
 
-            console.log(`Subscription updated for user ${uid}: ${subscription.status}`);
+            console.log(`Subscription updated for user ${uid}: ${subscription.status}, tier: ${tier}`);
           } else {
             console.error('Could not find Firebase UID for subscription update', subscription.id);
           }

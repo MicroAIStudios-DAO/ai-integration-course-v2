@@ -1,117 +1,70 @@
-import React, { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { httpsCallable } from "firebase/functions";
-import { useAuth } from "../../context/AuthContext"; // Corrected path
-import { functions } from "../../config/firebase";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import { useReCaptcha } from "../../hooks/useReCaptcha";
-import { trackSignUp, trackBeginCheckout } from "../../utils/analytics";
-import ReactPlayer from "react-player";
+import { trackSignUp } from "../../utils/analytics";
 import SEO from "../SEO";
-import RoiGuaranteeBadge from "../conversion/RoiGuaranteeBadge";
-import { CheckoutPlanKey, getCheckoutPlan } from "../../config/pricing";
-
-type AccessCodeClaimResult = {
-  accessType?: 'beta' | 'scholarship';
-  checkoutPlanKey?: CheckoutPlanKey;
-  checkoutRequired?: boolean;
-  cohort?: string;
-  priceCents?: number;
-  success?: boolean;
-  grantPremium?: boolean;
-  skipCheckout?: boolean;
-  usesRemaining?: number;
-};
+import { getPlan } from "../../config/pricing";
+import { getStoredPlanKey, startCheckoutForPlan } from "../../utils/checkout";
 
 const SignupPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const offerCode = ""; // Offer code UI hidden from public — backend logic preserved
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { signup } = useAuth(); // Use AuthContext
+  const { signup, currentUser } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const { executeAndVerify, isLoaded } = useReCaptcha();
-  const queryParams = new URLSearchParams(location.search);
-  const checkoutCancelled = queryParams.get("checkout") === "cancelled";
-  const introVideoUrl = "https://youtu.be/sG9_phBnm40";
+  const intendedPlan = getStoredPlanKey();
+  const selectedPlan = intendedPlan ? getPlan(intendedPlan) : null;
 
-  const startCheckout = async (planKey: CheckoutPlanKey) => {
-    const origin = window.location.origin;
-    const plan = getCheckoutPlan(planKey);
-    const createCheckoutSession = httpsCallable(functions, "createCheckoutSessionV2");
-    const result = await createCheckoutSession({
-      planKey,
-      priceId: plan.priceId,
-      successUrl: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancelUrl: `${origin}/payment-cancel`
-    });
-    const data = result.data as { url?: string };
-    if (data?.url) {
-      trackBeginCheckout(plan.amount, 'USD', plan.name, planKey);
-      window.location.href = data.url;
+  // Hydrate email from sessionStorage (set by landing page or pricing page)
+  useEffect(() => {
+    const savedEmail = sessionStorage.getItem('signup_email');
+    if (savedEmail) {
+      setEmail(savedEmail);
+      sessionStorage.removeItem('signup_email');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!intendedPlan) {
+      navigate('/pricing', { replace: true });
       return;
     }
-    throw new Error("Unable to start checkout. Please try again.");
-  };
+
+    if (currentUser) {
+      navigate('/pricing', { replace: true });
+    }
+  }, [currentUser, intendedPlan, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const normalizedOfferCode = offerCode.trim().toUpperCase();
 
-    // Try reCAPTCHA verification but don't block signup if it fails
+    // Try reCAPTCHA but don't block signup
     try {
       if (isLoaded) {
         const verification = await executeAndVerify('SIGNUP');
         if (verification && !verification.success) {
-          console.warn("reCAPTCHA verification returned low score, proceeding anyway");
+          console.warn("reCAPTCHA low score, proceeding anyway");
         }
       }
     } catch (recaptchaError) {
-      console.warn("reCAPTCHA verification failed, proceeding with signup:", recaptchaError);
+      console.warn("reCAPTCHA failed, proceeding:", recaptchaError);
     }
 
     try {
       await signup(email, password);
-
-      // Offer-code based beta enrollment (best practice: separate from password).
-      if (normalizedOfferCode) {
-        try {
-          const claimBetaTester = httpsCallable(functions, "claimBetaTesterV2");
-          const result = await claimBetaTester({ code: normalizedOfferCode, cohort: "Pioneer" });
-          const data = result.data as AccessCodeClaimResult;
-          trackSignUp('Email');
-          if (data?.accessType === 'scholarship' || data?.grantPremium) {
-            navigate("/courses");
-            setLoading(false);
-            return;
-          }
-
-          if (data?.skipCheckout) {
-            navigate("/welcome");
-            setLoading(false);
-            return;
-          }
-
-          await startCheckout(data?.checkoutPlanKey || 'beta_monthly');
-          return;
-        } catch (betaErr) {
-          console.error("Beta enrollment failed after signup:", betaErr);
-          setError(
-            "Your account was created, but the access code could not be applied. Sign in and contact support before continuing if this code should unlock a special access path."
-          );
-          setLoading(false);
-          trackSignUp('Email');
-          return;
-        }
-      }
-
-      // Track sign_up event
       trackSignUp('Email');
-      await startCheckout('pro_monthly');
+      if (!intendedPlan) {
+        navigate('/pricing', { replace: true });
+        return;
+      }
+      await startCheckoutForPlan(intendedPlan);
+      return;
     } catch (err: any) {
       setError(err.message || "Failed to create an account. Please try again.");
     }
@@ -119,53 +72,51 @@ const SignupPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50 py-12 px-4 sm:px-6 lg:px-8 font-body">
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50 py-8 px-4 sm:px-6 lg:px-8 font-body">
       <SEO
-        title="Sign Up"
-        description="Create your AI Integration Course account. Start with free lessons or go Pro for the full curriculum, AI tutor, and live Q&A."
+        title="Create Account"
+        description="Create your AI Integration Course account and continue directly to secure Stripe checkout for your selected plan."
         url="/signup"
         keywords={[
-          'AI Integration Course signup',
+          'AI Integration Course checkout signup',
           'AI course account creation',
-          'AI automation training',
-          'learn AI integration'
+          'secure Stripe checkout',
+          'AI automation course enrollment'
         ]}
         author="Blaine Casey"
       />
       <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
       <div className="absolute -bottom-32 -left-24 h-80 w-80 rounded-full bg-indigo-200/40 blur-3xl" />
-      <div className="max-w-2xl w-full space-y-8 bg-white/90 backdrop-blur p-10 rounded-3xl shadow-xl border border-white/60 form-container">
-        <div className="w-full aspect-video rounded-3xl overflow-hidden shadow-2xl bg-slate-900">
-          <ReactPlayer
-            url={introVideoUrl}
-            width="100%"
-            height="100%"
-            playing
-            controls
-            playsinline
-          />
+
+      <div className="max-w-md w-full bg-white/90 backdrop-blur p-8 sm:p-10 rounded-3xl shadow-xl border border-white/60">
+        {/* Login link — ELEVATED, top of card */}
+        <div className="mb-6 flex items-center justify-between">
+          <Link to="/" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">
+            &larr; Home
+          </Link>
+          <Link
+            to="/login"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+          >
+            Already a member? Sign in
+          </Link>
         </div>
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-headings font-extrabold text-gray-900">
+
+        <div className="text-center">
+          <h2 className="text-2xl sm:text-3xl font-headings font-extrabold text-gray-900">
             Create your account
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 font-body">
-            Create your account to access free lessons. Ready for more? Continue to Pro checkout.
+          <p className="mt-2 text-sm text-gray-600 font-body">
+            {selectedPlan
+              ? `You picked ${selectedPlan.name}. Create your account and we will send you straight to secure checkout.`
+              : 'Choose a plan first, then create your account to continue to checkout.'}
           </p>
         </div>
-        {checkoutCancelled && (
-          <div className="rounded-md bg-yellow-50 p-4 mt-4">
-            <p className="text-sm text-yellow-800 font-body">
-              Checkout was cancelled. You can try again or continue without starting your trial.
-            </p>
-          </div>
-        )}
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px max-w-md mx-auto">
+
+        <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
+          <div className="rounded-md shadow-sm -space-y-px">
             <div>
-              <label htmlFor="email-address" className="sr-only">
-                Email address
-              </label>
+              <label htmlFor="email-address" className="sr-only">Email address</label>
               <input
                 id="email-address"
                 name="email"
@@ -179,19 +130,17 @@ const SignupPage: React.FC = () => {
               />
             </div>
             <div className="relative">
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  required
-                  className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm font-body pr-12"
-                  placeholder="Password (min. 6 characters)"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+              <label htmlFor="password" className="sr-only">Password</label>
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm font-body pr-12"
+                placeholder="Password (min. 6 characters)"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
               <button
                 type="button"
@@ -214,67 +163,46 @@ const SignupPage: React.FC = () => {
                 )}
               </button>
             </div>
-            {/* Offer code field hidden from public UI — backend logic preserved */}
           </div>
 
           {error && (
-            <div className="rounded-md bg-red-50 p-4 mt-4">
-              <div className="flex">
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-red-700 font-body">{error}</p>
-                </div>
-              </div>
+            <div className="rounded-md bg-red-50 p-4">
+              <p className="text-sm font-medium text-red-700 font-body">{error}</p>
             </div>
           )}
 
-          <div className="mt-6">
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-headings font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 form-button"
-            >
-              {loading ? "Creating account..." : "Create account and continue"}
-            </button>
-            <div className="mt-3 flex justify-center">
-              <RoiGuaranteeBadge />
-            </div>
-            <p className="mt-2 text-center text-xs text-gray-500 font-body">
-              Finish checkout and build one live workflow in 14 days or request a full refund.
-            </p>
-            <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-500 font-body">
-              <span className="inline-flex items-center gap-1">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-4 w-4 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <rect x="3" y="11" width="18" height="10" rx="2" />
-                  <path d="M7 11V8a5 5 0 0 1 10 0v3" />
-                </svg>
-                Secure checkout
-              </span>
-              <span className="h-3 w-px bg-gray-200" />
-              <span>Powered by Stripe</span>
-            </div>
-            <div className="mt-4 flex flex-col items-center gap-2 text-sm">
-              <Link to="/pricing" className="font-medium text-blue-600 hover:text-blue-500">
-                Compare plans first
-              </Link>
-              <Link to="/courses" className="font-medium text-slate-600 hover:text-slate-900">
-                Preview the free curriculum
-              </Link>
-            </div>
-          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-headings font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 form-button"
+          >
+            {loading ? "Creating account..." : "Create Account & Continue to Checkout"}
+          </button>
         </form>
-        <div className="mt-6">
+
+        <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-500 font-body">
+          <span className="inline-flex items-center gap-1">
+            <svg viewBox="0 0 24 24" className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="10" rx="2" />
+              <path d="M7 11V8a5 5 0 0 1 10 0v3" />
+            </svg>
+            Secure Stripe checkout
+          </span>
+          <span className="h-3 w-px bg-gray-200" />
+          <span>Plan selected before account creation</span>
+        </div>
+
+        <div className="mt-5 flex flex-col items-center gap-2 text-sm">
+          <Link to="/pricing" className="font-medium text-blue-600 hover:text-blue-500">
+            Back to pricing
+          </Link>
+        </div>
+
+        {/* Login link repeated at bottom for scroll-down users */}
+        <div className="mt-6 pt-4 border-t border-gray-100">
           <p className="text-center text-sm text-gray-600 font-body">
             Already have an account?{" "}
-            <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 font-body">
+            <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-500 font-body">
               Sign in
             </Link>
           </p>

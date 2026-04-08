@@ -39,18 +39,18 @@ const PaidTrafficLandingPage: React.FC = () => {
 
         <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-10 leading-relaxed">
           A hands-on curriculum where every lesson ends with a real workflow you can use tomorrow.
-          Try it free — your first build is on us.
+          Pick a plan, create your account, and go straight into secure checkout.
         </p>
 
         <Link
-          to="/signup"
+          to="/pricing"
           onClick={() => handleCTAClick('hero')}
           className="inline-block bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-lg px-10 py-4 rounded-xl shadow-lg shadow-cyan-500/25 transition-all hover:shadow-cyan-400/40 hover:scale-[1.02]"
         >
-          Start Your First AI Build — Free
+          See Plans & Start Building
         </Link>
         <p className="mt-4 text-sm text-slate-500">
-          Takes 30 seconds. Get instant access to your first lesson.
+          Choose your plan first. Account creation happens right before checkout.
         </p>
       </section>
 
@@ -181,18 +181,18 @@ const PaidTrafficLandingPage: React.FC = () => {
           {[
             {
               step: '1',
-              title: 'Create your free account',
-              desc: 'Pick a username, set a password, you\'re in. Instant access to your first lessons.',
+              title: 'Choose the plan that fits',
+              desc: 'Start on pricing so intent is clear and checkout friction stays low.',
             },
             {
               step: '2',
-              title: 'Build your first AI workflow',
-              desc: 'Lesson 1 walks you through a real automation — not theory, not slides. Something you can use tomorrow.',
+              title: 'Create your account',
+              desc: 'Enter email and password once. We use that account to carry you straight into secure Stripe checkout.',
             },
             {
               step: '3',
-              title: 'Keep going or upgrade for more',
-              desc: 'Love it? Unlock 50+ hours of advanced builds, a personal AI tutor, and live Q&A with Pro. 14-day money-back guarantee.',
+              title: 'Complete checkout and start building',
+              desc: 'Unlock the curriculum, guided build path, and guarantee-backed implementation flow without detouring into a free signup path.',
             },
           ].map((item) => (
             <div key={item.step} className="flex gap-5">
@@ -254,7 +254,7 @@ const PaidTrafficLandingPage: React.FC = () => {
               },
               {
                 q: 'What is Pro and when would I need it?',
-                a: 'Pro unlocks 50+ hours of advanced builds, a personal AI tutor that answers your questions in context, and live Q&A sessions. Most people try the free lessons first, then upgrade when they want to go deeper. $49/month with a 14-day money-back guarantee.',
+                a: 'Pro unlocks 50+ hours of advanced builds, a personal AI tutor that answers your questions in context, and live Q&A sessions. Most people try the free lessons first, then upgrade when they want to go deeper. From $19.99/month (billed annually) with a 14-day money-back guarantee.',
               },
               {
                 q: 'How is this different from YouTube or ChatGPT?',
@@ -281,17 +281,17 @@ const PaidTrafficLandingPage: React.FC = () => {
           <span className="block text-cyan-400 mt-1">Catch up in one lesson.</span>
         </h2>
         <p className="text-slate-400 mb-8 max-w-lg mx-auto">
-          Try it free. Build something real. Decide for yourself.
+          Pick your plan, create your account, and finish checkout in one clean flow.
         </p>
         <Link
-          to="/signup"
+          to="/pricing"
           onClick={() => handleCTAClick('footer')}
           className="inline-block bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-lg px-10 py-4 rounded-xl shadow-lg shadow-cyan-500/25 transition-all hover:shadow-cyan-400/40 hover:scale-[1.02]"
         >
-          Start Building — It's Free
+          See Pricing
         </Link>
         <p className="mt-4 text-sm text-slate-500">
-          Free access to 5 lessons. Upgrade anytime. 14-day guarantee on Pro.
+          Pricing first. Account second. Checkout third.
         </p>
       </section>
 
@@ -312,11 +312,11 @@ const PaidTrafficLandingPage: React.FC = () => {
       {/* Sticky mobile CTA */}
       <div className="fixed bottom-0 left-0 right-0 md:hidden bg-slate-950/95 backdrop-blur border-t border-white/10 p-4 z-50">
         <Link
-          to="/signup"
+          to="/pricing"
           onClick={() => handleCTAClick('mobile_sticky')}
           className="block w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-center py-3.5 rounded-xl"
         >
-          Start Your First AI Build — Free
+          See Pricing
         </Link>
       </div>
     </div>

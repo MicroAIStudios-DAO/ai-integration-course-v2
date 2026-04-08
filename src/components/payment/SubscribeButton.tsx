@@ -1,50 +1,75 @@
-import React from 'react';
-import { httpsCallable } from 'firebase/functions';
+import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { functions } from '../../config/firebase';
-import { CheckoutPlanKey, getCheckoutPlan } from '../../config/pricing';
+import { PlanKey, getPlan } from '../../config/pricing';
+import { trackBeginCheckout } from '../../utils/analytics';
+import { startCheckoutForPlan, storePlanKey } from '../../utils/checkout';
 
 interface SubscribeButtonProps {
-  planKey?: CheckoutPlanKey;
-  priceId?: string;
+  /** Trusted plan key — server resolves this to a Stripe price ID */
+  planKey: PlanKey;
   buttonText?: string;
   className?: string;
+  disabled?: boolean;
 }
 
-const SubscribeButton: React.FC<SubscribeButtonProps> = ({ 
-  planKey = 'pro_monthly',
-  priceId,
-  buttonText = "Subscribe Now",
-  className = "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+const SubscribeButton: React.FC<SubscribeButtonProps> = ({
+  planKey,
+  buttonText,
+  className = 'bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded',
+  disabled = false,
 }) => {
   const { currentUser } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const plan = getPlan(planKey);
+
   const handleClick = async () => {
+    if (loading) return;
+
+    if (!currentUser) {
+      storePlanKey(planKey);
+      window.location.assign('/signup');
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      if (!currentUser) { alert('Please log in first.'); return; }
-      const origin = window.location.origin;
-      const plan = getCheckoutPlan(planKey);
-      const createCheckoutSession = httpsCallable(functions, 'createCheckoutSessionV2');
-      const result = await createCheckoutSession({
-        planKey,
-        priceId: priceId || plan.priceId,
-        successUrl: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&plan=${planKey}`,
-        cancelUrl: `${origin}/payment-cancel`
-      });
-      const data = result.data as { url?: string };
-      if (data?.url) { window.location.href = data.url; return; }
-      alert('Unexpected response from checkout');
-    } catch (e:any) {
-      alert(e?.message || 'Stripe error');
+      // Track begin_checkout — for trial plans, track as trial_start not purchase
+      trackBeginCheckout(
+        plan.analyticsValue,
+        'USD',
+        plan.name,
+        planKey
+      );
+
+      await startCheckoutForPlan(planKey);
+      return;
+    } catch (e: any) {
+      console.error('[Checkout] Error:', e);
+      alert(e?.message || 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div>
-      <button onClick={handleClick} className={className}>
-        {buttonText}
-      </button>
-      {/* Placeholder for error messages or login prompts */}
-    </div>
+    <button
+      onClick={handleClick}
+      disabled={disabled || loading}
+      className={className}
+    >
+      {loading ? (
+        <span className="inline-flex items-center gap-2">
+          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          Processing...
+        </span>
+      ) : (
+        buttonText || plan.ctaText
+      )}
+    </button>
   );
 };
 

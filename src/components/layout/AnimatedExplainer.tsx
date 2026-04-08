@@ -18,7 +18,7 @@ const AnimatedExplainer: React.FC<AnimatedExplainerProps> = ({
   ],
   onComplete,
   ctaLabel = 'Start Your AI Journey Now',
-  ctaPath = '/signup'
+  ctaPath = '/pricing'
 }) => {
   const navigate = useNavigate();
 

@@ -215,13 +215,13 @@ const Header: React.FC = () => {
                         Login
                       </NavLink>
                       <NavLink
-                        to="/signup"
+                        to="/pricing"
                         onClick={() => setMenuOpen(false)}
                         className={({ isActive }) =>
                           `block px-4 py-2 text-sm font-headings font-extrabold uppercase tracking-wide hover:bg-gray-100 ${isActive ? 'text-blue-700' : ''}`
                         }
                       >
-                        Sign Up
+                        Pricing
                       </NavLink>
                     </>
                   )}

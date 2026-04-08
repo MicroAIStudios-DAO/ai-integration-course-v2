@@ -24,7 +24,7 @@ const NewLandingPage: React.FC = () => {
         <div className="hidden md:flex space-x-6">
           <Link to="/courses" className="hover:text-cyan-400 transition-colors">Courses</Link>
           <Link to="/login" className="hover:text-cyan-400 transition-colors">Login</Link>
-          <Link to="/signup" className="bg-gradient-to-r from-cyan-500 to-purple-500 px-4 py-2 rounded-lg hover:from-cyan-600 hover:to-purple-600 transition-all">
+          <Link to="/pricing" className="bg-gradient-to-r from-cyan-500 to-purple-500 px-4 py-2 rounded-lg hover:from-cyan-600 hover:to-purple-600 transition-all">
             Get Started
           </Link>
         </div>
@@ -104,10 +104,10 @@ const NewLandingPage: React.FC = () => {
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 mb-12">
           <Link
-            to="/signup"
+            to="/pricing"
             className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white px-8 py-4 rounded-xl text-lg font-semibold shadow-2xl transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300"
           >
-            Start 7-Day Free Trial
+            See Pricing
           </Link>
           <Link
             to="/courses"

@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext"; // Corrected path
 import { getAuth, sendPasswordResetEmail } from "firebase/auth";
 import { useReCaptcha } from "../../hooks/useReCaptcha";
-import ReactPlayer from "react-player";
+import { getStoredPlanKey, startCheckoutForPlan } from "../../utils/checkout";
+// ReactPlayer removed from login — keeps the page lightweight for returning users
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -15,7 +16,7 @@ const LoginPage: React.FC = () => {
   const { login } = useAuth(); // Use AuthContext
   const navigate = useNavigate();
   const { executeAndVerify, isLoaded } = useReCaptcha();
-  const introVideoUrl = "https://youtu.be/sG9_phBnm40";
+  // Video removed from login — keeps page fast for returning users
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +37,11 @@ const LoginPage: React.FC = () => {
 
     try {
       await login(email, password);
+      const intendedPlan = getStoredPlanKey();
+      if (intendedPlan) {
+        await startCheckoutForPlan(intendedPlan);
+        return;
+      }
       navigate("/courses");
     } catch (err: any) {
       setError(err.message || "Failed to log in. Please check your credentials.");
@@ -47,23 +53,26 @@ const LoginPage: React.FC = () => {
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50 py-12 px-4 sm:px-6 lg:px-8 font-body">
       <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
       <div className="absolute -bottom-32 -left-24 h-80 w-80 rounded-full bg-indigo-200/40 blur-3xl" />
-      <div className="max-w-2xl w-full space-y-8 bg-white/90 backdrop-blur p-10 rounded-3xl shadow-xl border border-white/60">
-        <div className="w-full aspect-video rounded-3xl overflow-hidden shadow-2xl bg-slate-900">
-          <ReactPlayer
-            url={introVideoUrl}
-            width="100%"
-            height="100%"
-            playing
-            controls
-            playsinline
-          />
+      <div className="max-w-md w-full bg-white/90 backdrop-blur p-8 sm:p-10 rounded-3xl shadow-xl border border-white/60">
+        {/* Top navigation */}
+        <div className="mb-6 flex items-center justify-between">
+          <Link to="/" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">
+            &larr; Home
+          </Link>
+          <Link
+            to="/pricing"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors"
+          >
+            New here? Choose a plan
+          </Link>
         </div>
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-headings font-extrabold text-gray-900">
-            Sign in to your account
+
+        <div className="text-center">
+          <h2 className="text-2xl sm:text-3xl font-headings font-extrabold text-gray-900">
+            Welcome back
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 font-body">
-            Welcome back. Sign in to continue your curriculum.
+          <p className="mt-2 text-sm text-gray-600 font-body">
+            Sign in to continue your curriculum.
           </p>
         </div>
         {/* Regular Login Form */}
@@ -171,11 +180,11 @@ const LoginPage: React.FC = () => {
           </div>
         )}
 
-        <div className="mt-6">
+        <div className="mt-6 pt-4 border-t border-gray-100">
           <p className="text-center text-sm text-gray-600 font-body">
-            Not a member?{" "}
-            <Link to="/signup" className="font-medium text-blue-600 hover:text-blue-500 font-body">
-              Sign up now
+            Not a member yet?{" "}
+            <Link to="/pricing" className="font-semibold text-blue-600 hover:text-blue-500 font-body">
+              Choose your plan
             </Link>
           </p>
         </div>

@@ -122,7 +122,7 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
             to="/pricing"
             className="inline-flex items-center justify-center px-8 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors"
           >
-            Start Free Trial
+            Start 7-Day Trial
             <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
@@ -137,7 +137,7 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
 
         {/* Trial info */}
         <p className="text-sm text-gray-500 mt-6">
-          7-day free trial • Cancel anytime • Payment info required to start
+          7-day trial • Cancel anytime during the first 7 days
         </p>
       </div>
     </div>
