@@ -66,7 +66,7 @@ const PricingPage: React.FC = () => {
 
     return (
       <Link
-        to="/signup"
+        to={`/signup?plan=${planKey}`}
         onClick={() => storePlanKey(planKey)}
         className={`block w-full text-center py-3 px-6 rounded-lg font-semibold transition-colors ${
           plan.featured
@@ -85,7 +85,7 @@ const PricingPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
       <SEO
         title="Pricing"
-        description="Compare the Explorer, Pro AI Architect, and Team plans for AI Integration Course. Start the 7-day Explorer trial, or go annual and save 50%."
+        description="Compare the Explorer, Pro AI Architect, and Team plans for AI Integration Course. Start with a 7-day trial, then unlock the full premium curriculum after your first charge."
         url="/pricing"
         keywords={[
           'AI Integration Course pricing',
@@ -172,6 +172,7 @@ const PricingPage: React.FC = () => {
               <span className="text-4xl font-bold text-white">${formatPlanPrice(explorer.displayPrice)}</span>
               <span className="text-gray-400">{explorer.intervalLabel}</span>
               <p className="text-sm text-emerald-400 mt-1">7-day trial starts right away</p>
+              <p className="text-xs text-gray-500 mt-1">Trial includes free lessons. Premium curriculum unlocks after the first charge.</p>
             </div>
 
             <ul className="space-y-4 mb-8">
@@ -218,6 +219,8 @@ const PricingPage: React.FC = () => {
               <p className="text-sm text-emerald-400 mt-1">
                 ${formatPlanPrice(pro.displayPrice)}/year &mdash; billed annually
               </p>
+              <p className="text-xs text-emerald-400 mt-1">7-day trial starts right away</p>
+              <p className="text-xs text-gray-500 mt-1">Trial includes free lessons. Premium curriculum unlocks after the first charge.</p>
               <p className="text-xs text-indigo-300 mt-1">Save 50% vs monthly equivalent</p>
             </div>
 
@@ -330,11 +333,11 @@ const PricingPage: React.FC = () => {
             </div>
             <div className="bg-slate-800/50 rounded-lg p-6">
               <h4 className="text-lg font-semibold text-white mb-2">How does the Explorer free trial work?</h4>
-              <p className="text-gray-400">Your Explorer access starts immediately and runs for 7 days. If you decide it is not right for you, cancel during the trial window. If you stay active, the plan continues at $29.99/month.</p>
+              <p className="text-gray-400">Your Explorer trial starts immediately and runs for 7 days. During the trial you can use the free lessons and get a feel for the platform. If you stay active, the plan continues at $29.99/month and the premium curriculum unlocks after the first charge.</p>
             </div>
             <div className="bg-slate-800/50 rounded-lg p-6">
-              <h4 className="text-lg font-semibold text-white mb-2">Why is Pro billed annually?</h4>
-              <p className="text-gray-400">Pro AI Architect is designed for committed builders. Annual billing gives you a 50% discount versus monthly pricing, and you get uninterrupted access to all updates for a full year.</p>
+              <h4 className="text-lg font-semibold text-white mb-2">How does the Pro AI Architect trial work?</h4>
+              <p className="text-gray-400">Your Pro AI Architect plan starts with a 7-day trial. During that trial you can access the free lessons and complete setup. If you stay active, the annual plan is charged after 7 days and the premium curriculum unlocks.</p>
             </div>
             <div className="bg-slate-800/50 rounded-lg p-6">
               <h4 className="text-lg font-semibold text-white mb-2">Can I cancel anytime?</h4>
@@ -359,7 +362,7 @@ const PricingPage: React.FC = () => {
         <div className="mt-20 text-center">
           <h2 className="text-3xl font-bold text-white mb-6">Ready to Build Your First AI Solution?</h2>
           <p className="text-xl text-gray-300 mb-8">
-            Start the 7-day Explorer trial, or save 50% with the Pro annual plan.
+            Start with a 7-day trial, then unlock the full premium curriculum after your first charge.
           </p>
           <Link
             to={isFounding ? '/welcome' : currentUser ? '/courses' : '/signup'}

@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext"; // Corrected path
 import { getAuth, sendPasswordResetEmail } from "firebase/auth";
 import { useReCaptcha } from "../../hooks/useReCaptcha";
-import { getStoredPlanKey, startCheckoutForPlan, storePlanKey, isPlanKey } from "../../utils/checkout";
+import { getPlanKeyFromSearch, getStoredPlanKey, isPlanKey, startCheckoutForPlan, storePlanKey } from "../../utils/checkout";
 // ReactPlayer removed from login — keeps the page lightweight for returning users
 
 const LoginPage: React.FC = () => {
@@ -22,12 +22,12 @@ const LoginPage: React.FC = () => {
   // and persist it to sessionStorage so post-login checkout knows which plan to open.
   // This ensures returning users who click "Log in" from /start are routed to checkout.
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const planFromUrl = params.get('plan');
+    const planFromUrl = new URLSearchParams(location.search).get('plan');
     if (isPlanKey(planFromUrl)) {
       storePlanKey(planFromUrl);
     }
   }, [location.search]);
+  const intendedPlan = getPlanKeyFromSearch(location.search) || getStoredPlanKey();
   // Video removed from login — keeps page fast for returning users
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,8 +49,8 @@ const LoginPage: React.FC = () => {
 
     try {
       await login(email, password);
-      const intendedPlan = getStoredPlanKey();
       if (intendedPlan) {
+        storePlanKey(intendedPlan);
         await startCheckoutForPlan(intendedPlan);
         return;
       }
@@ -72,7 +72,7 @@ const LoginPage: React.FC = () => {
             &larr; Home
           </Link>
           <Link
-            to="/pricing"
+            to={intendedPlan ? `/pricing?plan=${intendedPlan}` : "/pricing"}
             className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors"
           >
             New here? Choose a plan
@@ -195,7 +195,7 @@ const LoginPage: React.FC = () => {
         <div className="mt-6 pt-4 border-t border-gray-100">
           <p className="text-center text-sm text-gray-600 font-body">
             Not a member yet?{" "}
-            <Link to="/pricing" className="font-semibold text-blue-600 hover:text-blue-500 font-body">
+            <Link to={intendedPlan ? `/pricing?plan=${intendedPlan}` : "/pricing"} className="font-semibold text-blue-600 hover:text-blue-500 font-body">
               Choose your plan
             </Link>
           </p>

@@ -56,11 +56,13 @@ const App: React.FC = () => {
       <UserJotWidget />
       <PageViewTracker />
       <Routes>
-        {/* HomePage renders without Layout for full-screen landing page */}
-        <Route path="/" element={<HomePage />} />
+        {/* Root route is the primary onboarding funnel for direct visitors */}
+        <Route path="/" element={<PaidTrafficLandingPage />} />
+        {/* Preserve the legacy homepage for editorial traffic and internal links */}
+        <Route path="/home" element={<HomePage />} />
         {/* NewLandingPage renders without Layout for full-screen landing page */}
         <Route path="/new-landing" element={<NewLandingPage />} />
-        {/* Paid traffic landing page — single CTA, plain language, free-first */}
+        {/* Paid traffic landing page — same onboarding experience available at /start */}
         <Route path="/start" element={<PaidTrafficLandingPage />} />
         {/* PricingPage renders without Layout for full-screen pricing page */}
         <Route path="/pricing" element={<PricingPage />} />

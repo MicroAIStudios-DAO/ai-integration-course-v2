@@ -8,11 +8,13 @@ import { User } from 'firebase/auth';
 // Initialize Firebase Storage
 const storage = getStorage(app);
 
-type LessonAccessSubject = Pick<Lesson, 'tier' | 'isFree'> | null | undefined;
+type LessonAccessSubject = Pick<Lesson, 'id' | 'tier' | 'isFree'> | null | undefined;
 type LessonContentDoc = {
   content?: string;
   markdown?: string;
 };
+
+const FOUNDING_ARCHITECT_TRIAL_LESSON_ID = 'lesson_founders_01_content_architect';
 
 export const getLessonContentDocumentId = (courseId: string, moduleId: string, lessonId: string): string =>
   `${courseId}__${moduleId}__${lessonId}`;
@@ -130,6 +132,18 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
   return null;
 };
 
+export const userHasPaidAccess = (profile: UserProfile | null | undefined): boolean => {
+  if (!profile) return false;
+  if (profile.foundingMember === true) return true;
+  if (profile.premium === true) return true;
+
+  if (profile.subscriptionStatus === 'active') {
+    return true;
+  }
+
+  return false;
+};
+
 const toDate = (value: UserProfile['trialEndsAt'] | UserProfile['trialEndDate']): Date | null => {
   if (!value) return null;
   if (value instanceof Date) return value;
@@ -141,21 +155,12 @@ const toDate = (value: UserProfile['trialEndsAt'] | UserProfile['trialEndDate'])
   return null;
 };
 
-export const userHasPaidAccess = (profile: UserProfile | null | undefined): boolean => {
+export const userHasActiveTrial = (profile: UserProfile | null | undefined): boolean => {
   if (!profile) return false;
-  if (profile.foundingMember === true) return true;
-  if (profile.premium === true) return true;
+  if (profile.subscriptionStatus !== 'trialing') return false;
 
   const trialEndsAt = toDate(profile.trialEndsAt) || toDate(profile.trialEndDate);
-  if (profile.subscriptionStatus === 'active') {
-    return true;
-  }
-
-  if (profile.subscriptionStatus === 'trialing') {
-    return !!trialEndsAt && trialEndsAt > new Date();
-  }
-
-  return false;
+  return !!trialEndsAt && trialEndsAt > new Date();
 };
 
 export const isAdminProfile = (profile: UserProfile | null | undefined): boolean => {
@@ -184,6 +189,10 @@ export const userCanAccessLesson = (
   }
 
   if (isAdminProfile(profile)) {
+    return true;
+  }
+
+  if (lesson?.id === FOUNDING_ARCHITECT_TRIAL_LESSON_ID && userHasActiveTrial(profile)) {
     return true;
   }
 

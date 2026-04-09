@@ -117,8 +117,7 @@ const resolvePlanKey = (payload: Record<string, any> | undefined): CheckoutPlanK
   throw new HttpsError('invalid-argument', 'A valid plan selection is required to start checkout.');
 };
 
-const isActiveSubscriptionStatus = (status: unknown): boolean =>
-  status === 'active' || status === 'trialing';
+const isPremiumContentUnlocked = (status: unknown): boolean => status === 'active';
 
 /** Check if a plan key maps to the explorer trial tier */
 const _isTrialPlan = (planKey: string | null | undefined): boolean => planKey === 'explorer';
@@ -239,6 +238,9 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
       subscriptionTier: tier,
       seatCount,
       lastPaymentAt: admin.firestore.FieldValue.serverTimestamp(),
+      trialStartedAt: null,
+      trialEndsAt: null,
+      subscriptionEndsAt: periodEnd ? admin.firestore.Timestamp.fromDate(periodEnd) : null,
     },
     { merge: true }
   );
@@ -462,7 +464,9 @@ export const createCheckoutSessionV2 = onCall(
       },
     };
 
-    // Apply trial for Explorer and Pro — cancel subscription if no payment method collected
+    // Apply trial for Explorer and Pro. Trial users stay on free-lesson access
+    // until the first paid invoice succeeds, and the subscription cancels if no
+    // payment method is available when the trial ends.
     if (plan.trialDays > 0) {
       subscriptionData.trial_period_days = plan.trialDays;
       subscriptionData.trial_settings = {
@@ -581,10 +585,11 @@ export const stripeWebhookV2 = onRequest(
             const seatCount = parseInt(session.metadata?.seatCount || '1', 10);
             const billingInterval = session.metadata?.billingInterval || 'month';
             const isTrialing = subStatus === 'trialing';
+            const premiumUnlocked = isPremiumContentUnlocked(subStatus);
 
             await admin.firestore().doc(`users/${uid}`).set(
               {
-                premium: true,
+                premium: premiumUnlocked,
                 subscriptionStatus: subStatus,
                 subscriptionTier: tier,
                 billingInterval,
@@ -592,6 +597,7 @@ export const stripeWebhookV2 = onRequest(
                 lastPaymentAt: isTrialing ? null : admin.firestore.FieldValue.serverTimestamp(),
                 trialStartedAt: isTrialing ? admin.firestore.FieldValue.serverTimestamp() : null,
                 trialEndsAt: isTrialing && periodEnd ? admin.firestore.Timestamp.fromDate(periodEnd) : null,
+                subscriptionEndsAt: !isTrialing && periodEnd ? admin.firestore.Timestamp.fromDate(periodEnd) : null,
                 pendingCheckoutPlanKey: admin.firestore.FieldValue.delete(),
                 pendingCheckoutTier: admin.firestore.FieldValue.delete(),
               },
@@ -621,7 +627,7 @@ export const stripeWebhookV2 = onRequest(
               console.error(`Failed to queue playbook email for user ${uid}:`, emailQueueErr);
             }
 
-            console.log(`Premium activated for user ${uid} with plan ${planKey}, tier: ${tier}`);
+            console.log(`Subscription recorded for user ${uid} with plan ${planKey}, tier: ${tier}, status: ${subStatus}`);
           } else {
             console.error('Could not find Firebase UID for checkout session', session.id);
           }
@@ -665,6 +671,8 @@ export const stripeWebhookV2 = onRequest(
               {
                 premium: false,
                 subscriptionStatus: 'cancelled',
+                trialEndsAt: null,
+                subscriptionEndsAt: null,
                 subscriptionCancelledAt: admin.firestore.FieldValue.serverTimestamp(),
               },
               { merge: true }
@@ -707,18 +715,21 @@ export const stripeWebhookV2 = onRequest(
           }
 
           if (uid) {
-            const isActive = isActiveSubscriptionStatus(subscription.status);
+            const premiumUnlocked = isPremiumContentUnlocked(subscription.status);
             const periodEnd = new Date(subscription.current_period_end * 1000);
             const planKey = subscription.metadata?.planKey || 'explorer';
             const tier = subscription.metadata?.tier || planKey;
             const seatCount = parseInt(subscription.metadata?.seatCount || '1', 10);
+            const isTrialing = subscription.status === 'trialing';
 
             await admin.firestore().doc(`users/${uid}`).set(
               {
-                premium: isActive,
+                premium: premiumUnlocked,
                 subscriptionStatus: subscription.status,
                 subscriptionTier: tier,
                 seatCount,
+                trialEndsAt: isTrialing ? admin.firestore.Timestamp.fromDate(periodEnd) : null,
+                subscriptionEndsAt: !isTrialing ? admin.firestore.Timestamp.fromDate(periodEnd) : null,
                 subscriptionUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
               },
               { merge: true }

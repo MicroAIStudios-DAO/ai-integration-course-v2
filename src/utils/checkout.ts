@@ -15,6 +15,11 @@ export const getStoredPlanKey = (): PlanKey | null => {
   return isPlanKey(rawValue) ? rawValue : null;
 };
 
+export const getPlanKeyFromSearch = (search: string): PlanKey | null => {
+  const rawValue = new URLSearchParams(search).get('plan');
+  return isPlanKey(rawValue) ? rawValue : null;
+};
+
 export const storePlanKey = (planKey: PlanKey): void => {
   sessionStorage.setItem(INTENDED_PLAN_STORAGE_KEY, planKey);
 };

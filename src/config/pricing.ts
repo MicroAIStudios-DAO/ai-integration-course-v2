@@ -52,7 +52,8 @@ export const plans: Record<PlanKey, PlanDefinition> = {
     featured: false,
     analyticsValue: 29.99,
     features: [
-      { text: '7-day full-access trial', included: true, bold: true },
+      { text: '7-day starter trial', included: true, bold: true },
+      { text: 'Free lessons during trial', included: true },
       { text: 'All Premium Lessons (50+ hours)', included: true },
       { text: 'AI Tutor - 24/7 Personalized Help', included: true },
       { text: 'Build Your First Bot - Guided Project', included: true },
@@ -77,6 +78,9 @@ export const plans: Record<PlanKey, PlanDefinition> = {
     featured: true,
     analyticsValue: 239.88,
     features: [
+      { text: '7-day starter trial', included: true, bold: true },
+      { text: 'Free lessons during trial', included: true },
+      { text: 'Premium lessons unlock after first charge', included: true },
       { text: 'All Premium Lessons (50+ hours)', included: true, bold: true },
       { text: 'AI Tutor - 24/7 Personalized Help', included: true },
       { text: 'Build Your First Bot - Guided Project', included: true },

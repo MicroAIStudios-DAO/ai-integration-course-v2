@@ -27,7 +27,7 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
 
     if (!currentUser) {
       storePlanKey(planKey);
-      window.location.assign('/signup');
+      window.location.assign(`/signup?plan=${planKey}`);
       return;
     }
 

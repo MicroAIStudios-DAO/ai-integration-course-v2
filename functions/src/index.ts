@@ -55,6 +55,9 @@ export { userJotToGithub, githubToUserJot, betaTesterSync } from './beta-testing
 // Lead magnet capture
 export { submitLeadMagnetV2 } from './leadMagnet';
 
+// Email queue delivery
+export { processEmailQueueV2, drainPendingEmailQueueV2 } from './email';
+
 // export const helloWorld = onRequest((request, response) => {
 //   logger.info("Hello logs!", {structuredData: true});
 //   response.send("Hello from Firebase!");

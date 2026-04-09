@@ -40,6 +40,7 @@ const PaymentSuccessPage: React.FC = () => {
     if (sId) {
       if (isTrial) {
         // Explorer or Pro trial start — NOT a paid conversion (no charge has occurred yet)
+        // Explorer or Pro trial start — NOT a paid conversion (no charge has occurred yet)
         trackCustomEvent('subscription', 'trial_start', planKey);
         // Pro_Trial_Value: secondary Google Ads conversion with predictive lead value.
         // Fires ONLY for Pro plan to give Maximize Conversion Value a $119.94 signal
@@ -113,13 +114,13 @@ const PaymentSuccessPage: React.FC = () => {
   // Dynamic heading/messaging based on plan
   const headingMap: Record<PlanKey, string> = {
     explorer: 'Your 7-Day Trial Has Started!',
-    pro: 'Welcome to Pro AI Architect!',
+    pro: 'Your Pro Trial Has Started!',
     corporate: 'Welcome to Team AI Standard!',
   };
 
   const subheadMap: Record<PlanKey, string> = {
-    explorer: 'Your 7-day full-access trial is live. Cancel during the trial window if it is not right for you. Stay active and the plan continues at $29.99/month.',
-    pro: 'Your annual plan is active. You just locked in the best rate for a full year of building.',
+    explorer: 'Your 7-day trial is live. During the trial you can use the free lessons and get your setup in place. Stay active and the plan continues at $29.99/month after the trial window.',
+    pro: 'Your 7-day Pro trial is live. During the trial you can use the free lessons and complete setup. If you stay active, the annual plan is charged after 7 days and the premium curriculum unlocks.',
     corporate: 'Your team plan is active with up to 5 seats. Time to standardize your AI operations.',
   };
 

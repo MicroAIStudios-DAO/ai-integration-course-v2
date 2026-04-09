@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useReCaptcha } from "../../hooks/useReCaptcha";
 import { trackSignUp } from "../../utils/analytics";
 import SEO from "../SEO";
 import { getPlan } from "../../config/pricing";
-import { getStoredPlanKey, startCheckoutForPlan } from "../../utils/checkout";
+import { getPlanKeyFromSearch, getStoredPlanKey, startCheckoutForPlan, storePlanKey } from "../../utils/checkout";
 
 const SignupPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -15,8 +15,9 @@ const SignupPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { signup, currentUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { executeAndVerify, isLoaded } = useReCaptcha();
-  const intendedPlan = getStoredPlanKey();
+  const intendedPlan = getPlanKeyFromSearch(location.search) || getStoredPlanKey();
   const selectedPlan = intendedPlan ? getPlan(intendedPlan) : null;
 
   // Hydrate email from sessionStorage (set by landing page or pricing page)
@@ -27,6 +28,12 @@ const SignupPage: React.FC = () => {
       sessionStorage.removeItem('signup_email');
     }
   }, []);
+
+  useEffect(() => {
+    if (intendedPlan) {
+      storePlanKey(intendedPlan);
+    }
+  }, [intendedPlan]);
 
   useEffect(() => {
     if (!intendedPlan) {
@@ -95,7 +102,7 @@ const SignupPage: React.FC = () => {
             &larr; Home
           </Link>
           <Link
-            to="/login"
+            to={intendedPlan ? `/login?plan=${intendedPlan}` : "/login"}
             className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
           >
             Already a member? Sign in
@@ -202,7 +209,7 @@ const SignupPage: React.FC = () => {
         <div className="mt-6 pt-4 border-t border-gray-100">
           <p className="text-center text-sm text-gray-600 font-body">
             Already have an account?{" "}
-            <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-500 font-body">
+            <Link to={intendedPlan ? `/login?plan=${intendedPlan}` : "/login"} className="font-semibold text-blue-600 hover:text-blue-500 font-body">
               Sign in
             </Link>
           </p>
