@@ -46,7 +46,9 @@ const PaymentSuccessPage: React.FC = () => {
         // immediately — without waiting for the Day-7 rebill to confirm value.
         // Explorer stays at $0 trial_start — it is the entry-level acquisition event.
         if (planKey === 'pro') {
-          trackProTrialValue();
+          // Pass Stripe session_id as transaction_id so Google Ads deduplicates
+          // on page reload or back-navigation — one conversion per Stripe session.
+          trackProTrialValue(sId);
         }
         setUserProperties({
           subscription_status: 'trial',

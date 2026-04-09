@@ -170,20 +170,25 @@ export const trackGoogleAdsSignupConversion = (
  *   Set as: Secondary action (prevents double-counting in bid strategy)
  *   After creating: replace GOOGLE_ADS_PRO_TRIAL_LABEL with the new label above.
  */
-export const trackProTrialValue = (): void => {
+export const trackProTrialValue = (transactionId: string): void => {
   const PRO_TRIAL_LEAD_VALUE = 119.94; // 50% of $239.88 annual price
   if (typeof window !== 'undefined' && window.gtag) {
-    // Primary: fire Google Ads secondary conversion event
+    // Primary: fire Google Ads secondary conversion event.
+    // transaction_id (mapped to order_id) is passed to Google Ads for deduplication:
+    // if the /payment-success page reloads or the user navigates back, Google Ads
+    // will deduplicate on this ID and count only one conversion per Stripe session.
     window.gtag('event', 'conversion', {
       send_to: `${GOOGLE_ADS_ID}/${GOOGLE_ADS_PRO_TRIAL_LABEL}`,
       value: PRO_TRIAL_LEAD_VALUE,
       currency: 'USD',
+      transaction_id: transactionId, // Stripe session_id — prevents duplicate counting
     });
     // Secondary: fire named GA4 event for audience segmentation and reporting
     window.gtag('event', 'Pro_Trial_Value', {
       value: PRO_TRIAL_LEAD_VALUE,
       currency: 'USD',
       plan: 'pro',
+      transaction_id: transactionId,
       event_category: 'conversion',
       event_label: 'pro_trial_lead_value',
     });
@@ -191,6 +196,7 @@ export const trackProTrialValue = (): void => {
       send_to: `${GOOGLE_ADS_ID}/${GOOGLE_ADS_PRO_TRIAL_LABEL}`,
       value: PRO_TRIAL_LEAD_VALUE,
       currency: 'USD',
+      transaction_id: transactionId,
     });
   }
 };
