@@ -25,6 +25,12 @@ const GA4_MEASUREMENT_ID = 'G-15SDDF1S5S';
 // Google Ads Conversion ID and Labels
 const GOOGLE_ADS_ID = 'AW-17956658756';
 const GOOGLE_ADS_SIGNUP_LABEL = 'YJI_CJzD95EcEMS8s_JC';
+// Pro_Trial_Value secondary conversion label — create this action in Google Ads:
+//   Goals → Conversions → New conversion action → Website
+//   Name: Pro_Trial_Value | Category: Lead | Value: Use value from tag | Count: One
+//   Set as: Secondary action (avoids double-counting with trial_start primary)
+// After creating, replace the placeholder below with the actual label from Google Ads:
+const GOOGLE_ADS_PRO_TRIAL_LABEL = 'REPLACE_WITH_PRO_TRIAL_VALUE_LABEL';
 
 // Type definitions for gtag
 declare global {
@@ -137,6 +143,54 @@ export const trackGoogleAdsSignupConversion = (
       send_to: `${GOOGLE_ADS_ID}/${GOOGLE_ADS_SIGNUP_LABEL}`,
       value,
       currency,
+    });
+  }
+};
+
+/**
+ * Track Pro trial start as a secondary Google Ads conversion with predictive lead value.
+ *
+ * ONLY fires for Pro plan (planKey === 'pro') — NOT Explorer, NOT Corporate.
+ *
+ * Rationale: Pro annual ($239.88/yr) trials have high purchase intent.
+ * Seeding the Google Ads algorithm with $119.94 (50% of annual price) gives
+ * Maximize Conversion Value a real signal to optimize against during the
+ * 7-day trial window, instead of waiting for the Day-7 rebill to confirm value.
+ *
+ * This is a SECONDARY conversion action — it does NOT replace trial_start.
+ * It runs alongside trial_start on the same page load for Pro trials only.
+ *
+ * Google Ads setup required (one-time):
+ *   Goals → Conversions → New conversion action → Website
+ *   Name: Pro_Trial_Value
+ *   Category: Lead (NOT Purchase — this is a predictive signal, not a charge)
+ *   Value: Use different values for each conversion
+ *   Count: One (one per trial start, not per session)
+ *   Attribution: Data-driven (or Last click if DDA unavailable)
+ *   Set as: Secondary action (prevents double-counting in bid strategy)
+ *   After creating: replace GOOGLE_ADS_PRO_TRIAL_LABEL with the new label above.
+ */
+export const trackProTrialValue = (): void => {
+  const PRO_TRIAL_LEAD_VALUE = 119.94; // 50% of $239.88 annual price
+  if (typeof window !== 'undefined' && window.gtag) {
+    // Primary: fire Google Ads secondary conversion event
+    window.gtag('event', 'conversion', {
+      send_to: `${GOOGLE_ADS_ID}/${GOOGLE_ADS_PRO_TRIAL_LABEL}`,
+      value: PRO_TRIAL_LEAD_VALUE,
+      currency: 'USD',
+    });
+    // Secondary: fire named GA4 event for audience segmentation and reporting
+    window.gtag('event', 'Pro_Trial_Value', {
+      value: PRO_TRIAL_LEAD_VALUE,
+      currency: 'USD',
+      plan: 'pro',
+      event_category: 'conversion',
+      event_label: 'pro_trial_lead_value',
+    });
+    console.log('[Analytics] Pro_Trial_Value fired:', {
+      send_to: `${GOOGLE_ADS_ID}/${GOOGLE_ADS_PRO_TRIAL_LABEL}`,
+      value: PRO_TRIAL_LEAD_VALUE,
+      currency: 'USD',
     });
   }
 };
@@ -376,6 +430,7 @@ const analytics = {
   trackCustomEvent,
   trackSignUp,
   trackGoogleAdsSignupConversion,
+  trackProTrialValue,
   trackViewPricing,
   trackBeginCheckout,
   trackPurchase,

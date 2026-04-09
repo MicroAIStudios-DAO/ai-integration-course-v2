@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { trackPurchase, setUserProperties, trackGoogleAdsSignupConversion, trackCustomEvent } from '../utils/analytics';
+import { trackPurchase, setUserProperties, trackGoogleAdsSignupConversion, trackCustomEvent, trackProTrialValue } from '../utils/analytics';
 import { PlanKey, plans } from '../config/pricing';
 
 /**
@@ -41,6 +41,13 @@ const PaymentSuccessPage: React.FC = () => {
       if (isTrial) {
         // Explorer or Pro trial start — NOT a paid conversion (no charge has occurred yet)
         trackCustomEvent('subscription', 'trial_start', planKey);
+        // Pro_Trial_Value: secondary Google Ads conversion with predictive lead value.
+        // Fires ONLY for Pro plan to give Maximize Conversion Value a $119.94 signal
+        // immediately — without waiting for the Day-7 rebill to confirm value.
+        // Explorer stays at $0 trial_start — it is the entry-level acquisition event.
+        if (planKey === 'pro') {
+          trackProTrialValue();
+        }
         setUserProperties({
           subscription_status: 'trial',
           signup_date: new Date().toISOString().split('T')[0],
