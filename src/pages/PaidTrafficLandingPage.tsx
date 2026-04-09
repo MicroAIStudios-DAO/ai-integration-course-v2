@@ -2,8 +2,19 @@ import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { trackEvent } from '../utils/analytics';
 
+// P0 FIX: Attribution param keys to capture and persist through the funnel
+const ATTRIBUTION_KEYS = ['gclid', 'utm_source', 'utm_campaign', 'utm_medium', 'utm_content', 'utm_term'] as const;
+
 const PaidTrafficLandingPage: React.FC = () => {
   useEffect(() => {
+    // P0 FIX: Capture Google Ads and UTM attribution params from the landing URL
+    // and persist them in sessionStorage so they survive navigation through
+    // /pricing → /signup → Stripe checkout and can be passed to Stripe metadata.
+    const params = new URLSearchParams(window.location.search);
+    for (const key of ATTRIBUTION_KEYS) {
+      const val = params.get(key);
+      if (val) sessionStorage.setItem(key, val);
+    }
     trackEvent('paid_landing_view', 'landing_page', 'start_page');
   }, []);
 

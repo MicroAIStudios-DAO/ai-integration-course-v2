@@ -436,6 +436,16 @@ export const createCheckoutSessionV2 = onCall(
 
     const customerId = await ensureStrictMapping(uid, email);
 
+    // P0 FIX: Extract attribution params passed from the client (captured at /start landing page)
+    // These are stored in Stripe session metadata so Google Ads can attribute conversions
+    // to the originating campaign, keyword, and ad group via offline conversion import.
+    const gclid = (request.data?.gclid as string | undefined) || '';
+    const utmSource = (request.data?.utm_source as string | undefined) || '';
+    const utmCampaign = (request.data?.utm_campaign as string | undefined) || '';
+    const utmMedium = (request.data?.utm_medium as string | undefined) || '';
+    const utmContent = (request.data?.utm_content as string | undefined) || '';
+    const utmTerm = (request.data?.utm_term as string | undefined) || '';
+
     const baseUrl = 'https://aiintegrationcourse.com';
     const successUrl = request.data?.successUrl || `${baseUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}&plan=${planKey}`;
     const cancelUrl = request.data?.cancelUrl || `${baseUrl}/pricing`;
@@ -471,6 +481,8 @@ export const createCheckoutSessionV2 = onCall(
       line_items: [{ price: plan.stripePriceId, quantity: 1 }],
       success_url: successUrl,
       cancel_url: cancelUrl,
+      // P0 FIX: Pre-fill customer email to reduce checkout friction
+      customer_email: email,
       metadata: {
         firebaseUID: uid,
         firebase_uid: uid,
@@ -479,6 +491,13 @@ export const createCheckoutSessionV2 = onCall(
         billingInterval: plan.billingInterval,
         seatCount: String(plan.seatCount),
         analyticsValue: String(plan.analyticsValue),
+        // Attribution params for Google Ads offline conversion import
+        gclid,
+        utm_source: utmSource,
+        utm_campaign: utmCampaign,
+        utm_medium: utmMedium,
+        utm_content: utmContent,
+        utm_term: utmTerm,
       },
       subscription_data: subscriptionData,
       // Allow promo codes on checkout

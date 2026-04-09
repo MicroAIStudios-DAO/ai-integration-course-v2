@@ -5,6 +5,7 @@ import { getUserProfile, userHasPaidAccess } from "../firebaseService";
 import { UserProfile } from "../types/course";
 import { openBetaFeedback } from "../components/UserJotWidget";
 import { trackGoogleAdsSignupConversion } from "../utils/analytics";
+import { plans, PlanKey } from "../config/pricing";
 
 const DISCORD_URL = process.env.REACT_APP_FOUNDING_DISCORD_URL || "";
 
@@ -79,10 +80,17 @@ const WelcomePage: React.FC = () => {
   const { currentUser } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
-  // Fire Google Ads conversion on /welcome page load
-  // Matches conversion action: "Sign-up - Welcome Page" (Page load: aiintegrationcourse.com/welcome)
+  // P0 FIX: Fire Google Ads signup conversion with plan-aware dynamic value.
+  // Previously hardcoded to $49 which matched no current plan and corrupted ROAS.
+  // Now reads the intended plan from sessionStorage (set by PricingPage CTA click)
+  // so Google Ads receives the correct plan value for each signup conversion.
   useEffect(() => {
-    trackGoogleAdsSignupConversion(49, 'USD');
+    const storedPlanKey = sessionStorage.getItem('intended_plan') as PlanKey | null;
+    const planDef = storedPlanKey && plans[storedPlanKey] ? plans[storedPlanKey] : null;
+    const conversionValue = planDef ? planDef.analyticsValue : 0;
+    if (conversionValue > 0) {
+      trackGoogleAdsSignupConversion(conversionValue, 'USD');
+    }
   }, []);
 
   useEffect(() => {

@@ -9,8 +9,9 @@ import { PlanKey, plans } from '../config/pricing';
  * IMPORTANT: The webhook (stripeWebhookV2) is the authority for subscription state.
  * This page fires client-side analytics as a belt-and-suspenders backup.
  *
- * For Explorer trials: we fire a 'trial_start' event, NOT a purchase.
- * Purchase events should only fire for paid conversions.
+ * For Explorer AND Pro trials: we fire a 'trial_start' event, NOT a purchase.
+ * Only Corporate (no trial, immediate charge) fires a paid purchase event.
+ * Purchase events must only fire for confirmed paid conversions — never for trial starts.
  */
 const PaymentSuccessPage: React.FC = () => {
   const location = useLocation();
@@ -26,7 +27,10 @@ const PaymentSuccessPage: React.FC = () => {
   ) as PlanKey;
 
   const plan = plans[planKey] || plans.explorer;
-  const isTrial = plan.trialDays > 0;
+  // P0 FIX: Both Explorer and Pro have 7-day trials — neither fires a purchase event
+  // on the success page since Stripe has not charged anything yet.
+  // Only Corporate (trialDays: 0) is an immediate paid conversion.
+  const isTrial = planKey === 'explorer' || planKey === 'pro';
 
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
@@ -35,7 +39,7 @@ const PaymentSuccessPage: React.FC = () => {
 
     if (sId) {
       if (isTrial) {
-        // Explorer or Pro trial start — NOT a paid conversion yet
+        // Explorer or Pro trial start — NOT a paid conversion (no charge has occurred yet)
         trackCustomEvent('subscription', 'trial_start', planKey);
         setUserProperties({
           subscription_status: 'trial',
