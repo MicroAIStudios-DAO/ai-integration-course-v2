@@ -481,8 +481,9 @@ export const createCheckoutSessionV2 = onCall(
       line_items: [{ price: plan.stripePriceId, quantity: 1 }],
       success_url: successUrl,
       cancel_url: cancelUrl,
-      // P0 FIX: Pre-fill customer email to reduce checkout friction
-      customer_email: email,
+      // NOTE: customer_email is intentionally omitted — it conflicts with the `customer` param.
+      // The user's email is already attached to the Stripe customer object via ensureStrictMapping.
+      // Stripe pre-fills the email field automatically when a customer ID is provided.
       metadata: {
         firebaseUID: uid,
         firebase_uid: uid,

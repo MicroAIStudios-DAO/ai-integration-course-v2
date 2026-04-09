@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext"; // Corrected path
 import { getAuth, sendPasswordResetEmail } from "firebase/auth";
 import { useReCaptcha } from "../../hooks/useReCaptcha";
-import { getStoredPlanKey, startCheckoutForPlan } from "../../utils/checkout";
+import { getStoredPlanKey, startCheckoutForPlan, storePlanKey, isPlanKey } from "../../utils/checkout";
 // ReactPlayer removed from login — keeps the page lightweight for returning users
 
 const LoginPage: React.FC = () => {
@@ -15,7 +15,19 @@ const LoginPage: React.FC = () => {
   // Master access removed for production launch
   const { login } = useAuth(); // Use AuthContext
   const navigate = useNavigate();
+  const location = useLocation();
   const { executeAndVerify, isLoaded } = useReCaptcha();
+
+  // P1 FIX: On mount, read ?plan= from the URL (set by /start login link and pricing page)
+  // and persist it to sessionStorage so post-login checkout knows which plan to open.
+  // This ensures returning users who click "Log in" from /start are routed to checkout.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const planFromUrl = params.get('plan');
+    if (isPlanKey(planFromUrl)) {
+      storePlanKey(planFromUrl);
+    }
+  }, [location.search]);
   // Video removed from login — keeps page fast for returning users
 
   const handleSubmit = async (e: React.FormEvent) => {

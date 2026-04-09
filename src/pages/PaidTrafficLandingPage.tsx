@@ -29,8 +29,9 @@ const PaidTrafficLandingPage: React.FC = () => {
         <div className="text-xl font-bold text-white">
           AI Integration Course
         </div>
+        {/* P1 FIX: Pass plan param so LoginPage can restore intended_plan for returning users */}
         <Link
-          to="/login"
+          to="/login?plan=explorer"
           className="text-sm text-slate-400 hover:text-white transition-colors"
         >
           Already a member? Log in

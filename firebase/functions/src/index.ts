@@ -128,69 +128,12 @@ async function findUidByStripeCustomerId(customerId: string): Promise<string | n
   return null;
 }
 
-// ============================================================================
-// AUDIT REQUIREMENT: createCheckoutSession
-// Generates a Stripe hosted payment link.
-// CRITICAL: Must include `client_reference_id: uid` to track who is paying.
-// ============================================================================
-export const createCheckoutSession = functions
-  .runWith({ secrets: [STRIPE_SECRET] })
-  .https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Login required');
-  }
-  const { stripe, secret } = getStripe();
-  if (!secret) {
-    throw new functions.https.HttpsError('failed-precondition', 'Stripe not configured');
-  }
-
-  const uid = context.auth.uid;
-  const email = context.auth.token.email;
-  const priceId = data?.priceId as string;
-  if (!priceId) {
-    throw new functions.https.HttpsError('invalid-argument', 'Missing priceId');
-  }
-
-  // Ensure strict mapping between Firebase and Stripe
-  const customerId = await ensureStrictMapping(uid, email);
-
-  // Production URLs for success and cancel
-  const baseUrl = 'https://aiintegrationcourse.com';
-  const successUrl = data?.successUrl || `${baseUrl}/dashboard?session_id={CHECKOUT_SESSION_ID}`;
-  const cancelUrl = data?.cancelUrl || `${baseUrl}/pricing`;
-
-  const session = await stripe.checkout.sessions.create({
-    customer: customerId,
-    // AUDIT CRITICAL: client_reference_id tracks who is paying
-    client_reference_id: uid,
-    mode: 'subscription',
-    payment_method_types: ['card'],
-    // CRITICAL: Always collect payment method, even for free trials
-    payment_method_collection: 'always' as any,
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: successUrl,
-    cancel_url: cancelUrl,
-    metadata: {
-      firebaseUID: uid,
-      firebase_uid: uid,
-    },
-    subscription_data: {
-      metadata: {
-        firebaseUID: uid,
-        firebase_uid: uid,
-      },
-      // Cancel subscription if payment method goes missing after trial
-      trial_settings: {
-        end_behavior: {
-          missing_payment_method: 'cancel',
-        },
-      },
-    },
-  });
-
-  return { id: session.id, url: session.url };
-});
-
+// DEPRECATED: createCheckoutSession removed.
+// Replaced by createCheckoutSessionV2 in functions/src/stripe.ts which:
+//   - Resolves plans server-side (no client-supplied priceId)
+//   - Passes planKey, tier, attribution params (gclid, utm_*) in metadata
+//   - Supports trial_period_days and trial_settings per plan
+//   - Uses the new Firebase Functions v2 onCall API
 // ============================================================================
 // AUDIT REQUIREMENT: handleStripeWebhook
 // Listens for `checkout.session.completed` and `invoice.paid`.
