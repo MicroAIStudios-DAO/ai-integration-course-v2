@@ -30,7 +30,7 @@ const GOOGLE_ADS_SIGNUP_LABEL = 'YJI_CJzD95EcEMS8s_JC';
 //   Name: Pro_Trial_Value | Category: Lead | Value: Use value from tag | Count: One
 //   Set as: Secondary action (avoids double-counting with trial_start primary)
 // After creating, replace the placeholder below with the actual label from Google Ads:
-const GOOGLE_ADS_PRO_TRIAL_LABEL = 'REPLACE_WITH_PRO_TRIAL_VALUE_LABEL';
+const GOOGLE_ADS_PRO_TRIAL_LABEL = 'wFMCIPj_5gcEMS8s_JC'; // Pro_Trial_Value — $119.94 lead value (50% of annual)
 
 // Type definitions for gtag
 declare global {
