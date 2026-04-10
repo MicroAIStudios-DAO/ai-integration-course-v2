@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const admin = require('firebase-admin');
+const crypto = require('crypto');
 
 if (!admin.apps.length) {
   admin.initializeApp({ projectId: 'ai-integra-course-v2' });
@@ -8,8 +9,9 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-const CAMPAIGN_ID = 'non_premium_join_invite_20260408';
-const CAMPAIGN_LINK = 'https://aiintegrationcourse.com/pricing?utm_source=join_invite&utm_medium=email&utm_campaign=non_premium_join_invite_20260408';
+const CAMPAIGN_ID = 'non_premium_join_invite_v2_20260410';
+const CAMPAIGN_LINK = 'https://aiintegrationcourse.com/pricing?utm_source=join_invite&utm_medium=email&utm_campaign=non_premium_join_invite_v2_20260410';
+const TEMPLATE_VERSION = 'v2';
 const dryRun = process.argv.includes('--dry-run');
 
 function getFirstName({ displayName, email }) {
@@ -30,31 +32,58 @@ function buildEmail({ displayName, email }) {
   const firstName = getFirstName({ displayName, email });
 
   return {
-    subject: 'Ready to build with AI? Join now for $29.99/month',
+    subject: 'Special offer for you 65% off Join now for $19.99/month',
+    previewText: 'This is the lowest-friction way back into the full AI Architect path.',
     body: `Hi ${firstName},
 
 You are closer than you think to getting a real AI workflow live.
 
-AI Integration Course is built to help you move from curiosity to implementation with:
+For a limited window, you can join Pro AI Architect at the annual rate that works out to just $19.99/month.
 
-- A practical premium curriculum
-- The AI tutor for fast answers while you build
-- Guided lessons focused on real-world workflows
-- A 7-day trial to get momentum before the first charge
+What you get:
 
-If you have been meaning to start, this is the moment.
+- The full AI Architect curriculum
+- The AI tutor for fast technical answers while you build
+- Guided implementation lessons focused on real workflows
+- A structured path from setup to your first working automation
 
-Join now for $29.99/month:
+If you have been waiting for the right time, this is it.
+
+Claim the offer here:
 ${CAMPAIGN_LINK}
 
-The fastest way to get value is simple:
-pick your plan, start your trial, and build your first working workflow.
+The fastest path to value is still simple:
+pick your plan, start your access, and finish one real build.
 
-Start here:
+Start here now:
 ${CAMPAIGN_LINK}
 
-The AI Integration Course Team`,
+— AI Integration Course`,
+    html: `
+      <p>Hi ${firstName},</p>
+      <p>You are closer than you think to getting a real AI workflow live.</p>
+      <p>For a limited window, you can join <strong>Pro AI Architect</strong> at the annual rate that works out to just <strong>$19.99/month</strong>.</p>
+      <p><strong>What you get:</strong></p>
+      <ul>
+        <li>The full AI Architect curriculum</li>
+        <li>The AI tutor for fast technical answers while you build</li>
+        <li>Guided implementation lessons focused on real workflows</li>
+        <li>A structured path from setup to your first working automation</li>
+      </ul>
+      <p>If you have been waiting for the right time, this is it.</p>
+      <p><a href="${CAMPAIGN_LINK}" style="display:inline-block;padding:12px 20px;background:#111827;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;">Claim the $19.99/month Offer</a></p>
+      <p>The fastest path to value is still simple: pick your plan, start your access, and finish one real build.</p>
+      <p>— AI Integration Course</p>
+    `,
   };
+}
+
+function buildDedupeKey(uid) {
+  return `marketing_join_invite:${uid}:${CAMPAIGN_ID}`;
+}
+
+function buildQueueDocId(dedupeKey) {
+  return `email_${crypto.createHash('sha256').update(dedupeKey).digest('hex').slice(0, 40)}`;
 }
 
 function hasPremiumAccess(profile) {
@@ -157,17 +186,30 @@ async function main() {
     });
 
     if (!dryRun) {
-      const queueRef = db.collection('email_queue').doc();
+      const dedupeKey = buildDedupeKey(authUser.uid);
+      const queueRef = db.collection('email_queue').doc(buildQueueDocId(dedupeKey));
 
       batch.set(queueRef, {
         to: email,
+        from: 'AI Integration Course <Info@aiintegrationcourse.com>',
+        replyTo: 'Info@aiintegrationcourse.com',
         subject: emailData.subject,
+        previewText: emailData.previewText,
         body: emailData.body,
+        html: emailData.html,
         userId: authUser.uid,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         status: 'pending',
         type: 'marketing_join_invite',
         campaignId: CAMPAIGN_ID,
+        templateVersion: TEMPLATE_VERSION,
+        dedupeKey,
+        meta: {
+          offerType: 'annual_1999_month_equivalent',
+        },
+        attemptCount: 0,
+        scheduledFor: null,
       });
 
       batch.set(userRef, {

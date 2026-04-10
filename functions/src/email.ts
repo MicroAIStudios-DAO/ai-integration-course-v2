@@ -13,19 +13,27 @@ const SMTP_PASS = defineSecret('SMTP_PASS');
 
 const DEFAULT_SMTP_HOST = 'smtp.office365.com';
 const DEFAULT_SMTP_PORT = 587;
-const DEFAULT_FROM_EMAIL = 'support@aiintegrationcourse.com';
+const DEFAULT_FROM_EMAIL = 'Info@aiintegrationcourse.com';
 const DEFAULT_FROM_NAME = 'AI Integration Course';
 const MAX_SEND_ATTEMPTS = 5;
 const CLAIMABLE_STATUSES = new Set(['pending', 'retry']);
 
 type EmailQueueDoc = {
   to?: string;
+  from?: string;
+  previewText?: string;
   subject?: string;
   body?: string;
   html?: string;
   replyTo?: string;
   status?: string;
+  attemptCount?: number;
   attempts?: number;
+  scheduledFor?: FirebaseFirestore.Timestamp | null;
+  campaignId?: string;
+  templateVersion?: string;
+  dedupeKey?: string;
+  meta?: Record<string, unknown>;
 };
 
 let transporter: nodemailer.Transporter | null = null;
@@ -46,6 +54,20 @@ const plainTextToHtml = (body: string): string => {
     .map((section) => `<p>${escapeHtml(section).replace(/\n/g, '<br />')}</p>`);
 
   return sections.join('');
+};
+
+const applyPreviewText = (html: string, previewText?: string): string => {
+  const cleanPreviewText = (previewText || '').trim();
+  if (!cleanPreviewText) {
+    return html;
+  }
+
+  return `
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">
+      ${escapeHtml(cleanPreviewText)}
+    </div>
+    ${html}
+  `.trim();
 };
 
 const getTransportConfig = () => {
@@ -110,8 +132,12 @@ async function claimQueueDoc(
 
     const data = snap.data() as EmailQueueDoc;
     const status = (data.status || 'pending').toString();
+    const scheduledFor = data.scheduledFor?.toDate();
 
     if (!CLAIMABLE_STATUSES.has(status)) {
+      return null;
+    }
+    if (scheduledFor && scheduledFor.getTime() > Date.now()) {
       return null;
     }
 
@@ -119,7 +145,9 @@ async function claimQueueDoc(
       status: 'processing',
       lastAttemptedAt: admin.firestore.FieldValue.serverTimestamp(),
       processingStartedAt: admin.firestore.FieldValue.serverTimestamp(),
+      attemptCount: admin.firestore.FieldValue.increment(1),
       attempts: admin.firestore.FieldValue.increment(1),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
     return data;
@@ -159,12 +187,12 @@ async function sendClaimedEmail(
 
   try {
     const info = await transporter.sendMail({
-      from: config.from,
+      from: queueDoc.from || config.from,
       replyTo: queueDoc.replyTo || config.replyTo,
       to,
       subject,
       text: body,
-      html: queueDoc.html || plainTextToHtml(body),
+      html: applyPreviewText(queueDoc.html || plainTextToHtml(body), queueDoc.previewText),
     });
 
     await docRef.set({
@@ -176,13 +204,14 @@ async function sendClaimedEmail(
       provider: 'smtp',
       providerHost: config.host,
       providerMessageId: info.messageId || null,
+      previewText: queueDoc.previewText || null,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     }, {merge: true});
 
     console.log(`Sent email queue item ${docRef.id} to ${to}`);
   } catch (error) {
     const latest = await docRef.get();
-    const latestAttempts = Number(latest.get('attempts') || 1);
+    const latestAttempts = Number(latest.get('attemptCount') || latest.get('attempts') || 1);
     const nextStatus = getRetryStatus(latestAttempts);
     const errorMessage = formatError(error);
 
@@ -191,6 +220,7 @@ async function sendClaimedEmail(
       lastError: errorMessage,
       failedAt: admin.firestore.FieldValue.serverTimestamp(),
       processingFinishedAt: admin.firestore.FieldValue.serverTimestamp(),
+      attemptCount: latestAttempts,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     }, {merge: true});
 
@@ -237,7 +267,7 @@ export const drainPendingEmailQueueV2 = onSchedule(
     const db = admin.firestore();
     const pendingSnap = await db.collection('email_queue')
       .where('status', 'in', ['pending', 'retry'])
-      .limit(25)
+      .limit(50)
       .get();
 
     if (pendingSnap.empty) {

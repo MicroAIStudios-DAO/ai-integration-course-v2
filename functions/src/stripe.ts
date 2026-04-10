@@ -5,6 +5,12 @@ import type { CloudEvent } from 'firebase-functions/v2/core';
 import { HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
 import { onCustomEventPublished } from 'firebase-functions/v2/eventarc';
 import { defineSecret } from 'firebase-functions/params';
+import {
+  queuePaidWelcomeEmail,
+  queuePlaybookDelivery,
+  queueTrialStartedEmail,
+  queueWelcomeEmail,
+} from './emailLifecycle';
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -15,8 +21,6 @@ const STRIPE_WEBHOOK_SECRET = defineSecret('STRIPE_WEBHOOK_SECRET');
 const STRIPE_PRICE_EXPLORER_MONTHLY = defineSecret('STRIPE_PRICE_EXPLORER_MONTHLY');
 const STRIPE_PRICE_PRO_ANNUAL = defineSecret('STRIPE_PRICE_PRO_ANNUAL');
 const STRIPE_PRICE_CORPORATE_MONTHLY = defineSecret('STRIPE_PRICE_CORPORATE_MONTHLY');
-const PLAYBOOK_DOWNLOAD_URL = 'https://aiintegrationcourse.com/assets/AI_Prompt_Engineering_Automation_Playbook_FULL.pdf';
-const PLAYBOOK_FALLBACK_URL = 'https://ai-integra-course-v2.web.app/assets/AI_Prompt_Engineering_Automation_Playbook_FULL.pdf';
 let stripe: Stripe | null = null;
 
 type CheckoutPlanKey = 'explorer' | 'pro' | 'corporate';
@@ -140,6 +144,23 @@ function generateUserApiKey(): string {
   return `ak_${crypto.randomBytes(24).toString('hex')}`;
 }
 
+async function queueInitialOnboardingEmails(uid: string, email?: string | null, displayName?: string | null): Promise<void> {
+  try {
+    await queueWelcomeEmail({
+      uid,
+      email,
+      displayName,
+    });
+    await queuePlaybookDelivery({
+      uid,
+      email,
+      displayName,
+    });
+  } catch (error) {
+    console.error(`Failed to queue onboarding emails for user ${uid}:`, error);
+  }
+}
+
 async function ensureStrictMapping(uid: string, email?: string): Promise<string> {
   const userRef = admin.firestore().doc(`users/${uid}`);
   const userSnap = await userRef.get();
@@ -217,6 +238,10 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
     return;
   }
 
+  const userRef = admin.firestore().doc(`users/${uid}`);
+  const existingUserSnap = await userRef.get();
+  const existingUser = existingUserSnap.data() || {};
+
   let periodEnd: Date | null = null;
   let planKey = (invoice.subscription_details?.metadata?.planKey as string | undefined) || 'explorer';
   let tier = (invoice.subscription_details?.metadata?.tier as string | undefined) || planKey;
@@ -231,7 +256,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
     seatCount = parseInt(subscription.metadata?.seatCount || '1', 10);
   }
 
-  await admin.firestore().doc(`users/${uid}`).set(
+  await userRef.set(
     {
       premium: true,
       subscriptionStatus: 'active',
@@ -258,76 +283,18 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
     { merge: true }
   );
 
-  console.log(`Premium renewed for user ${uid}`);
-}
-
-async function queuePlaybookDeliveryEmail(uid: string): Promise<void> {
-  const db = admin.firestore();
-  const userRef = db.doc(`users/${uid}`);
-  let queued = false;
-
-  await db.runTransaction(async (tx) => {
-    const userSnap = await tx.get(userRef);
-    if (!userSnap.exists) {
-      return;
-    }
-
-    const alreadyQueued = Boolean(userSnap.get('playbookEmailQueuedAt'));
-    if (alreadyQueued) {
-      return;
-    }
-
-    const email = (userSnap.get('email') || '').toString().trim();
-    if (!email) {
-      return;
-    }
-
-    const displayName = (userSnap.get('displayName') || '').toString().trim();
-    const firstName = displayName ? displayName.split(' ')[0] : 'there';
-    const subject = 'Your AI Prompt Engineering Automation Playbook (PDF)';
-    const body = `Hi ${firstName},
-
-Welcome to AI Integration Course.
-
-Here is your playbook download:
-${PLAYBOOK_DOWNLOAD_URL}
-
-Backup link:
-${PLAYBOOK_FALLBACK_URL}
-
-Keep this PDF handy as you go through the modules. It pairs directly with your practical lessons.
-
-If you need help, reply to this email and we will support you.
-
-The AI Integration Course Team`;
-
-    const queueRef = db.collection('email_queue').doc();
-    tx.set(queueRef, {
-      to: email,
-      subject,
-      body,
-      userId: uid,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      status: 'pending',
-      type: 'playbook_delivery',
-      playbookUrl: PLAYBOOK_DOWNLOAD_URL,
-      playbookFallbackUrl: PLAYBOOK_FALLBACK_URL,
+  try {
+    await queuePaidWelcomeEmail({
+      uid,
+      email: existingUser.email || invoice.customer_email || '',
+      displayName: existingUser.displayName || null,
+      subscriptionTier: tier,
     });
-
-    tx.set(userRef, {
-      playbookEmailQueuedAt: admin.firestore.FieldValue.serverTimestamp(),
-      playbookEmailStatus: 'queued',
-      playbookEmailType: 'playbook_delivery',
-    }, { merge: true });
-
-    queued = true;
-  });
-
-  if (queued) {
-    console.log(`Queued playbook delivery email for user ${uid}`);
-  } else {
-    console.log(`Skipped playbook email queue for user ${uid} (already queued or missing email/user)`);
+  } catch (emailQueueErr) {
+    console.error(`Failed to queue paid welcome email for user ${uid}:`, emailQueueErr);
   }
+
+  console.log(`Premium renewed for user ${uid}`);
 }
 
 export const onUserCreateV2 = onCustomEventPublished(
@@ -363,6 +330,7 @@ export const onUserCreateV2 = onCustomEventPublished(
         },
         { merge: true }
       );
+      await queueInitialOnboardingEmails(uid, user.email || user.emailAddress || null, user.displayName || user.name || null);
       return;
     }
 
@@ -389,6 +357,7 @@ export const onUserCreateV2 = onCustomEventPublished(
         },
         { merge: true }
       );
+      await queueInitialOnboardingEmails(uid, user.email || user.emailAddress || null, user.displayName || user.name || null);
 
       console.log(`Created Stripe customer ${customer.id} for Firebase user ${uid}`);
     } catch (err: any) {
@@ -405,6 +374,7 @@ export const onUserCreateV2 = onCustomEventPublished(
         },
         { merge: true }
       );
+      await queueInitialOnboardingEmails(uid, user.email || user.emailAddress || null, user.displayName || user.name || null);
     }
   }
 );
@@ -570,6 +540,9 @@ export const stripeWebhookV2 = onRequest(
           }
 
           if (uid) {
+            const userRef = admin.firestore().doc(`users/${uid}`);
+            const existingUserSnap = await userRef.get();
+            const existingUser = existingUserSnap.data() || {};
             let periodEnd: Date | null = null;
             let planKey = (session.metadata?.planKey as string | undefined) || 'explorer';
             let subStatus: string = 'active';
@@ -587,7 +560,7 @@ export const stripeWebhookV2 = onRequest(
             const isTrialing = subStatus === 'trialing';
             const premiumUnlocked = isPremiumContentUnlocked(subStatus);
 
-            await admin.firestore().doc(`users/${uid}`).set(
+            await userRef.set(
               {
                 premium: premiumUnlocked,
                 subscriptionStatus: subStatus,
@@ -621,10 +594,27 @@ export const stripeWebhookV2 = onRequest(
               { merge: true }
             );
 
+            const email = existingUser.email || session.customer_details?.email || '';
+            const displayName = existingUser.displayName || session.customer_details?.name || null;
+
             try {
-              await queuePlaybookDeliveryEmail(uid);
+              if (isTrialing) {
+                await queueTrialStartedEmail({
+                  uid,
+                  email,
+                  displayName,
+                  subscriptionTier: tier,
+                  trialStartedAt: admin.firestore.Timestamp.now(),
+                  trialEndsAt: periodEnd ? admin.firestore.Timestamp.fromDate(periodEnd) : null,
+                });
+              }
+              await queuePlaybookDelivery({
+                uid,
+                email,
+                displayName,
+              });
             } catch (emailQueueErr) {
-              console.error(`Failed to queue playbook email for user ${uid}:`, emailQueueErr);
+              console.error(`Failed to queue lifecycle email for user ${uid}:`, emailQueueErr);
             }
 
             console.log(`Subscription recorded for user ${uid} with plan ${planKey}, tier: ${tier}, status: ${subStatus}`);

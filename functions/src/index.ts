@@ -58,6 +58,9 @@ export { submitLeadMagnetV2 } from './leadMagnet';
 // Email queue delivery
 export { processEmailQueueV2, drainPendingEmailQueueV2 } from './email';
 
+// Lifecycle email queueing
+export { queueLifecycleEmailCadenceV2 } from './emailLifecycle';
+
 // export const helloWorld = onRequest((request, response) => {
 //   logger.info("Hello logs!", {structuredData: true});
 //   response.send("Hello from Firebase!");

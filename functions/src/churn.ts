@@ -10,7 +10,7 @@ if (!admin.apps.length) {
 interface UserSegment {
   uid: string;
   email: string;
-  segment: 'window_shopper' | 'cart_abandoner' | 'zombie_user';
+  segment: 'window_shopper' | 'zombie_user';
   lastActivity: Date;
   daysSinceActivity: number;
 }
@@ -55,31 +55,6 @@ export const identifyChurnRiskUsersV2 = onSchedule(
               (24 * 60 * 60 * 1000)
           ),
         });
-      }
-
-      const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
-      const cartAbandoners = await db.collection('users')
-        .where('checkoutStartedAt', '!=', null)
-        .where('premium', '==', false)
-        .limit(100)
-        .get();
-
-      for (const doc of cartAbandoners.docs) {
-        const data = doc.data();
-        if (!data.email || data.churnEmailSent?.cart_abandoner) continue;
-
-        const checkoutTime = data.checkoutStartedAt?.toDate();
-        if (checkoutTime && checkoutTime < oneHourAgo) {
-          segments.push({
-            uid: doc.id,
-            email: data.email,
-            segment: 'cart_abandoner',
-            lastActivity: checkoutTime,
-            daysSinceActivity: Math.floor(
-              (now.getTime() - checkoutTime.getTime()) / (24 * 60 * 60 * 1000)
-            ),
-          });
-        }
       }
 
       const zombieUsers = await db.collection('users')
@@ -137,7 +112,6 @@ export const identifyChurnRiskUsersV2 = onSchedule(
 
       console.log(`Identified ${segments.length} users for churn recovery:`, {
         window_shoppers: segments.filter((s) => s.segment === 'window_shopper').length,
-        cart_abandoners: segments.filter((s) => s.segment === 'cart_abandoner').length,
         zombie_users: segments.filter((s) => s.segment === 'zombie_user').length,
       });
 
@@ -181,29 +155,6 @@ Best,
 The AI Integration Course Team
 
 P.S. Reply to this email - I read every response personally.`,
-      },
-      cart_abandoner: {
-        subject: 'Your checkout is waiting (14-day guarantee inside)',
-        body: `Hi there,
-
-You were SO close to starting your AI integration journey! Your checkout session is still waiting for you.
-
-I know life gets busy, so here's a quick reminder of what you're getting:
-
-- Build your first working bot in 14 days (guaranteed)
-- Step-by-step tutorials with real business applications
-- AI tutor available 24/7 to answer your questions
-- Lifetime access to all course materials
-
-Remember: If you don't build a working bot in 14 days, you get a full refund. No questions asked.
-
-Ready to continue? Click here to complete your enrollment:
-https://aiintegrationcourse.com/signup
-
-Questions? Just reply to this email.
-
-Best,
-The AI Integration Course Team`,
       },
       zombie_user: {
         subject: 'We miss you! Your AI bot is waiting to be built',
@@ -363,11 +314,6 @@ export const manualChurnRecoveryRunV2 = onCall(
       .where('premium', '==', false)
       .get();
 
-    const cartAbandoners = await db.collection('users')
-      .where('checkoutStartedAt', '!=', null)
-      .where('premium', '==', false)
-      .get();
-
     const zombieUsers = await db.collection('users')
       .where('premium', '==', true)
       .get();
@@ -382,9 +328,8 @@ export const manualChurnRecoveryRunV2 = onCall(
     return {
       summary: {
         window_shoppers: windowShoppers.size,
-        cart_abandoners: cartAbandoners.size,
         zombie_users: actualZombies.length,
-        total_at_risk: windowShoppers.size + cartAbandoners.size + actualZombies.length,
+        total_at_risk: windowShoppers.size + actualZombies.length,
       },
       timestamp: now.toISOString(),
     };
