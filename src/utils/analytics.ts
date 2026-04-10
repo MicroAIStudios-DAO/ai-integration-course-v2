@@ -25,12 +25,12 @@ const GA4_MEASUREMENT_ID = 'G-15SDDF1S5S';
 // Google Ads Conversion ID and Labels
 const GOOGLE_ADS_ID = 'AW-17956658756';
 const GOOGLE_ADS_SIGNUP_LABEL = 'YJI_CJzD95EcEMS8s_JC';
-// Pro_Trial_Value secondary conversion label — create this action in Google Ads:
-//   Goals → Conversions → New conversion action → Website
+// Pro_Trial_Value secondary conversion label currently embedded in the live funnel:
+//   AW-17956658756/wFMCIPj_5gcEMS8s_JC
+// Google Ads action:
 //   Name: Pro_Trial_Value | Category: Lead | Value: Use value from tag | Count: One
 //   Set as: Secondary action (avoids double-counting with trial_start primary)
-// After creating, replace the placeholder below with the actual label from Google Ads:
-const GOOGLE_ADS_PRO_TRIAL_LABEL = 'wFMCIPj_5gcEMS8s_JC'; // Pro_Trial_Value — $119.94 lead value (50% of annual)
+const GOOGLE_ADS_PRO_TRIAL_LABEL = 'wFMCIPj_5gcEMS8s_JC'; // AW-17956658756/wFMCIPj_5gcEMS8s_JC
 
 // Type definitions for gtag
 declare global {
