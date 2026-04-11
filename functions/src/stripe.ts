@@ -80,7 +80,10 @@ const getStripePriceId = (
   }
 };
 
-const getPlanConfig = (planKey: CheckoutPlanKey): CheckoutPlanDefinition => {
+const getPlanConfig = (
+  planKey: CheckoutPlanKey,
+  options?: { requireStripePrice?: boolean }
+): CheckoutPlanDefinition => {
   const planConfig: Record<CheckoutPlanKey, CheckoutPlanDefinition> = {
     explorer: {
       stripePriceId: getStripePriceId('STRIPE_PRICE_EXPLORER_MONTHLY'),
@@ -120,7 +123,7 @@ const getPlanConfig = (planKey: CheckoutPlanKey): CheckoutPlanDefinition => {
   if (!config) {
     throw new HttpsError('invalid-argument', `Invalid plan key: ${planKey}`);
   }
-  if (!config.stripePriceId) {
+  if (options?.requireStripePrice && !config.stripePriceId) {
     throw new HttpsError('failed-precondition', `Stripe price not configured for plan: ${planKey}`);
   }
   return config;
@@ -707,7 +710,7 @@ export const createCheckoutSessionV2 = onCall(
     }
 
     const planKey = resolvePlanKey(request.data || {});
-    const plan = getPlanConfig(planKey);
+    const plan = getPlanConfig(planKey, { requireStripePrice: true });
     const isAuthenticatedUser = Boolean(request.auth?.uid && request.auth?.token?.email);
     const uid = isAuthenticatedUser ? request.auth!.uid : null;
     const email = isAuthenticatedUser ? normalizeEmail(request.auth?.token?.email) : '';
