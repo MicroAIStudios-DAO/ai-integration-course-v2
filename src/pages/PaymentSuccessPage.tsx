@@ -1,185 +1,218 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { trackPurchase, setUserProperties, trackGoogleAdsSignupConversion, trackCustomEvent, trackProTrialValue } from '../utils/analytics';
-import { PlanKey, plans } from '../config/pricing';
+import React, { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  trackCustomEvent,
+  trackProTrialValue,
+  trackPurchase,
+  setUserProperties,
+} from "../utils/analytics";
+import { plans, type PlanKey } from "../config/pricing";
+import {
+  clearStoredPlanKey,
+  fetchCheckoutSessionSummary,
+  getCheckoutSessionIdFromSearch,
+} from "../utils/checkout";
 
-/**
- * Plan-aware success page.
- *
- * IMPORTANT: The webhook (stripeWebhookV2) is the authority for subscription state.
- * This page fires client-side analytics as a belt-and-suspenders backup.
- *
- * For Explorer AND Pro trials: we fire a 'trial_start' event, NOT a purchase.
- * Only Corporate (no trial, immediate charge) fires a paid purchase event.
- * Purchase events must only fire for confirmed paid conversions — never for trial starts.
- */
 const PaymentSuccessPage: React.FC = () => {
   const location = useLocation();
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const checkoutSessionId = getCheckoutSessionIdFromSearch(location.search);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [redirectTarget, setRedirectTarget] = useState<"signup" | "login" | "welcome" | null>(null);
+  const [summary, setSummary] = useState<{
+    sessionId: string;
+    email: string;
+    displayName: string | null;
+    planKey: PlanKey;
+    planName: string;
+    status: string;
+    existingAccount: boolean;
+    attachedUid: string | null;
+    isAttachedToCurrentUser: boolean;
+    requiresLogin: boolean;
+  } | null>(null);
 
-  // Recover the plan the user just purchased from sessionStorage or URL
-  const planKey = (
-    new URLSearchParams(location.search).get('plan') ||
-    sessionStorage.getItem('intended_plan') ||
-    'explorer'
-  ) as PlanKey;
-
-  const plan = plans[planKey] || plans.explorer;
-  // P0 FIX: Both Explorer and Pro have 7-day trials — neither fires a purchase event
-  // on the success page since Stripe has not charged anything yet.
-  // Only Corporate (trialDays: 0) is an immediate paid conversion.
-  const isTrial = planKey === 'explorer' || planKey === 'pro';
+  const plan = useMemo(() => {
+    if (summary) return plans[summary.planKey];
+    const queryPlan = new URLSearchParams(location.search).get("plan") as PlanKey | null;
+    return plans[queryPlan || "explorer"] || plans.explorer;
+  }, [location.search, summary]);
 
   useEffect(() => {
-    const queryParams = new URLSearchParams(location.search);
-    const sId = queryParams.get('session_id');
-    setSessionId(sId);
-
-    if (sId) {
-      if (isTrial) {
-        // Explorer or Pro trial start — NOT a paid conversion (no charge has occurred yet)
-        // Explorer or Pro trial start — NOT a paid conversion (no charge has occurred yet)
-        trackCustomEvent('subscription', 'trial_start', planKey);
-        // Pro_Trial_Value: secondary Google Ads conversion with predictive lead value.
-        // Fires ONLY for Pro plan to give Maximize Conversion Value a $119.94 signal
-        // immediately — without waiting for the Day-7 rebill to confirm value.
-        // Explorer stays at $0 trial_start — it is the entry-level acquisition event.
-        if (planKey === 'pro') {
-          // Pass Stripe session_id as transaction_id so Google Ads deduplicates
-          // on page reload or back-navigation — one conversion per Stripe session.
-          trackProTrialValue(sId);
-        }
-        setUserProperties({
-          subscription_status: 'trial',
-          signup_date: new Date().toISOString().split('T')[0],
-        });
-      } else {
-        // Paid plan — fire purchase event with correct value
-        trackPurchase(
-          sId,
-          plan.analyticsValue,
-          'USD',
-          0,
-          plan.name,
-          planKey
-        );
-        trackGoogleAdsSignupConversion(plan.analyticsValue, 'USD');
-        setUserProperties({
-          subscription_status: planKey === 'corporate' ? 'corporate' : 'pro',
-          signup_date: new Date().toISOString().split('T')[0],
-        });
-      }
-
-      // Clean up intended_plan from sessionStorage
-      sessionStorage.removeItem('intended_plan');
+    if (!checkoutSessionId) {
+      setError("No checkout session ID was returned from Stripe.");
       setLoading(false);
-    } else {
-      setError('No session ID found. Payment status cannot be confirmed.');
-      setLoading(false);
+      return;
     }
-  }, [location, isTrial, plan.analyticsValue, plan.name, planKey]);
+
+    let active = true;
+
+    const loadSummary = async () => {
+      try {
+        const nextSummary = await fetchCheckoutSessionSummary(checkoutSessionId);
+        if (!active) return;
+        setSummary(nextSummary);
+        setError(null);
+      } catch (summaryError: any) {
+        if (!active) return;
+        setError(summaryError?.message || "We could not verify your checkout yet.");
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadSummary();
+
+    return () => {
+      active = false;
+    };
+  }, [checkoutSessionId]);
+
+  useEffect(() => {
+    if (!summary) return;
+
+    const analyticsKey = `checkout_analytics:${summary.sessionId}`;
+    if (sessionStorage.getItem(analyticsKey)) {
+      return;
+    }
+
+    const isTrial = summary.planKey === "explorer" || summary.planKey === "pro";
+
+    if (isTrial) {
+      trackCustomEvent("subscription", "trial_start", summary.planKey);
+      if (summary.planKey === "pro") {
+        trackProTrialValue(summary.sessionId);
+      }
+      setUserProperties({
+        subscription_status: "trial",
+        signup_date: new Date().toISOString().split("T")[0],
+      });
+    } else {
+      trackPurchase(summary.sessionId, plan.analyticsValue, "USD", 0, plan.name, summary.planKey);
+      setUserProperties({
+        subscription_status: summary.planKey === "corporate" ? "corporate" : "pro",
+        signup_date: new Date().toISOString().split("T")[0],
+      });
+    }
+
+    sessionStorage.setItem(analyticsKey, "1");
+    clearStoredPlanKey();
+  }, [plan.analyticsValue, plan.name, summary]);
+
+  useEffect(() => {
+    if (!summary || !checkoutSessionId) return;
+
+    let target: "signup" | "login" | "welcome" = "signup";
+    let destination = `/signup?checkout_session_id=${checkoutSessionId}`;
+
+    if (summary.isAttachedToCurrentUser) {
+      target = "welcome";
+      destination = "/welcome";
+    } else if (summary.requiresLogin || summary.existingAccount) {
+      target = "login";
+      destination = `/login?checkout_session_id=${checkoutSessionId}`;
+    }
+
+    setRedirectTarget(target);
+    const timeoutId = window.setTimeout(() => {
+      navigate(destination, { replace: true });
+    }, 900);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [checkoutSessionId, navigate, summary]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto mb-4"></div>
-          <p className="text-gray-300">Confirming your payment...</p>
+          <p className="text-gray-300">Confirming your Stripe checkout...</p>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (error || !summary) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center px-4">
         <div className="max-w-md mx-auto text-center p-8 bg-slate-800/50 rounded-2xl border border-red-500/20">
           <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-red-400 mb-4">Payment Verification Error</h1>
-          <p className="text-gray-400 mb-6">{error}</p>
-          <Link to="/" className="inline-flex items-center px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors">
-            Go to Homepage
+          <h1 className="text-2xl font-bold text-red-400 mb-4">Checkout Verification Error</h1>
+          <p className="text-gray-400 mb-6">{error || "We could not verify your checkout."}</p>
+          <Link to="/pricing" className="inline-flex items-center px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors">
+            Return to pricing
           </Link>
         </div>
       </div>
     );
   }
 
-  // Dynamic heading/messaging based on plan
-  const headingMap: Record<PlanKey, string> = {
-    explorer: 'Your 7-Day Trial Has Started!',
-    pro: 'Your Pro Trial Has Started!',
-    corporate: 'Welcome to Team AI Standard!',
-  };
+  const heading =
+    redirectTarget === "welcome"
+      ? "Checkout confirmed"
+      : redirectTarget === "login"
+        ? "Sign in to attach your access"
+        : "Create your login to unlock access";
 
-  const subheadMap: Record<PlanKey, string> = {
-    explorer: 'Your 7-day trial is live. During the trial you can use the free lessons and get your setup in place. Stay active and the plan continues at $29.99/month after the trial window.',
-    pro: 'Your 7-day Pro trial is live. During the trial you can use the free lessons and complete setup. If you stay active, the annual plan is charged after 7 days and the premium curriculum unlocks.',
-    corporate: 'Your team plan is active with up to 5 seats. Time to standardize your AI operations.',
-  };
+  const body =
+    redirectTarget === "welcome"
+      ? "Your account is already connected to this checkout. Taking you to your welcome dashboard now."
+      : redirectTarget === "login"
+        ? `We found an existing account for ${summary.email}. Sign in next so this paid checkout lands on the right login.`
+        : `Stripe checkout is complete for ${summary.planName}. Next you will create your permanent login so your billing, lessons, and progress stay attached to one account.`;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center">
-      <div className="max-w-lg mx-auto text-center p-8 bg-slate-800/50 rounded-2xl border border-green-500/20">
-        {/* Success Icon */}
-        <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg className="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 flex items-center justify-center px-4">
+      <div className="max-w-lg rounded-2xl border border-emerald-400/20 bg-slate-900/70 p-8 text-center text-slate-100">
+        <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg className="w-10 h-10 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-
-        <h1 className="text-3xl font-bold text-white mb-4">{headingMap[planKey]}</h1>
-        <p className="text-gray-300 mb-2">{subheadMap[planKey]}</p>
-        <p className="text-sm text-gray-500 mb-6">Transaction ID: {sessionId}</p>
-
-        {/* 14-Day Guarantee Reminder */}
-        <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4 mb-6">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <span className="font-semibold text-indigo-400">14-Day Build-Your-First-Bot Guarantee</span>
-          </div>
-          <p className="text-sm text-gray-400">
-            Build your first working bot in 14 days or get a full refund. No questions asked.
-          </p>
+        <h1 className="text-3xl font-bold text-white mb-4">{heading}</h1>
+        <p className="text-slate-300 leading-7">{body}</p>
+        <p className="mt-3 text-sm text-slate-500">Session ID: {summary.sessionId}</p>
+        <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-left">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Checkout Summary</p>
+          <p className="mt-2 text-sm text-slate-200">Plan: {summary.planName}</p>
+          <p className="mt-1 text-sm text-slate-200">Email: {summary.email}</p>
+          <p className="mt-1 text-sm text-slate-200">Status: {summary.status}</p>
         </div>
-
-        {/* Next Steps */}
-        <div className="bg-slate-700/50 rounded-xl p-4 mb-6 text-left">
-          <h3 className="font-semibold text-white mb-3">Your Next Steps:</h3>
-          <ol className="space-y-2 text-sm text-gray-300">
-            <li className="flex items-start gap-2">
-              <span className="bg-indigo-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
-              <span>Start the &quot;Build Your First Bot&quot; lesson to claim your guarantee</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="bg-indigo-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
-              <span>Set up your AI tools (Gmail, Zapier, OpenAI)</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="bg-indigo-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
-              <span>Deploy your first customer service email bot</span>
-            </li>
-          </ol>
-        </div>
-
-        {/* CTAs */}
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          {redirectTarget === "login" ? (
+            <Link
+              to={`/login?checkout_session_id=${summary.sessionId}`}
+              className="inline-flex items-center justify-center rounded-lg bg-emerald-400 px-6 py-3 font-semibold text-slate-950 transition-colors hover:bg-emerald-300"
+            >
+              Sign in now
+            </Link>
+          ) : redirectTarget === "welcome" ? (
+            <Link
+              to="/welcome"
+              className="inline-flex items-center justify-center rounded-lg bg-emerald-400 px-6 py-3 font-semibold text-slate-950 transition-colors hover:bg-emerald-300"
+            >
+              Open welcome page
+            </Link>
+          ) : (
+            <Link
+              to={`/signup?checkout_session_id=${summary.sessionId}`}
+              className="inline-flex items-center justify-center rounded-lg bg-emerald-400 px-6 py-3 font-semibold text-slate-950 transition-colors hover:bg-emerald-300"
+            >
+              Create your login
+            </Link>
+          )}
           <Link
-            to="/courses"
-            className="inline-flex items-center justify-center px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg transition-colors"
+            to="/pricing"
+            className="inline-flex items-center justify-center rounded-lg border border-white/15 px-6 py-3 font-semibold text-white transition-colors hover:bg-white/5"
           >
-            Start Building Now
-          </Link>
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
-          >
-            Go to Homepage
+            Review plans
           </Link>
         </div>
       </div>

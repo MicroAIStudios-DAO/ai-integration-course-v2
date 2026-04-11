@@ -9,7 +9,7 @@ const PaidTrafficLandingPage: React.FC = () => {
   useEffect(() => {
     // P0 FIX: Capture Google Ads and UTM attribution params from the landing URL
     // and persist them in sessionStorage so they survive navigation through
-    // /pricing → /signup → Stripe checkout and can be passed to Stripe metadata.
+    // /pricing → Stripe checkout → account creation and can be passed to Stripe metadata.
     const params = new URLSearchParams(window.location.search);
     for (const key of ATTRIBUTION_KEYS) {
       const val = params.get(key);
@@ -51,7 +51,7 @@ const PaidTrafficLandingPage: React.FC = () => {
 
         <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-10 leading-relaxed">
           A hands-on curriculum where every lesson ends with a real workflow you can use tomorrow.
-          Pick a plan, create your account, and go straight into secure checkout.
+          Pick a plan, go straight into secure checkout, then create your login after payment.
         </p>
 
         <Link
@@ -62,7 +62,7 @@ const PaidTrafficLandingPage: React.FC = () => {
           See Plans & Start Building
         </Link>
         <p className="mt-4 text-sm text-slate-500">
-          Choose your plan first. Account creation happens right before checkout.
+          Choose your plan first. Checkout comes immediately. Login creation happens right after payment.
         </p>
       </section>
 
@@ -186,7 +186,7 @@ const PaidTrafficLandingPage: React.FC = () => {
       {/* How it works — simple, fast, low friction */}
       <section className="px-6 py-16 max-w-4xl mx-auto">
         <h2 className="text-2xl md:text-3xl font-bold text-center mb-12">
-          From sign-up to first build in under an hour
+          From checkout to first build in under an hour
         </h2>
 
         <div className="space-y-8 max-w-2xl mx-auto">
@@ -198,13 +198,13 @@ const PaidTrafficLandingPage: React.FC = () => {
             },
             {
               step: '2',
-              title: 'Create your account',
-              desc: 'Enter email and password once. We use that account to carry you straight into secure Stripe checkout.',
+              title: 'Complete secure checkout',
+              desc: 'Choose your plan and go directly into Stripe without a signup wall interrupting the purchase.',
             },
             {
               step: '3',
-              title: 'Complete checkout and start building',
-              desc: 'Unlock the curriculum, guided build path, and guarantee-backed implementation flow without detouring into a free signup path.',
+              title: 'Create your login and start building',
+              desc: 'After payment, create your login once so your access, progress, and billing stay attached to the same account.',
             },
           ].map((item) => (
             <div key={item.step} className="flex gap-5">

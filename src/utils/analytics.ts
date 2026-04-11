@@ -10,8 +10,8 @@
  * - lesson_complete: Button click / Video end (lesson_id)
  * 
  * Google Ads Conversion Tracking:
- * - Sign-up / Welcome Page conversion (AW-17956658756/YJI_CJzD95EcEMS8s_JC)
- *   Fires on /welcome page load to track successful signups
+ * - Account creation conversion (AW-17956658756/YJI_CJzD95EcEMS8s_JC)
+ *   Fires after checkout account creation to track completed signups
  * 
  * Audience Segments:
  * - Window Shoppers: Viewed Pricing > 0 AND Checkout = 0
@@ -122,9 +122,9 @@ export const trackSignUp = (method: 'Google' | 'Email' | 'GitHub' | string): voi
 };
 
 /**
- * Track Google Ads conversion for paid subscriptions.
- * IMPORTANT: Do NOT fire this for Explorer trial starts.
- * Only fire for actual paid conversions (Pro, Corporate).
+ * Track Google Ads conversion for completed account creation.
+ * Use this after the user finishes signup so trials and paid enrollments both count
+ * as successful account creation without relying on a page-load destination rule.
  *
  * Conversion ID: AW-17956658756
  * Conversion Label: YJI_CJzD95EcEMS8s_JC

@@ -8,7 +8,6 @@ import SEO from '../components/SEO';
 import RoiGuaranteeBadge from '../components/conversion/RoiGuaranteeBadge';
 import ExitIntentLeadMagnet from '../components/lead-magnet/ExitIntentLeadMagnet';
 import { PlanKey, plans, formatPlanPrice } from '../config/pricing';
-import { storePlanKey } from '../utils/checkout';
 
 const CheckIcon = () => (
   <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -25,6 +24,7 @@ const XIcon = () => (
 const PricingPage: React.FC = () => {
   const { currentUser } = useAuth();
   const { isFounding } = useFoundingAccess();
+  const isRegisteredUser = !!currentUser && !currentUser.isAnonymous;
 
   const explorer = plans.explorer;
   const pro = plans.pro;
@@ -48,36 +48,18 @@ const PricingPage: React.FC = () => {
       );
     }
 
-    if (currentUser) {
-      return (
-        <SubscribeButton
-          planKey={planKey}
-          buttonText={plan.ctaText}
-          className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
-            plan.featured
-              ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
-              : planKey === 'corporate'
-                ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
-                : 'bg-slate-700 hover:bg-slate-600 text-white'
-          }`}
-        />
-      );
-    }
-
     return (
-      <Link
-        to={`/signup?plan=${planKey}`}
-        onClick={() => storePlanKey(planKey)}
-        className={`block w-full text-center py-3 px-6 rounded-lg font-semibold transition-colors ${
+      <SubscribeButton
+        planKey={planKey}
+        buttonText={plan.ctaText}
+        className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
           plan.featured
             ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
             : planKey === 'corporate'
               ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
               : 'bg-slate-700 hover:bg-slate-600 text-white'
         }`}
-      >
-        {plan.ctaText}
-      </Link>
+      />
     );
   };
 
@@ -105,7 +87,7 @@ const PricingPage: React.FC = () => {
             </Link>
             <nav className="flex items-center gap-6">
               <Link to="/courses" className="text-gray-300 hover:text-white transition-colors">Curriculum</Link>
-              {currentUser ? (
+              {isRegisteredUser ? (
                 <Link to="/profile" className="text-gray-300 hover:text-white transition-colors">Dashboard</Link>
               ) : (
                 <Link to="/login" className="text-gray-300 hover:text-white transition-colors">Login</Link>
@@ -126,23 +108,6 @@ const PricingPage: React.FC = () => {
           </p>
           <RoiGuaranteeBadge className="px-6 py-3 text-sm" />
 
-          <div className="mt-10 grid gap-4 md:grid-cols-3 max-w-5xl mx-auto text-left">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Outcome</p>
-              <h2 className="mt-2 text-lg font-semibold text-white">Ship one real workflow</h2>
-              <p className="mt-2 text-sm text-gray-300">The course is designed around getting from lesson to implementation, not endless theory.</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Support</p>
-              <h2 className="mt-2 text-lg font-semibold text-white">AI tutor plus guided project</h2>
-              <p className="mt-2 text-sm text-gray-300">Use the tutor, the build path, and the curriculum together so you can move faster with fewer stalls.</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Risk</p>
-              <h2 className="mt-2 text-lg font-semibold text-white">Guarantee stays specific</h2>
-              <p className="mt-2 text-sm text-gray-300">If you do not build your first working AI agent in 14 days, the course gets refunded.</p>
-            </div>
-          </div>
         </div>
 
         {isFounding && (
@@ -172,6 +137,7 @@ const PricingPage: React.FC = () => {
               <span className="text-4xl font-bold text-white">${formatPlanPrice(explorer.displayPrice)}</span>
               <span className="text-gray-400">{explorer.intervalLabel}</span>
               <p className="text-sm text-emerald-400 mt-1">7-day trial starts right away</p>
+              <p className="text-xs text-slate-400 mt-2">No account wall before checkout. You will create your login after payment.</p>
               <p className="text-xs text-gray-500 mt-1">Trial includes free lessons. Premium curriculum unlocks after the first charge.</p>
             </div>
 
@@ -220,6 +186,7 @@ const PricingPage: React.FC = () => {
                 ${formatPlanPrice(pro.displayPrice)}/year &mdash; billed annually
               </p>
               <p className="text-xs text-emerald-400 mt-1">7-day trial starts right away</p>
+              <p className="text-xs text-slate-400 mt-2">Go straight from this page to secure checkout, then create your login after payment.</p>
               <p className="text-xs text-gray-500 mt-1">Trial includes free lessons. Premium curriculum unlocks after the first charge.</p>
               <p className="text-xs text-indigo-300 mt-1">Save 50% vs monthly equivalent</p>
             </div>
@@ -364,18 +331,29 @@ const PricingPage: React.FC = () => {
           <p className="text-xl text-gray-300 mb-8">
             Start with a 7-day trial, then unlock the full premium curriculum after your first charge.
           </p>
-          <Link
-            to={isFounding ? '/welcome' : currentUser ? '/courses' : '/signup'}
-            className="inline-flex items-center justify-center px-8 py-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg transition-colors"
-          >
-            {isFounding ? 'Open Founding Dashboard' : 'Start Building Now'}
-            <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </Link>
-          {!isFounding && !currentUser && (
-            <div className="mt-4 flex justify-center">
+          {isFounding ? (
+            <Link
+              to="/welcome"
+              className="inline-flex items-center justify-center px-8 py-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg transition-colors"
+            >
+              Open Founding Dashboard
+              <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </Link>
+          ) : (
+            <div className="mx-auto max-w-sm">
+              <SubscribeButton
+                planKey="pro"
+                buttonText="Start Checkout Now"
+                className="w-full inline-flex items-center justify-center px-8 py-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg transition-colors"
+              />
+            </div>
+          )}
+          {!isFounding && !isRegisteredUser && (
+            <div className="mt-4 flex flex-col items-center gap-3">
               <RoiGuaranteeBadge />
+              <p className="text-sm text-slate-400">Plan selection leads straight into secure Stripe checkout. Login is created after purchase.</p>
             </div>
           )}
         </div>

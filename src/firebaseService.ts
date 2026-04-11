@@ -219,6 +219,19 @@ export const createUserProfile = async (user: User, additionalData?: Partial<Use
   await setDoc(userRef, profileData, { merge: true });
 };
 
+export const syncUserIdentityProfile = async (user: User): Promise<void> => {
+  const userRef = doc(db, 'users', user.uid);
+  await setDoc(
+    userRef,
+    {
+      email: user.email || undefined,
+      displayName: user.displayName || undefined,
+      photoURL: user.photoURL || undefined,
+    },
+    { merge: true }
+  );
+};
+
 export const getUserCourseProgress = async (userId: string, courseId: string): Promise<UserCourseProgress | null> => {
   const progressRef = doc(db, `users/${userId}/progress`, courseId);
   const progressSnap = await getDoc(progressRef);

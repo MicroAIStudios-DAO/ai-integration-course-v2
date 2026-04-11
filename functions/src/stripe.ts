@@ -9,7 +9,6 @@ import {
   queuePaidWelcomeEmail,
   queuePlaybookDelivery,
   queueTrialStartedEmail,
-  queueWelcomeEmail,
 } from './emailLifecycle';
 
 if (!admin.apps.length) {
@@ -21,27 +20,45 @@ const STRIPE_WEBHOOK_SECRET = defineSecret('STRIPE_WEBHOOK_SECRET');
 const STRIPE_PRICE_EXPLORER_MONTHLY = defineSecret('STRIPE_PRICE_EXPLORER_MONTHLY');
 const STRIPE_PRICE_PRO_ANNUAL = defineSecret('STRIPE_PRICE_PRO_ANNUAL');
 const STRIPE_PRICE_CORPORATE_MONTHLY = defineSecret('STRIPE_PRICE_CORPORATE_MONTHLY');
+const CHECKOUT_SESSIONS_COLLECTION = 'checkout_sessions';
+
 let stripe: Stripe | null = null;
 
 type CheckoutPlanKey = 'explorer' | 'pro' | 'corporate';
 
 type CheckoutPlanDefinition = {
-  /** Stripe Price ID — MUST come from env, never from client */
   stripePriceId: string;
   tier: CheckoutPlanKey;
   billingInterval: 'month' | 'year';
   trialDays: number;
   seatCount: number;
-  /** Amount charged per billing interval (cents-friendly: use dollars here) */
   displayPrice: number;
-  /** For annual plans shown as monthly equivalent */
   displayMonthlyEquivalent?: number;
-  /** Strikethrough anchor price for marketing */
   anchorMonthlyPrice?: number;
   name: string;
-  /** Analytics value — always the per-interval charge in USD */
   analyticsValue: number;
 };
+
+type CheckoutSessionSnapshot = {
+  sessionId: string;
+  email: string;
+  displayName: string | null;
+  planKey: CheckoutPlanKey;
+  planName: string;
+  status: string;
+  tier: string;
+  billingInterval: 'month' | 'year';
+  seatCount: number;
+  analyticsValue: number;
+  customerId: string | null;
+  subscriptionId: string | null;
+  attachedUid: string | null;
+  premiumUnlocked: boolean;
+  isTrialing: boolean;
+  periodEnd: Date | null;
+};
+
+const db = admin.firestore();
 
 const getStripePriceId = (
   envName: 'STRIPE_PRICE_EXPLORER_MONTHLY' | 'STRIPE_PRICE_PRO_ANNUAL' | 'STRIPE_PRICE_CORPORATE_MONTHLY'
@@ -93,9 +110,9 @@ const getPlanConfig = (planKey: CheckoutPlanKey): CheckoutPlanDefinition => {
       billingInterval: 'month',
       trialDays: 0,
       seatCount: 5,
-      displayPrice: 149.00,
+      displayPrice: 149.0,
       name: 'Team AI Standard',
-      analyticsValue: 149.00,
+      analyticsValue: 149.0,
     },
   };
 
@@ -109,10 +126,13 @@ const getPlanConfig = (planKey: CheckoutPlanKey): CheckoutPlanDefinition => {
   return config;
 };
 
-/**
- * Server resolves plan from a trusted key only.
- * Never accept a raw Stripe price ID from the client.
- */
+const safePlanKey = (value: unknown): CheckoutPlanKey => {
+  if (value === 'explorer' || value === 'pro' || value === 'corporate') {
+    return value;
+  }
+  return 'explorer';
+};
+
 const resolvePlanKey = (payload: Record<string, any> | undefined): CheckoutPlanKey => {
   const requested = payload?.planKey;
   if (requested === 'explorer' || requested === 'pro' || requested === 'corporate') {
@@ -123,13 +143,9 @@ const resolvePlanKey = (payload: Record<string, any> | undefined): CheckoutPlanK
 
 const isPremiumContentUnlocked = (status: unknown): boolean => status === 'active';
 
-/** Check if a plan key maps to the explorer trial tier */
 const _isTrialPlan = (planKey: string | null | undefined): boolean => planKey === 'explorer';
-
-/** Check if a plan key is corporate (multi-seat) */
 const _isCorporatePlan = (planKey: string | null | undefined): boolean => planKey === 'corporate';
 
-// Export for future use in entitlement checks
 export { _isTrialPlan as isTrialPlan, _isCorporatePlan as isCorporatePlan };
 
 function getStripe() {
@@ -144,25 +160,53 @@ function generateUserApiKey(): string {
   return `ak_${crypto.randomBytes(24).toString('hex')}`;
 }
 
-async function queueInitialOnboardingEmails(uid: string, email?: string | null, displayName?: string | null): Promise<void> {
+const normalizeEmail = (value: unknown): string => {
+  if (typeof value !== 'string') return '';
+  return value.trim().toLowerCase();
+};
+
+const toTimestamp = (value: Date | null): FirebaseFirestore.Timestamp | null => {
+  if (!value) return null;
+  return admin.firestore.Timestamp.fromDate(value);
+};
+
+const deriveMetadataUid = (metadata?: Stripe.Metadata | null): string | null => {
+  const uid = metadata?.firebaseUID || metadata?.firebase_uid;
+  if (typeof uid !== 'string') return null;
+  const cleanUid = uid.trim();
+  return cleanUid || null;
+};
+
+const getStripeCustomerId = (customer: string | Stripe.Customer | Stripe.DeletedCustomer | null | undefined): string | null => {
+  if (!customer) return null;
+  if (typeof customer === 'string') return customer;
+  return customer.id || null;
+};
+
+const getStripeSubscriptionId = (subscription: string | Stripe.Subscription | null | undefined): string | null => {
+  if (!subscription) return null;
+  if (typeof subscription === 'string') return subscription;
+  return subscription.id || null;
+};
+
+async function findUserRecordByEmail(email: string): Promise<admin.auth.UserRecord | null> {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) {
+    return null;
+  }
+
   try {
-    await queueWelcomeEmail({
-      uid,
-      email,
-      displayName,
-    });
-    await queuePlaybookDelivery({
-      uid,
-      email,
-      displayName,
-    });
-  } catch (error) {
-    console.error(`Failed to queue onboarding emails for user ${uid}:`, error);
+    return await admin.auth().getUserByEmail(normalizedEmail);
+  } catch (error: any) {
+    if (error?.code === 'auth/user-not-found') {
+      return null;
+    }
+    throw error;
   }
 }
 
 async function ensureStrictMapping(uid: string, email?: string): Promise<string> {
-  const userRef = admin.firestore().doc(`users/${uid}`);
+  const userRef = db.doc(`users/${uid}`);
   const userSnap = await userRef.get();
   let customerId = userSnap.get('stripeCustomerId') as string | undefined;
   const { stripe } = getStripe();
@@ -186,7 +230,7 @@ async function ensureStrictMapping(uid: string, email?: string): Promise<string>
   }
 
   const customer = await stripe.customers.create({
-    email: email || userSnap.get('email'),
+    email: normalizeEmail(email) || normalizeEmail(userSnap.get('email')) || undefined,
     metadata: { firebaseUID: uid, firebase_uid: uid },
   });
   customerId = customer.id;
@@ -203,7 +247,7 @@ async function ensureStrictMapping(uid: string, email?: string): Promise<string>
 }
 
 async function findUidByStripeCustomerId(customerId: string): Promise<string | null> {
-  const usersSnapshot = await admin.firestore()
+  const usersSnapshot = await db
     .collection('users')
     .where('stripeCustomerId', '==', customerId)
     .limit(1)
@@ -215,83 +259,401 @@ async function findUidByStripeCustomerId(customerId: string): Promise<string | n
   return null;
 }
 
-async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
-  let uid = invoice.subscription_details?.metadata?.firebaseUID ||
-    invoice.subscription_details?.metadata?.firebase_uid;
-
-  if (!uid && invoice.customer) {
-    const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer.id;
-    const foundUid = await findUidByStripeCustomerId(customerId);
-    if (foundUid) uid = foundUid;
-
-    if (!uid) {
-      const { stripe } = getStripe();
-      const customer = await stripe.customers.retrieve(customerId);
-      if (!customer.deleted) {
-        uid = customer.metadata?.firebaseUID || customer.metadata?.firebase_uid;
-      }
-    }
+async function findCheckoutSessionDocByField(
+  field: 'customerId' | 'subscriptionId',
+  value: string | null | undefined
+): Promise<FirebaseFirestore.QueryDocumentSnapshot | null> {
+  if (!value) {
+    return null;
   }
 
-  if (!uid) {
-    console.error('Could not find Firebase UID for invoice', invoice.id);
-    return;
+  const snapshot = await db
+    .collection(CHECKOUT_SESSIONS_COLLECTION)
+    .where(field, '==', value)
+    .limit(1)
+    .get();
+
+  return snapshot.empty ? null : snapshot.docs[0];
+}
+
+async function getExpandedCustomer(customerId: string | null): Promise<Stripe.Customer | null> {
+  if (!customerId) {
+    return null;
   }
 
-  const userRef = admin.firestore().doc(`users/${uid}`);
-  const existingUserSnap = await userRef.get();
-  const existingUser = existingUserSnap.data() || {};
+  const { stripe } = getStripe();
+  const customer = await stripe.customers.retrieve(customerId);
+  return customer.deleted ? null : customer;
+}
 
-  let periodEnd: Date | null = null;
-  let planKey = (invoice.subscription_details?.metadata?.planKey as string | undefined) || 'explorer';
-  let tier = (invoice.subscription_details?.metadata?.tier as string | undefined) || planKey;
-  let seatCount = 1;
-  if (invoice.subscription) {
-    const { stripe } = getStripe();
-    const subId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription.id;
-    const subscription = await stripe.subscriptions.retrieve(subId);
-    periodEnd = new Date(subscription.current_period_end * 1000);
-    planKey = subscription.metadata?.planKey || planKey;
-    tier = subscription.metadata?.tier || planKey;
-    seatCount = parseInt(subscription.metadata?.seatCount || '1', 10);
+async function getExpandedSubscription(subscriptionId: string | null): Promise<Stripe.Subscription | null> {
+  if (!subscriptionId) {
+    return null;
   }
 
-  await userRef.set(
+  const { stripe } = getStripe();
+  return stripe.subscriptions.retrieve(subscriptionId);
+}
+
+async function syncCheckoutSessionRecord(
+  source: string | Stripe.Checkout.Session
+): Promise<CheckoutSessionSnapshot> {
+  const { stripe } = getStripe();
+  const session = typeof source === 'string'
+    ? await stripe.checkout.sessions.retrieve(source, { expand: ['customer', 'subscription'] })
+    : source;
+
+  const customerId = getStripeCustomerId(session.customer);
+  const subscriptionId = getStripeSubscriptionId(session.subscription);
+  const customer = typeof session.customer === 'string'
+    ? await getExpandedCustomer(customerId)
+    : session.customer && !(session.customer as Stripe.DeletedCustomer).deleted
+      ? session.customer as Stripe.Customer
+      : null;
+  const subscription = typeof session.subscription === 'string'
+    ? await getExpandedSubscription(subscriptionId)
+    : session.subscription || null;
+
+  const recordRef = db.collection(CHECKOUT_SESSIONS_COLLECTION).doc(session.id);
+  const existingRecordSnap = await recordRef.get();
+  const existingAttachedUid = (existingRecordSnap.get('attachedUid') as string | undefined) || null;
+
+  const planKey = safePlanKey(subscription?.metadata?.planKey || session.metadata?.planKey);
+  const plan = getPlanConfig(planKey);
+  const tier = subscription?.metadata?.tier || session.metadata?.tier || plan.tier;
+  const billingInterval =
+    (subscription?.metadata?.billingInterval as 'month' | 'year' | undefined) ||
+    (session.metadata?.billingInterval as 'month' | 'year' | undefined) ||
+    plan.billingInterval;
+  const seatCount = Number.parseInt(
+    subscription?.metadata?.seatCount || session.metadata?.seatCount || String(plan.seatCount),
+    10
+  ) || plan.seatCount;
+  const status = subscription?.status || session.status || 'open';
+  const isTrialing = status === 'trialing';
+  const premiumUnlocked = isPremiumContentUnlocked(status);
+  const periodEnd = subscription ? new Date(subscription.current_period_end * 1000) : null;
+  const email = normalizeEmail(session.customer_details?.email || customer?.email || existingRecordSnap.get('email'));
+  const displayName =
+    session.customer_details?.name || customer?.name || (existingRecordSnap.get('displayName') as string | undefined) || null;
+  const attachedUid =
+    existingAttachedUid ||
+    deriveMetadataUid(subscription?.metadata || null) ||
+    deriveMetadataUid(customer?.metadata || null) ||
+    deriveMetadataUid(session.metadata || null) ||
+    (customerId ? await findUidByStripeCustomerId(customerId) : null);
+
+  const snapshot: CheckoutSessionSnapshot = {
+    sessionId: session.id,
+    email,
+    displayName,
+    planKey,
+    planName: plan.name,
+    status,
+    tier,
+    billingInterval,
+    seatCount,
+    analyticsValue: plan.analyticsValue,
+    customerId,
+    subscriptionId,
+    attachedUid,
+    premiumUnlocked,
+    isTrialing,
+    periodEnd,
+  };
+
+  await recordRef.set(
     {
-      premium: true,
-      subscriptionStatus: 'active',
-      subscriptionTier: tier,
-      seatCount,
-      lastPaymentAt: admin.firestore.FieldValue.serverTimestamp(),
-      trialStartedAt: null,
-      trialEndsAt: null,
-      subscriptionEndsAt: periodEnd ? admin.firestore.Timestamp.fromDate(periodEnd) : null,
-    },
-    { merge: true }
-  );
-
-  await admin.firestore().doc(`users/${uid}/subscriptions/current`).set(
-    {
-      status: 'active',
-      plan: planKey,
-      tier,
-      seatCount,
-      period_end: periodEnd ? admin.firestore.Timestamp.fromDate(periodEnd) : null,
-      lastPaymentAt: admin.firestore.FieldValue.serverTimestamp(),
+      ...snapshot,
+      periodEnd: toTimestamp(periodEnd),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     },
     { merge: true }
   );
 
-  try {
+  return snapshot;
+}
+
+async function persistCheckoutStateWithoutUid(snapshot: CheckoutSessionSnapshot): Promise<void> {
+  await db.collection(CHECKOUT_SESSIONS_COLLECTION).doc(snapshot.sessionId).set(
+    {
+      ...snapshot,
+      periodEnd: toTimestamp(snapshot.periodEnd),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+}
+
+async function persistSubscriptionForUser(
+  uid: string,
+  snapshot: CheckoutSessionSnapshot,
+  options?: { email?: string | null; displayName?: string | null; markCancelled?: boolean }
+): Promise<void> {
+  const userRef = db.doc(`users/${uid}`);
+  const subRef = db.doc(`users/${uid}/subscriptions/current`);
+  const userPayload: Record<string, unknown> = {
+    subscriptionStatus: options?.markCancelled ? 'cancelled' : snapshot.status,
+    subscriptionTier: snapshot.tier,
+    billingInterval: snapshot.billingInterval,
+    seatCount: snapshot.seatCount,
+    subscriptionUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    pendingCheckoutPlanKey: admin.firestore.FieldValue.delete(),
+    pendingCheckoutTier: admin.firestore.FieldValue.delete(),
+  };
+
+  if (snapshot.customerId) {
+    userPayload.stripeCustomerId = snapshot.customerId;
+    userPayload.stripeCustomerCreatedAt = admin.firestore.FieldValue.serverTimestamp();
+  }
+
+  if (options?.email) {
+    userPayload.email = normalizeEmail(options.email);
+  }
+
+  if (options?.displayName) {
+    userPayload.displayName = options.displayName;
+  }
+
+  if (options?.markCancelled) {
+    userPayload.premium = false;
+    userPayload.trialEndsAt = null;
+    userPayload.subscriptionEndsAt = null;
+    userPayload.subscriptionCancelledAt = admin.firestore.FieldValue.serverTimestamp();
+  } else {
+    userPayload.premium = snapshot.premiumUnlocked;
+    userPayload.lastPaymentAt = snapshot.isTrialing ? null : admin.firestore.FieldValue.serverTimestamp();
+    userPayload.trialStartedAt = snapshot.isTrialing ? admin.firestore.FieldValue.serverTimestamp() : null;
+    userPayload.trialEndsAt = snapshot.isTrialing ? toTimestamp(snapshot.periodEnd) : null;
+    userPayload.subscriptionEndsAt = snapshot.isTrialing ? null : toTimestamp(snapshot.periodEnd);
+  }
+
+  await userRef.set(userPayload, { merge: true });
+
+  const subscriptionPayload: Record<string, unknown> = {
+    status: options?.markCancelled ? 'cancelled' : snapshot.status,
+    plan: snapshot.planKey,
+    tier: snapshot.tier,
+    billingInterval: snapshot.billingInterval,
+    seatCount: snapshot.seatCount,
+    period_end: toTimestamp(snapshot.periodEnd),
+    stripeSubscriptionId: snapshot.subscriptionId,
+    stripeCustomerId: snapshot.customerId,
+    checkoutSessionId: snapshot.sessionId,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+
+  if (options?.markCancelled) {
+    subscriptionPayload.cancelledAt = admin.firestore.FieldValue.serverTimestamp();
+  }
+
+  await subRef.set(subscriptionPayload, { merge: true });
+}
+
+async function queueLifecycleEmailsOnce(
+  sessionId: string,
+  uid: string,
+  snapshot: CheckoutSessionSnapshot,
+  email: string,
+  displayName?: string | null
+): Promise<void> {
+  const sessionRef = db.collection(CHECKOUT_SESSIONS_COLLECTION).doc(sessionId);
+  const sessionSnap = await sessionRef.get();
+  if (sessionSnap.get('lifecycleEmailsQueuedAt')) {
+    return;
+  }
+
+  if (snapshot.isTrialing) {
+    await queueTrialStartedEmail({
+      uid,
+      email,
+      displayName,
+      subscriptionTier: snapshot.tier,
+      trialStartedAt: admin.firestore.Timestamp.now(),
+      trialEndsAt: toTimestamp(snapshot.periodEnd),
+    });
+  } else {
     await queuePaidWelcomeEmail({
       uid,
-      email: existingUser.email || invoice.customer_email || '',
-      displayName: existingUser.displayName || null,
+      email,
+      displayName,
+      subscriptionTier: snapshot.tier,
+    });
+  }
+
+  await queuePlaybookDelivery({
+    uid,
+    email,
+    displayName,
+  });
+
+  await sessionRef.set(
+    {
+      lifecycleEmailsQueuedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+}
+
+async function attachCheckoutStateToUid(
+  uid: string,
+  snapshot: CheckoutSessionSnapshot,
+  options?: { email?: string | null; displayName?: string | null; queueEmails?: boolean }
+): Promise<void> {
+  const email = normalizeEmail(options?.email || snapshot.email);
+  const displayName = options?.displayName || snapshot.displayName || null;
+
+  await persistSubscriptionForUser(uid, snapshot, { email, displayName });
+
+  await db.collection(CHECKOUT_SESSIONS_COLLECTION).doc(snapshot.sessionId).set(
+    {
+      ...snapshot,
+      attachedUid: uid,
+      attachedAt: admin.firestore.FieldValue.serverTimestamp(),
+      email,
+      displayName,
+      periodEnd: toTimestamp(snapshot.periodEnd),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  if (options?.queueEmails && email) {
+    await queueLifecycleEmailsOnce(snapshot.sessionId, uid, snapshot, email, displayName);
+  }
+}
+
+async function updatePendingCheckoutByStripeIds(params: {
+  customerId?: string | null;
+  subscriptionId?: string | null;
+  status: string;
+  premiumUnlocked: boolean;
+  periodEnd?: Date | null;
+  planKey?: CheckoutPlanKey;
+  tier?: string;
+  billingInterval?: 'month' | 'year';
+  seatCount?: number;
+}): Promise<void> {
+  const docSnap =
+    (params.subscriptionId ? await findCheckoutSessionDocByField('subscriptionId', params.subscriptionId) : null) ||
+    (params.customerId ? await findCheckoutSessionDocByField('customerId', params.customerId) : null);
+
+  if (!docSnap) {
+    return;
+  }
+
+  const existingPlanKey = safePlanKey(params.planKey || docSnap.get('planKey'));
+  const plan = getPlanConfig(existingPlanKey);
+
+  await docSnap.ref.set(
+    {
+      status: params.status,
+      premiumUnlocked: params.premiumUnlocked,
+      isTrialing: params.status === 'trialing',
+      periodEnd: toTimestamp(params.periodEnd || null),
+      planKey: existingPlanKey,
+      planName: plan.name,
+      tier: params.tier || docSnap.get('tier') || existingPlanKey,
+      billingInterval: params.billingInterval || docSnap.get('billingInterval') || plan.billingInterval,
+      seatCount: params.seatCount || docSnap.get('seatCount') || plan.seatCount,
+      customerId: params.customerId || docSnap.get('customerId') || null,
+      subscriptionId: params.subscriptionId || docSnap.get('subscriptionId') || null,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+}
+
+async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
+  let uid = deriveMetadataUid(invoice.subscription_details?.metadata || null);
+  const customerId = getStripeCustomerId(invoice.customer as string | Stripe.Customer | null | undefined);
+
+  if (!uid && customerId) {
+    uid = await findUidByStripeCustomerId(customerId);
+
+    if (!uid) {
+      const customer = await getExpandedCustomer(customerId);
+      uid = deriveMetadataUid(customer?.metadata || null);
+    }
+  }
+
+  const subscriptionId = getStripeSubscriptionId(invoice.subscription as string | Stripe.Subscription | null | undefined);
+  const subscription = subscriptionId ? await getExpandedSubscription(subscriptionId) : null;
+  const planKey = safePlanKey(subscription?.metadata?.planKey || invoice.subscription_details?.metadata?.planKey);
+  const plan = getPlanConfig(planKey);
+  const tier = subscription?.metadata?.tier || invoice.subscription_details?.metadata?.tier || plan.tier;
+  const seatCount = Number.parseInt(subscription?.metadata?.seatCount || '1', 10) || 1;
+  const periodEnd = subscription ? new Date(subscription.current_period_end * 1000) : null;
+  const status = subscription?.status || 'active';
+
+  const snapshot: CheckoutSessionSnapshot = {
+    sessionId: subscriptionId || invoice.id,
+    email: normalizeEmail(invoice.customer_email),
+    displayName: null,
+    planKey,
+    planName: plan.name,
+    status,
+    tier,
+    billingInterval: plan.billingInterval,
+    seatCount,
+    analyticsValue: plan.analyticsValue,
+    customerId,
+    subscriptionId,
+    attachedUid: uid,
+    premiumUnlocked: true,
+    isTrialing: false,
+    periodEnd,
+  };
+
+  if (!uid) {
+    await updatePendingCheckoutByStripeIds({
+      customerId,
+      subscriptionId,
+      status,
+      premiumUnlocked: true,
+      periodEnd,
+      planKey,
+      tier,
+      billingInterval: plan.billingInterval,
+      seatCount,
+    });
+    console.error('Could not find Firebase UID for invoice', invoice.id);
+    return;
+  }
+
+  await persistSubscriptionForUser(uid, snapshot, { email: invoice.customer_email || null, displayName: null });
+
+  const sessionDoc =
+    (subscriptionId ? await findCheckoutSessionDocByField('subscriptionId', subscriptionId) : null) ||
+    (customerId ? await findCheckoutSessionDocByField('customerId', customerId) : null);
+
+  if (sessionDoc) {
+    await sessionDoc.ref.set(
+      {
+        attachedUid: uid,
+        status,
+        premiumUnlocked: true,
+        isTrialing: false,
+        periodEnd: toTimestamp(periodEnd),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+    await queueLifecycleEmailsOnce(
+      sessionDoc.id,
+      uid,
+      { ...snapshot, sessionId: sessionDoc.id },
+      normalizeEmail(invoice.customer_email),
+      null
+    );
+  } else {
+    await queuePaidWelcomeEmail({
+      uid,
+      email: invoice.customer_email || '',
+      displayName: null,
       subscriptionTier: tier,
     });
-  } catch (emailQueueErr) {
-    console.error(`Failed to queue paid welcome email for user ${uid}:`, emailQueueErr);
   }
 
   console.log(`Premium renewed for user ${uid}`);
@@ -300,7 +662,6 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
 export const onUserCreateV2 = onCustomEventPublished(
   {
     region: 'us-central1',
-    secrets: [STRIPE_SECRET],
     eventType: 'google.firebase.auth.user.v1.created',
   },
   async (event: CloudEvent<any>) => {
@@ -311,71 +672,21 @@ export const onUserCreateV2 = onCustomEventPublished(
       return;
     }
 
-    const userRef = admin.firestore().doc(`users/${uid}`);
+    const userRef = db.doc(`users/${uid}`);
     const existingUser = await userRef.get();
     const apiKey = existingUser.get('apiKey') || generateUserApiKey();
 
-    const { stripe, secret } = getStripe();
-    if (!secret) {
-      console.error('Stripe not configured, skipping customer creation');
-      await userRef.set(
-        {
-          email: user.email || user.emailAddress || null,
-          displayName: user.displayName || user.name || null,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          premium: false,
-          subscriptionStatus: 'none',
-          apiKey,
-          stripeError: 'Stripe not configured',
-        },
-        { merge: true }
-      );
-      await queueInitialOnboardingEmails(uid, user.email || user.emailAddress || null, user.displayName || user.name || null);
-      return;
-    }
-
-    try {
-      const customer = await stripe.customers.create({
-        email: user.email || user.emailAddress || undefined,
-        metadata: {
-          firebaseUID: uid,
-          firebase_uid: uid,
-        },
-        name: user.displayName || user.name || undefined,
-      });
-
-      await userRef.set(
-        {
-          email: user.email || user.emailAddress || null,
-          displayName: user.displayName || user.name || null,
-          stripeCustomerId: customer.id,
-          stripeCustomerCreatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          premium: false,
-          subscriptionStatus: 'none',
-          apiKey,
-        },
-        { merge: true }
-      );
-      await queueInitialOnboardingEmails(uid, user.email || user.emailAddress || null, user.displayName || user.name || null);
-
-      console.log(`Created Stripe customer ${customer.id} for Firebase user ${uid}`);
-    } catch (err: any) {
-      console.error(`Failed to create Stripe customer for user ${uid}:`, err.message);
-      await userRef.set(
-        {
-          email: user.email || user.emailAddress || null,
-          displayName: user.displayName || user.name || null,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          premium: false,
-          subscriptionStatus: 'none',
-          apiKey,
-          stripeError: err.message,
-        },
-        { merge: true }
-      );
-      await queueInitialOnboardingEmails(uid, user.email || user.emailAddress || null, user.displayName || user.name || null);
-    }
+    await userRef.set(
+      {
+        email: normalizeEmail(user.email || user.emailAddress) || null,
+        displayName: user.displayName || user.name || null,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        premium: existingUser.get('premium') || false,
+        subscriptionStatus: existingUser.get('subscriptionStatus') || 'none',
+        apiKey,
+      },
+      { merge: true }
+    );
   }
 );
 
@@ -390,27 +701,17 @@ export const createCheckoutSessionV2 = onCall(
     ],
   },
   async (request) => {
-    if (!request.auth) {
-      throw new HttpsError('unauthenticated', 'Login required');
-    }
-
     const { stripe, secret } = getStripe();
     if (!secret) {
       throw new HttpsError('failed-precondition', 'Stripe not configured');
     }
 
-    const uid = request.auth.uid;
-    const email = request.auth.token?.email as string | undefined;
-
-    // Server-side plan resolution — client sends planKey only, never a price ID
     const planKey = resolvePlanKey(request.data || {});
     const plan = getPlanConfig(planKey);
+    const isAuthenticatedUser = Boolean(request.auth?.uid && request.auth?.token?.email);
+    const uid = isAuthenticatedUser ? request.auth!.uid : null;
+    const email = isAuthenticatedUser ? normalizeEmail(request.auth?.token?.email) : '';
 
-    const customerId = await ensureStrictMapping(uid, email);
-
-    // P0 FIX: Extract attribution params passed from the client (captured at /start landing page)
-    // These are stored in Stripe session metadata so Google Ads can attribute conversions
-    // to the originating campaign, keyword, and ad group via offline conversion import.
     const gclid = (request.data?.gclid as string | undefined) || '';
     const utmSource = (request.data?.utm_source as string | undefined) || '';
     const utmCampaign = (request.data?.utm_campaign as string | undefined) || '';
@@ -422,21 +723,29 @@ export const createCheckoutSessionV2 = onCall(
     const successUrl = request.data?.successUrl || `${baseUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}&plan=${planKey}`;
     const cancelUrl = request.data?.cancelUrl || `${baseUrl}/pricing`;
 
-    // Build subscription_data with metadata and optional trial
-    const subscriptionData: Stripe.Checkout.SessionCreateParams['subscription_data'] = {
-      metadata: {
-        firebaseUID: uid,
-        firebase_uid: uid,
-        planKey,
-        tier: plan.tier,
-        billingInterval: plan.billingInterval,
-        seatCount: String(plan.seatCount),
-      },
+    const baseMetadata: Record<string, string> = {
+      planKey,
+      tier: plan.tier,
+      billingInterval: plan.billingInterval,
+      seatCount: String(plan.seatCount),
+      analyticsValue: String(plan.analyticsValue),
+      gclid,
+      utm_source: utmSource,
+      utm_campaign: utmCampaign,
+      utm_medium: utmMedium,
+      utm_content: utmContent,
+      utm_term: utmTerm,
     };
 
-    // Apply trial for Explorer and Pro. Trial users stay on free-lesson access
-    // until the first paid invoice succeeds, and the subscription cancels if no
-    // payment method is available when the trial ends.
+    if (uid) {
+      baseMetadata.firebaseUID = uid;
+      baseMetadata.firebase_uid = uid;
+    }
+
+    const subscriptionData: Stripe.Checkout.SessionCreateParams['subscription_data'] = {
+      metadata: { ...baseMetadata },
+    };
+
     if (plan.trialDays > 0) {
       subscriptionData.trial_period_days = plan.trialDays;
       subscriptionData.trial_settings = {
@@ -446,50 +755,176 @@ export const createCheckoutSessionV2 = onCall(
       };
     }
 
+    const customerId = uid ? await ensureStrictMapping(uid, email) : null;
+
     const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      client_reference_id: uid,
+      ...(customerId ? { customer: customerId } : {}),
+      ...(uid ? { client_reference_id: uid } : {}),
       mode: 'subscription',
       payment_method_collection: 'always',
       payment_method_types: ['card'],
       line_items: [{ price: plan.stripePriceId, quantity: 1 }],
       success_url: successUrl,
       cancel_url: cancelUrl,
-      // NOTE: customer_email is intentionally omitted — it conflicts with the `customer` param.
-      // The user's email is already attached to the Stripe customer object via ensureStrictMapping.
-      // Stripe pre-fills the email field automatically when a customer ID is provided.
-      metadata: {
-        firebaseUID: uid,
-        firebase_uid: uid,
-        planKey,
-        tier: plan.tier,
-        billingInterval: plan.billingInterval,
-        seatCount: String(plan.seatCount),
-        analyticsValue: String(plan.analyticsValue),
-        // Attribution params for Google Ads offline conversion import
-        gclid,
-        utm_source: utmSource,
-        utm_campaign: utmCampaign,
-        utm_medium: utmMedium,
-        utm_content: utmContent,
-        utm_term: utmTerm,
-      },
+      metadata: baseMetadata,
       subscription_data: subscriptionData,
-      // Allow promo codes on checkout
       allow_promotion_codes: true,
     });
 
-    const userRef = admin.firestore().doc(`users/${uid}`);
-    await userRef.set(
+    if (uid) {
+      await db.doc(`users/${uid}`).set(
+        {
+          pendingCheckoutPlanKey: planKey,
+          pendingCheckoutTier: plan.tier,
+          checkoutStartedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+    }
+
+    await db.collection(CHECKOUT_SESSIONS_COLLECTION).doc(session.id).set(
       {
-        pendingCheckoutPlanKey: planKey,
-        pendingCheckoutTier: plan.tier,
-        checkoutStartedAt: admin.firestore.FieldValue.serverTimestamp(),
+        sessionId: session.id,
+        planKey,
+        planName: plan.name,
+        tier: plan.tier,
+        billingInterval: plan.billingInterval,
+        seatCount: plan.seatCount,
+        analyticsValue: plan.analyticsValue,
+        attachedUid: uid,
+        customerId,
+        status: 'open',
+        attribution: {
+          gclid,
+          utm_source: utmSource,
+          utm_campaign: utmCampaign,
+          utm_medium: utmMedium,
+          utm_content: utmContent,
+          utm_term: utmTerm,
+        },
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       },
       { merge: true }
     );
 
     return { id: session.id, planKey, url: session.url };
+  }
+);
+
+export const getCheckoutSessionSummaryV2 = onCall(
+  {
+    region: 'us-central1',
+    secrets: [STRIPE_SECRET],
+  },
+  async (request) => {
+    const sessionId = typeof request.data?.sessionId === 'string' ? request.data.sessionId.trim() : '';
+    if (!sessionId) {
+      throw new HttpsError('invalid-argument', 'Checkout session ID is required.');
+    }
+
+    const snapshot = await syncCheckoutSessionRecord(sessionId);
+    const existingUser = snapshot.email ? await findUserRecordByEmail(snapshot.email) : null;
+    const currentUid = request.auth?.uid || null;
+    const attachedUid = snapshot.attachedUid || existingUser?.uid || null;
+    const requiresLogin = Boolean(existingUser && (!currentUid || existingUser.uid !== currentUid));
+    const isAttachedToCurrentUser = Boolean(currentUid && attachedUid === currentUid);
+
+    return {
+      sessionId: snapshot.sessionId,
+      email: snapshot.email,
+      displayName: snapshot.displayName,
+      planKey: snapshot.planKey,
+      planName: snapshot.planName,
+      status: snapshot.status,
+      existingAccount: Boolean(existingUser),
+      attachedUid,
+      isAttachedToCurrentUser,
+      requiresLogin,
+    };
+  }
+);
+
+export const attachCheckoutSessionToUserV2 = onCall(
+  {
+    region: 'us-central1',
+    secrets: [STRIPE_SECRET],
+  },
+  async (request) => {
+    if (!request.auth?.uid) {
+      throw new HttpsError('unauthenticated', 'Login required.');
+    }
+
+    const authEmail = normalizeEmail(request.auth.token?.email);
+    if (!authEmail) {
+      throw new HttpsError('failed-precondition', 'Your account must have an email before checkout can be attached.');
+    }
+
+    const sessionId = typeof request.data?.sessionId === 'string' ? request.data.sessionId.trim() : '';
+    if (!sessionId) {
+      throw new HttpsError('invalid-argument', 'Checkout session ID is required.');
+    }
+
+    const requestedDisplayName = typeof request.data?.displayName === 'string'
+      ? request.data.displayName.trim()
+      : '';
+
+    const snapshot = await syncCheckoutSessionRecord(sessionId);
+    if (!snapshot.email) {
+      throw new HttpsError('failed-precondition', 'Stripe checkout did not return an email address.');
+    }
+
+    if (normalizeEmail(snapshot.email) !== authEmail) {
+      throw new HttpsError('permission-denied', 'Sign in with the same email you used in Stripe checkout.');
+    }
+
+    if (snapshot.attachedUid && snapshot.attachedUid !== request.auth.uid) {
+      throw new HttpsError('already-exists', 'This checkout session is already attached to another account.');
+    }
+
+    const { stripe } = getStripe();
+    if (snapshot.customerId) {
+      await stripe.customers.update(snapshot.customerId, {
+        email: snapshot.email,
+        ...(requestedDisplayName ? { name: requestedDisplayName } : {}),
+        metadata: {
+          firebaseUID: request.auth.uid,
+          firebase_uid: request.auth.uid,
+        },
+      });
+    }
+
+    if (snapshot.subscriptionId) {
+      await stripe.subscriptions.update(snapshot.subscriptionId, {
+        metadata: {
+          firebaseUID: request.auth.uid,
+          firebase_uid: request.auth.uid,
+          planKey: snapshot.planKey,
+          tier: snapshot.tier,
+          billingInterval: snapshot.billingInterval,
+          seatCount: String(snapshot.seatCount),
+        },
+      });
+    }
+
+    const attachedSnapshot: CheckoutSessionSnapshot = {
+      ...snapshot,
+      attachedUid: request.auth.uid,
+      displayName: requestedDisplayName || snapshot.displayName,
+    };
+
+    await attachCheckoutStateToUid(request.auth.uid, attachedSnapshot, {
+      email: snapshot.email,
+      displayName: requestedDisplayName || snapshot.displayName,
+      queueEmails: true,
+    });
+
+    return {
+      success: true,
+      attachedUid: request.auth.uid,
+      planKey: snapshot.planKey,
+      status: snapshot.status,
+    };
   }
 );
 
@@ -512,9 +947,9 @@ export const stripeWebhookV2 = onRequest(
     let event: Stripe.Event;
     try {
       event = stripe.webhooks.constructEvent(req.rawBody, sig, endpointSecret);
-    } catch (err: any) {
-      console.error('Webhook signature verification failed', err.message);
-      res.status(400).send(`Webhook Error: ${err.message}`);
+    } catch (error: any) {
+      console.error('Webhook signature verification failed', error.message);
+      res.status(400).send(`Webhook Error: ${error.message}`);
       return;
     }
 
@@ -522,114 +957,23 @@ export const stripeWebhookV2 = onRequest(
       switch (event.type) {
         case 'checkout.session.completed': {
           const session = event.data.object as Stripe.Checkout.Session;
-          let uid = session.metadata?.firebaseUID ||
-            session.metadata?.firebase_uid ||
-            session.client_reference_id || undefined;
+          const snapshot = await syncCheckoutSessionRecord(session);
 
-          if (!uid && session.customer) {
-            const customerId = typeof session.customer === 'string' ? session.customer : session.customer.id;
-            const foundUid = await findUidByStripeCustomerId(customerId);
-            if (foundUid) uid = foundUid;
-
-            if (!uid) {
-              const customer = await stripe.customers.retrieve(customerId);
-              if (!customer.deleted) {
-                uid = customer.metadata?.firebaseUID || customer.metadata?.firebase_uid;
-              }
-            }
-          }
-
-          if (uid) {
-            const userRef = admin.firestore().doc(`users/${uid}`);
-            const existingUserSnap = await userRef.get();
-            const existingUser = existingUserSnap.data() || {};
-            let periodEnd: Date | null = null;
-            let planKey = (session.metadata?.planKey as string | undefined) || 'explorer';
-            let subStatus: string = 'active';
-            if (session.subscription) {
-              const subId = typeof session.subscription === 'string' ? session.subscription : session.subscription.id;
-              const subscription = await stripe.subscriptions.retrieve(subId);
-              periodEnd = new Date(subscription.current_period_end * 1000);
-              planKey = subscription.metadata?.planKey || planKey;
-              subStatus = subscription.status; // 'active' or 'trialing'
-            }
-
-            const tier = session.metadata?.tier || planKey;
-            const seatCount = parseInt(session.metadata?.seatCount || '1', 10);
-            const billingInterval = session.metadata?.billingInterval || 'month';
-            const isTrialing = subStatus === 'trialing';
-            const premiumUnlocked = isPremiumContentUnlocked(subStatus);
-
-            await userRef.set(
-              {
-                premium: premiumUnlocked,
-                subscriptionStatus: subStatus,
-                subscriptionTier: tier,
-                billingInterval,
-                seatCount,
-                lastPaymentAt: isTrialing ? null : admin.firestore.FieldValue.serverTimestamp(),
-                trialStartedAt: isTrialing ? admin.firestore.FieldValue.serverTimestamp() : null,
-                trialEndsAt: isTrialing && periodEnd ? admin.firestore.Timestamp.fromDate(periodEnd) : null,
-                subscriptionEndsAt: !isTrialing && periodEnd ? admin.firestore.Timestamp.fromDate(periodEnd) : null,
-                pendingCheckoutPlanKey: admin.firestore.FieldValue.delete(),
-                pendingCheckoutTier: admin.firestore.FieldValue.delete(),
-              },
-              { merge: true }
-            );
-
-            await admin.firestore().doc(`users/${uid}/subscriptions/current`).set(
-              {
-                status: subStatus,
-                plan: planKey,
-                tier,
-                billingInterval,
-                seatCount,
-                period_end: periodEnd ? admin.firestore.Timestamp.fromDate(periodEnd) : null,
-                stripeSubscriptionId: session.subscription,
-                stripeCustomerId: session.customer,
-                checkoutSessionId: session.id,
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
-              },
-              { merge: true }
-            );
-
-            const email = existingUser.email || session.customer_details?.email || '';
-            const displayName = existingUser.displayName || session.customer_details?.name || null;
-
-            try {
-              if (isTrialing) {
-                await queueTrialStartedEmail({
-                  uid,
-                  email,
-                  displayName,
-                  subscriptionTier: tier,
-                  trialStartedAt: admin.firestore.Timestamp.now(),
-                  trialEndsAt: periodEnd ? admin.firestore.Timestamp.fromDate(periodEnd) : null,
-                });
-              }
-              await queuePlaybookDelivery({
-                uid,
-                email,
-                displayName,
-              });
-            } catch (emailQueueErr) {
-              console.error(`Failed to queue lifecycle email for user ${uid}:`, emailQueueErr);
-            }
-
-            console.log(`Subscription recorded for user ${uid} with plan ${planKey}, tier: ${tier}, status: ${subStatus}`);
+          if (snapshot.attachedUid) {
+            await attachCheckoutStateToUid(snapshot.attachedUid, snapshot, {
+              email: snapshot.email,
+              displayName: snapshot.displayName,
+              queueEmails: true,
+            });
+            console.log(`Subscription recorded for user ${snapshot.attachedUid} with plan ${snapshot.planKey}, status: ${snapshot.status}`);
           } else {
-            console.error('Could not find Firebase UID for checkout session', session.id);
+            await persistCheckoutStateWithoutUid(snapshot);
+            console.log(`Checkout ${snapshot.sessionId} completed without attached Firebase user yet.`);
           }
           break;
         }
 
-        case 'invoice.payment_succeeded': {
-          const invoice = event.data.object as Stripe.Invoice;
-          await handleInvoicePaid(invoice);
-          break;
-        }
-
+        case 'invoice.payment_succeeded':
         case 'invoice.paid': {
           const invoice = event.data.object as Stripe.Invoice;
           await handleInvoicePaid(invoice);
@@ -638,47 +982,64 @@ export const stripeWebhookV2 = onRequest(
 
         case 'customer.subscription.deleted': {
           const subscription = event.data.object as Stripe.Subscription;
-          let uid: string | undefined = subscription.metadata?.firebaseUID ||
-            subscription.metadata?.firebase_uid;
+          let uid = deriveMetadataUid(subscription.metadata || null);
+          const customerId = getStripeCustomerId(subscription.customer as string | Stripe.Customer | null | undefined);
 
-          if (!uid && subscription.customer) {
-            const customerId = typeof subscription.customer === 'string'
-              ? subscription.customer
-              : subscription.customer.id;
-            const foundUid = await findUidByStripeCustomerId(customerId);
-            if (foundUid) {
-              uid = foundUid;
-            } else {
-              const customer = await stripe.customers.retrieve(customerId);
-              if (!customer.deleted) {
-                uid = customer.metadata?.firebaseUID || customer.metadata?.firebase_uid;
-              }
+          if (!uid && customerId) {
+            uid = await findUidByStripeCustomerId(customerId);
+            if (!uid) {
+              const customer = await getExpandedCustomer(customerId);
+              uid = deriveMetadataUid(customer?.metadata || null);
             }
           }
 
+          const planKey = safePlanKey(subscription.metadata?.planKey);
+          const plan = getPlanConfig(planKey);
+          const snapshot: CheckoutSessionSnapshot = {
+            sessionId: subscription.id,
+            email: '',
+            displayName: null,
+            planKey,
+            planName: plan.name,
+            status: 'cancelled',
+            tier: subscription.metadata?.tier || plan.tier,
+            billingInterval: (subscription.metadata?.billingInterval as 'month' | 'year' | undefined) || plan.billingInterval,
+            seatCount: Number.parseInt(subscription.metadata?.seatCount || '1', 10) || 1,
+            analyticsValue: plan.analyticsValue,
+            customerId,
+            subscriptionId: subscription.id,
+            attachedUid: uid,
+            premiumUnlocked: false,
+            isTrialing: false,
+            periodEnd: null,
+          };
+
           if (uid) {
-            await admin.firestore().doc(`users/${uid}`).set(
-              {
-                premium: false,
-                subscriptionStatus: 'cancelled',
-                trialEndsAt: null,
-                subscriptionEndsAt: null,
-                subscriptionCancelledAt: admin.firestore.FieldValue.serverTimestamp(),
-              },
-              { merge: true }
-            );
-
-            await admin.firestore().doc(`users/${uid}/subscriptions/current`).set(
-              {
-                status: 'cancelled',
-                cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-              },
-              { merge: true }
-            );
-
+            await persistSubscriptionForUser(uid, snapshot, { markCancelled: true });
+            const sessionDoc = await findCheckoutSessionDocByField('subscriptionId', subscription.id);
+            if (sessionDoc) {
+              await sessionDoc.ref.set(
+                {
+                  attachedUid: uid,
+                  status: 'cancelled',
+                  premiumUnlocked: false,
+                  updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                },
+                { merge: true }
+              );
+            }
             console.log(`Subscription cancelled for user ${uid}`);
           } else {
+            await updatePendingCheckoutByStripeIds({
+              customerId,
+              subscriptionId: subscription.id,
+              status: 'cancelled',
+              premiumUnlocked: false,
+              planKey,
+              tier: snapshot.tier,
+              billingInterval: snapshot.billingInterval,
+              seatCount: snapshot.seatCount,
+            });
             console.error('Could not find Firebase UID for subscription', subscription.id);
           }
           break;
@@ -686,67 +1047,77 @@ export const stripeWebhookV2 = onRequest(
 
         case 'customer.subscription.updated': {
           const subscription = event.data.object as Stripe.Subscription;
-          let uid: string | undefined = subscription.metadata?.firebaseUID ||
-            subscription.metadata?.firebase_uid;
+          let uid = deriveMetadataUid(subscription.metadata || null);
+          const customerId = getStripeCustomerId(subscription.customer as string | Stripe.Customer | null | undefined);
 
-          if (!uid && subscription.customer) {
-            const customerId = typeof subscription.customer === 'string'
-              ? subscription.customer
-              : subscription.customer.id;
-            const foundUid = await findUidByStripeCustomerId(customerId);
-            if (foundUid) {
-              uid = foundUid;
-            } else {
-              const customer = await stripe.customers.retrieve(customerId);
-              if (!customer.deleted) {
-                uid = customer.metadata?.firebaseUID || customer.metadata?.firebase_uid;
-              }
+          if (!uid && customerId) {
+            uid = await findUidByStripeCustomerId(customerId);
+            if (!uid) {
+              const customer = await getExpandedCustomer(customerId);
+              uid = deriveMetadataUid(customer?.metadata || null);
             }
           }
 
+          const planKey = safePlanKey(subscription.metadata?.planKey);
+          const plan = getPlanConfig(planKey);
+          const periodEnd = new Date(subscription.current_period_end * 1000);
+          const status = subscription.status;
+          const snapshot: CheckoutSessionSnapshot = {
+            sessionId: subscription.id,
+            email: '',
+            displayName: null,
+            planKey,
+            planName: plan.name,
+            status,
+            tier: subscription.metadata?.tier || plan.tier,
+            billingInterval: (subscription.metadata?.billingInterval as 'month' | 'year' | undefined) || plan.billingInterval,
+            seatCount: Number.parseInt(subscription.metadata?.seatCount || '1', 10) || 1,
+            analyticsValue: plan.analyticsValue,
+            customerId,
+            subscriptionId: subscription.id,
+            attachedUid: uid,
+            premiumUnlocked: isPremiumContentUnlocked(status),
+            isTrialing: status === 'trialing',
+            periodEnd,
+          };
+
           if (uid) {
-            const premiumUnlocked = isPremiumContentUnlocked(subscription.status);
-            const periodEnd = new Date(subscription.current_period_end * 1000);
-            const planKey = subscription.metadata?.planKey || 'explorer';
-            const tier = subscription.metadata?.tier || planKey;
-            const seatCount = parseInt(subscription.metadata?.seatCount || '1', 10);
-            const isTrialing = subscription.status === 'trialing';
-
-            await admin.firestore().doc(`users/${uid}`).set(
-              {
-                premium: premiumUnlocked,
-                subscriptionStatus: subscription.status,
-                subscriptionTier: tier,
-                seatCount,
-                trialEndsAt: isTrialing ? admin.firestore.Timestamp.fromDate(periodEnd) : null,
-                subscriptionEndsAt: !isTrialing ? admin.firestore.Timestamp.fromDate(periodEnd) : null,
-                subscriptionUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
-              },
-              { merge: true }
-            );
-
-            await admin.firestore().doc(`users/${uid}/subscriptions/current`).set(
-              {
-                status: subscription.status,
-                plan: planKey,
-                tier,
-                seatCount,
-                period_end: admin.firestore.Timestamp.fromDate(periodEnd),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-              },
-              { merge: true }
-            );
-
-            console.log(`Subscription updated for user ${uid}: ${subscription.status}, tier: ${tier}`);
+            await persistSubscriptionForUser(uid, snapshot);
+            const sessionDoc = await findCheckoutSessionDocByField('subscriptionId', subscription.id);
+            if (sessionDoc) {
+              await sessionDoc.ref.set(
+                {
+                  attachedUid: uid,
+                  status,
+                  premiumUnlocked: snapshot.premiumUnlocked,
+                  isTrialing: snapshot.isTrialing,
+                  periodEnd: toTimestamp(periodEnd),
+                  updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                },
+                { merge: true }
+              );
+            }
+            console.log(`Subscription updated for user ${uid}: ${status}, tier: ${snapshot.tier}`);
           } else {
+            await updatePendingCheckoutByStripeIds({
+              customerId,
+              subscriptionId: subscription.id,
+              status,
+              premiumUnlocked: snapshot.premiumUnlocked,
+              periodEnd,
+              planKey,
+              tier: snapshot.tier,
+              billingInterval: snapshot.billingInterval,
+              seatCount: snapshot.seatCount,
+            });
             console.error('Could not find Firebase UID for subscription update', subscription.id);
           }
           break;
         }
       }
-    } catch (err: any) {
-      console.error('Error processing webhook event:', err);
-      res.status(500).send(`Webhook processing error: ${err.message}`);
+    } catch (error: any) {
+      console.error('Error processing webhook event:', error);
+      res.status(500).send(`Webhook processing error: ${error.message}`);
       return;
     }
 
@@ -762,7 +1133,7 @@ export const validateIdMappingV2 = onCall(
     }
 
     const uid = request.data?.uid || request.auth.uid;
-    const userRef = admin.firestore().doc(`users/${uid}`);
+    const userRef = db.doc(`users/${uid}`);
     const userSnap = await userRef.get();
 
     if (!userSnap.exists) {
@@ -787,12 +1158,12 @@ export const validateIdMappingV2 = onCall(
         } else {
           results.error = 'Stripe customer was deleted';
         }
-      } catch (err: any) {
-        results.error = err.message;
+      } catch (error: any) {
+        results.error = error.message;
       }
     }
 
-    const subSnap = await admin.firestore().doc(`users/${uid}/subscriptions/current`).get();
+    const subSnap = await db.doc(`users/${uid}/subscriptions/current`).get();
     if (subSnap.exists) {
       results.subscription = subSnap.data();
     }
@@ -813,7 +1184,7 @@ export const backfillStripeCustomersV2 = onCall(
       throw new HttpsError('failed-precondition', 'Stripe not configured');
     }
 
-    const usersSnapshot = await admin.firestore()
+    const usersSnapshot = await db
       .collection('users')
       .where('stripeCustomerId', '==', null)
       .limit(100)
@@ -821,13 +1192,13 @@ export const backfillStripeCustomersV2 = onCall(
 
     const results: any[] = [];
 
-    for (const doc of usersSnapshot.docs) {
-      const userData = doc.data();
-      const uid = doc.id;
+    for (const docSnap of usersSnapshot.docs) {
+      const userData = docSnap.data();
+      const uid = docSnap.id;
 
       try {
         const customer = await stripe.customers.create({
-          email: userData.email || undefined,
+          email: normalizeEmail(userData.email) || undefined,
           metadata: {
             firebaseUID: uid,
             firebase_uid: uid,
@@ -835,7 +1206,7 @@ export const backfillStripeCustomersV2 = onCall(
           name: userData.displayName || undefined,
         });
 
-        await admin.firestore().doc(`users/${uid}`).set(
+        await db.doc(`users/${uid}`).set(
           {
             stripeCustomerId: customer.id,
             stripeCustomerCreatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -844,8 +1215,8 @@ export const backfillStripeCustomersV2 = onCall(
         );
 
         results.push({ uid, status: 'created', customerId: customer.id });
-      } catch (err: any) {
-        results.push({ uid, status: 'error', error: err.message });
+      } catch (error: any) {
+        results.push({ uid, status: 'error', error: error.message });
       }
     }
 
