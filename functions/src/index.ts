@@ -28,6 +28,8 @@ export { verifyRecaptcha } from './recaptcha';
 export {
   onUserCreateV2,
   createCheckoutSessionV2,
+  getCheckoutSessionSummaryV2,
+  attachCheckoutSessionToUserV2,
   stripeWebhookV2,
   validateIdMappingV2,
   backfillStripeCustomersV2,
