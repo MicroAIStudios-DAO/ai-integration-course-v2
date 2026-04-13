@@ -28,6 +28,8 @@ type CheckoutPlanKey = 'explorer' | 'pro' | 'corporate';
 
 type CheckoutPlanDefinition = {
   stripePriceId: string;
+  stripePriceLookupKey: string;
+  stripeProductId: string;
   tier: CheckoutPlanKey;
   billingInterval: 'month' | 'year';
   trialDays: number;
@@ -59,6 +61,7 @@ type CheckoutSessionSnapshot = {
 };
 
 const db = admin.firestore();
+const stripePriceIdCache = new Map<CheckoutPlanKey, string>();
 
 const getStripePriceId = (
   envName: 'STRIPE_PRICE_EXPLORER_MONTHLY' | 'STRIPE_PRICE_PRO_ANNUAL' | 'STRIPE_PRICE_CORPORATE_MONTHLY'
@@ -87,6 +90,8 @@ const getPlanConfig = (
   const planConfig: Record<CheckoutPlanKey, CheckoutPlanDefinition> = {
     explorer: {
       stripePriceId: getStripePriceId('STRIPE_PRICE_EXPLORER_MONTHLY'),
+      stripePriceLookupKey: 'ai_integration_course_explorer_monthly',
+      stripeProductId: 'prod_UIh7e0eEE8c2kA',
       tier: 'explorer',
       billingInterval: 'month',
       trialDays: 7,
@@ -97,6 +102,8 @@ const getPlanConfig = (
     },
     pro: {
       stripePriceId: getStripePriceId('STRIPE_PRICE_PRO_ANNUAL'),
+      stripePriceLookupKey: 'ai_integration_course_pro_annual',
+      stripeProductId: 'prod_UIh7BnELJthIQb',
       tier: 'pro',
       billingInterval: 'year',
       trialDays: 7,
@@ -109,6 +116,8 @@ const getPlanConfig = (
     },
     corporate: {
       stripePriceId: getStripePriceId('STRIPE_PRICE_CORPORATE_MONTHLY'),
+      stripePriceLookupKey: 'ai_integration_course_corporate_monthly',
+      stripeProductId: 'prod_UIh7i0BufNgOev',
       tier: 'corporate',
       billingInterval: 'month',
       trialDays: 0,
@@ -123,7 +132,12 @@ const getPlanConfig = (
   if (!config) {
     throw new HttpsError('invalid-argument', `Invalid plan key: ${planKey}`);
   }
-  if (options?.requireStripePrice && !config.stripePriceId) {
+  if (
+    options?.requireStripePrice &&
+    !config.stripePriceId &&
+    !config.stripePriceLookupKey &&
+    !config.stripeProductId
+  ) {
     throw new HttpsError('failed-precondition', `Stripe price not configured for plan: ${planKey}`);
   }
   return config;
@@ -157,6 +171,56 @@ function getStripe() {
     stripe = new Stripe(secret || '', { apiVersion: '2024-06-20' });
   }
   return { stripe, secret };
+}
+
+async function resolveCheckoutStripePriceId(
+  planKey: CheckoutPlanKey,
+  plan: CheckoutPlanDefinition
+): Promise<string> {
+  if (plan.stripePriceId) {
+    stripePriceIdCache.set(planKey, plan.stripePriceId);
+    return plan.stripePriceId;
+  }
+
+  const cachedPriceId = stripePriceIdCache.get(planKey);
+  if (cachedPriceId) {
+    return cachedPriceId;
+  }
+
+  const { stripe } = getStripe();
+
+  if (plan.stripePriceLookupKey) {
+    const prices = await stripe.prices.list({
+      lookup_keys: [plan.stripePriceLookupKey],
+      active: true,
+      limit: 1,
+    });
+    const matchedPriceId = prices.data[0]?.id;
+    if (matchedPriceId) {
+      stripePriceIdCache.set(planKey, matchedPriceId);
+      return matchedPriceId;
+    }
+  }
+
+  if (plan.stripeProductId) {
+    const product = await stripe.products.retrieve(plan.stripeProductId, {
+      expand: ['default_price'],
+    });
+    const defaultPriceId =
+      typeof product.default_price === 'string'
+        ? product.default_price
+        : product.default_price?.id || '';
+
+    if (defaultPriceId) {
+      stripePriceIdCache.set(planKey, defaultPriceId);
+      return defaultPriceId;
+    }
+  }
+
+  throw new HttpsError(
+    'failed-precondition',
+    `Stripe checkout price could not be resolved for plan: ${planKey}`
+  );
 }
 
 function generateUserApiKey(): string {
@@ -759,6 +823,7 @@ export const createCheckoutSessionV2 = onCall(
     }
 
     const customerId = uid ? await ensureStrictMapping(uid, email) : null;
+    const checkoutPriceId = await resolveCheckoutStripePriceId(planKey, plan);
 
     const session = await stripe.checkout.sessions.create({
       ...(customerId ? { customer: customerId } : {}),
@@ -766,7 +831,7 @@ export const createCheckoutSessionV2 = onCall(
       mode: 'subscription',
       payment_method_collection: 'always',
       payment_method_types: ['card'],
-      line_items: [{ price: plan.stripePriceId, quantity: 1 }],
+      line_items: [{ price: checkoutPriceId, quantity: 1 }],
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: baseMetadata,

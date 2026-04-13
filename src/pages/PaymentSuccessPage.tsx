@@ -159,14 +159,14 @@ const PaymentSuccessPage: React.FC = () => {
       ? "Checkout confirmed"
       : redirectTarget === "login"
         ? "Sign in to attach your access"
-        : "Create your login to unlock access";
+        : "Set your password to unlock access";
 
   const body =
     redirectTarget === "welcome"
       ? "Your account is already connected to this checkout. Taking you to your welcome dashboard now."
       : redirectTarget === "login"
         ? `We found an existing account for ${summary.email}. Sign in next so this paid checkout lands on the right login.`
-        : `Stripe checkout is complete for ${summary.planName}. Next you will create your permanent login so your billing, lessons, and progress stay attached to one account.`;
+        : `Stripe checkout is complete for ${summary.planName}. Next you will set your password so your billing, lessons, and progress stay attached to one account.`;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 flex items-center justify-center px-4">
@@ -205,7 +205,7 @@ const PaymentSuccessPage: React.FC = () => {
               to={`/signup?checkout_session_id=${summary.sessionId}`}
               className="inline-flex items-center justify-center rounded-lg bg-emerald-400 px-6 py-3 font-semibold text-slate-950 transition-colors hover:bg-emerald-300"
             >
-              Create your login
+              Set your password
             </Link>
           )}
           <Link

@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { updateProfile } from "firebase/auth";
 import { useAuth } from "../../context/AuthContext";
 import { useReCaptcha } from "../../hooks/useReCaptcha";
 import { trackGoogleAdsSignupConversion, trackSignUp } from "../../utils/analytics";
@@ -15,7 +14,6 @@ import {
 import { syncUserIdentityProfile } from "../../firebaseService";
 
 const SignupPage: React.FC = () => {
-  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -58,7 +56,6 @@ const SignupPage: React.FC = () => {
 
         setPlanKey(summary.planKey);
         setEmail(summary.email);
-        setDisplayName(summary.displayName || "");
         setError(null);
       } catch (sessionError: any) {
         if (!active) return;
@@ -100,14 +97,9 @@ const SignupPage: React.FC = () => {
 
     try {
       const userCredential = await signup(email, password);
-      const cleanDisplayName = displayName.trim();
-
-      if (cleanDisplayName) {
-        await updateProfile(userCredential.user, { displayName: cleanDisplayName });
-      }
 
       await syncUserIdentityProfile(userCredential.user);
-      await attachCheckoutSessionToCurrentUser(checkoutSessionId, cleanDisplayName || undefined);
+      await attachCheckoutSessionToCurrentUser(checkoutSessionId);
       trackSignUp("Email");
 
       if (selectedPlan && selectedPlan.analyticsValue > 0) {
@@ -119,7 +111,8 @@ const SignupPage: React.FC = () => {
       return;
     } catch (signupError: any) {
       if (signupError?.code === "auth/email-already-in-use") {
-        setError("That email already has an account. Sign in to attach this checkout and continue.");
+        navigate(`/login?checkout_session_id=${checkoutSessionId}`, { replace: true });
+        return;
       } else {
         setError(signupError?.message || "Failed to secure your account. Please try again.");
       }
@@ -166,8 +159,8 @@ const SignupPage: React.FC = () => {
           </h2>
           <p className="mt-2 text-sm text-gray-600 font-body">
             {selectedPlan
-              ? `Checkout is complete for ${selectedPlan.name}. Add your username and password now so your access, progress, and billing stay on one account.`
-              : "Checkout is complete. Add your username and password now so your access, progress, and billing stay on one account."}
+              ? `Checkout is complete for ${selectedPlan.name}. Create your password now so your access, progress, and billing stay on one account.`
+              : "Checkout is complete. Create your password now so your access, progress, and billing stay on one account."}
           </p>
         </div>
 
@@ -178,20 +171,6 @@ const SignupPage: React.FC = () => {
         ) : (
           <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
             <div className="space-y-4">
-              <div>
-                <label htmlFor="display-name" className="sr-only">Username</label>
-                <input
-                  id="display-name"
-                  name="displayName"
-                  type="text"
-                  autoComplete="nickname"
-                  required
-                  className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm font-body form-input"
-                  placeholder="Username shown on your welcome page"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                />
-              </div>
               <div>
                 <label htmlFor="email-address" className="sr-only">Email address</label>
                 <input
@@ -206,7 +185,7 @@ const SignupPage: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
-                <p className="mt-2 text-xs text-gray-500">Sign-in will always use this Stripe checkout email.</p>
+                <p className="mt-2 text-xs text-gray-500">Sign-in will always use this Stripe checkout email. You can add a display name later.</p>
               </div>
               <div className="relative">
                 <label htmlFor="password" className="sr-only">Password</label>
@@ -218,7 +197,7 @@ const SignupPage: React.FC = () => {
                   required
                   minLength={6}
                   className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm font-body pr-12"
-                  placeholder="Password (min. 6 characters)"
+                  placeholder="Create a password (min. 6 characters)"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
