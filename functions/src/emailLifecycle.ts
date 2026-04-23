@@ -13,8 +13,8 @@ if (!admin.apps.length) {
   admin.initializeApp();
 }
 
-const DEFAULT_FROM = 'AI Integration Course <Info@aiintegrationcourse.com>';
-const DEFAULT_REPLY_TO = 'Info@aiintegrationcourse.com';
+const DEFAULT_FROM = 'AI Integration Course <info@aiintegrationcourse.com>';
+const DEFAULT_REPLY_TO = 'info@aiintegrationcourse.com';
 const DEFAULT_DASHBOARD_URL = 'https://aiintegrationcourse.com/dashboard';
 const DEFAULT_CURRICULUM_URL = 'https://aiintegrationcourse.com/curriculum';
 const DEFAULT_INTRO_LESSON_URL = 'https://aiintegrationcourse.com/lessons/intro';

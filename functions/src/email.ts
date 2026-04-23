@@ -13,7 +13,7 @@ const SMTP_PASS = defineSecret('SMTP_PASS');
 
 const DEFAULT_SMTP_HOST = 'smtp.office365.com';
 const DEFAULT_SMTP_PORT = 587;
-const DEFAULT_FROM_EMAIL = 'Info@aiintegrationcourse.com';
+const DEFAULT_FROM_EMAIL = 'info@aiintegrationcourse.com';
 const DEFAULT_FROM_NAME = 'AI Integration Course';
 const MAX_SEND_ATTEMPTS = 5;
 const CLAIMABLE_STATUSES = new Set(['pending', 'retry']);

@@ -49,7 +49,7 @@ export const welcomeEmailTemplate: EmailTemplateDefinition = {
   templateVersion: 'v1',
   subject: 'Welcome to AI Integration Course — your first build starts here',
   previewText: 'Start with lesson 1 and get your first working AI workflow moving.',
-  replyTo: 'Info@aiintegrationcourse.com',
+  replyTo: 'info@aiintegrationcourse.com',
   ctaLabel: 'Start Lesson 1',
   body: `Hi {{firstName}},
 
@@ -105,7 +105,7 @@ export const trialStartedEmailTemplate: EmailTemplateDefinition = {
   templateVersion: 'v1',
   subject: 'Your 7-Day Trial is Active: Here is your roadmap',
   previewText: 'Your trial is officially live. Here is exactly what you can build in the next 7 days.',
-  replyTo: 'Info@aiintegrationcourse.com',
+  replyTo: 'info@aiintegrationcourse.com',
   ctaLabel: 'Access Your Trial Lessons',
   body: `Success! Your trial of the {{subscriptionTier}} plan is now active.
 
@@ -138,7 +138,7 @@ export const playbookDeliveryTemplate: EmailTemplateDefinition = {
   templateVersion: 'v1',
   subject: 'Your Prompt Engineering Automation Playbook is ready',
   previewText: 'Here is your playbook download so you can build with a working blueprint, not guesswork.',
-  replyTo: 'Info@aiintegrationcourse.com',
+  replyTo: 'info@aiintegrationcourse.com',
   ctaLabel: 'Download the Playbook',
   body: `Hi {{firstName}},
 
@@ -167,7 +167,7 @@ export const trialDay3NudgeTemplate: EmailTemplateDefinition = {
   templateVersion: 'v1',
   subject: 'Day 3 check-in: don’t let your trial drift',
   previewText: 'A small step today beats waiting for the perfect moment.',
-  replyTo: 'Info@aiintegrationcourse.com',
+  replyTo: 'info@aiintegrationcourse.com',
   ctaLabel: 'Continue the Course',
   body: `Hi {{firstName}},
 
@@ -216,7 +216,7 @@ export const trialExpiredOfferTemplate: EmailTemplateDefinition = {
   templateVersion: 'v2',
   subject: 'Your trial ended. Pick back up for $29.99/month',
   previewText: 'Your setup window closed, but the fastest path back in is still open.',
-  replyTo: 'Info@aiintegrationcourse.com',
+  replyTo: 'info@aiintegrationcourse.com',
   ctaLabel: 'Restart Your Access',
   body: `Hi {{firstName}},
 
@@ -306,7 +306,7 @@ export const paidWelcomeEmailTemplate: EmailTemplateDefinition = {
   templateVersion: 'v1',
   subject: 'You’re fully in — your paid access is live',
   previewText: 'Your paid plan is active. Here’s the best next move.',
-  replyTo: 'Info@aiintegrationcourse.com',
+  replyTo: 'info@aiintegrationcourse.com',
   ctaLabel: 'Enter the Premium Path',
   body: `Hi {{firstName}},
 
