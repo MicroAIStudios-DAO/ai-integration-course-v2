@@ -14,7 +14,10 @@ type LessonContentDoc = {
   markdown?: string;
 };
 
-const FOUNDING_ARCHITECT_TRIAL_LESSON_ID = 'lesson_founders_01_content_architect';
+const PUBLIC_PREVIEW_LESSON_IDS = new Set([
+  'lesson_founders_01_content_architect',
+  'lesson_founders_02_informed_architect',
+]);
 
 export const getLessonContentDocumentId = (courseId: string, moduleId: string, lessonId: string): string =>
   `${courseId}__${moduleId}__${lessonId}`;
@@ -121,6 +124,9 @@ export const getSecureLessonContent = async (
   return data.content || data.markdown || null;
 };
 
+export const isPublicPreviewLesson = (lesson: LessonAccessSubject): boolean =>
+  typeof lesson?.id === 'string' && PUBLIC_PREVIEW_LESSON_IDS.has(lesson.id);
+
 // --- User Profile & Progress --- //
 
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
@@ -144,25 +150,6 @@ export const userHasPaidAccess = (profile: UserProfile | null | undefined): bool
   return false;
 };
 
-const toDate = (value: UserProfile['trialEndsAt'] | UserProfile['trialEndDate']): Date | null => {
-  if (!value) return null;
-  if (value instanceof Date) return value;
-  if (typeof (value as any)?.toDate === 'function') return (value as any).toDate();
-  if (typeof value === 'string') {
-    const parsed = new Date(value);
-    return Number.isNaN(parsed.getTime()) ? null : parsed;
-  }
-  return null;
-};
-
-export const userHasActiveTrial = (profile: UserProfile | null | undefined): boolean => {
-  if (!profile) return false;
-  if (profile.subscriptionStatus !== 'trialing') return false;
-
-  const trialEndsAt = toDate(profile.trialEndsAt) || toDate(profile.trialEndDate);
-  return !!trialEndsAt && trialEndsAt > new Date();
-};
-
 export const isAdminProfile = (profile: UserProfile | null | undefined): boolean => {
   if (!profile) return false;
   return profile.isAdmin === true || profile.role === 'admin';
@@ -175,7 +162,9 @@ export const userHasFounderAccess = (profile: UserProfile | null | undefined): b
 };
 
 export const isFreeLesson = (lesson: LessonAccessSubject): boolean =>
-  lesson?.tier === 'free' || lesson?.isFree === true;
+  lesson?.tier === 'free' ||
+  lesson?.isFree === true ||
+  isPublicPreviewLesson(lesson);
 
 export const isFoundersLesson = (lesson: LessonAccessSubject): boolean =>
   lesson?.tier === 'founders';
@@ -192,9 +181,6 @@ export const userCanAccessLesson = (
     return true;
   }
 
-  if (lesson?.id === FOUNDING_ARCHITECT_TRIAL_LESSON_ID && userHasActiveTrial(profile)) {
-    return true;
-  }
 
   if (isFoundersLesson(lesson)) {
     return userHasFounderAccess(profile);

@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { trackAITutorQueried } from "../utils/analytics";
 
 type Props = {
   lessonId: string;
@@ -29,10 +30,12 @@ export default function AITutor({ lessonId, premium, hasAccess, supportEmail }: 
       console.error("Subscribe to access premium tutor."); 
       return; 
     }
+    const question = q.trim();
     setError(null);
     setLoading(true);
-    setMessages(m => [...m, { role: "user", content: q }]);
-    const question = q; setQ("");
+    setMessages(m => [...m, { role: "user", content: question }]);
+    setQ("");
+    trackAITutorQueried(lessonId, Boolean(premium));
     try {
       const idToken = currentUser ? await currentUser.getIdToken() : null;
       const res = await fetch(tutorUrl, {

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
+import { trackFreeStarterOptIn } from '../utils/analytics';
 
 const GITHUB_REPO_URL = 'https://github.com/MicroAIStudios-DAO/ai-integration-course-v2';
 const LINKEDIN_URL = 'https://www.linkedin.com/in/blainecasey';
@@ -24,6 +25,9 @@ const CASE_STUDIES = [
 ];
 
 const AboutPage: React.FC = () => {
+  const handleFreeStarterOptIn = () => {
+    trackFreeStarterOptIn('about_browse_free_lessons', '/courses');
+  };
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <SEO
@@ -193,6 +197,7 @@ const AboutPage: React.FC = () => {
             </Link>
             <Link
               to="/courses"
+              onClick={handleFreeStarterOptIn}
               className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-6 py-3 font-semibold text-slate-900 hover:bg-slate-100 transition-colors"
             >
               Browse free lessons

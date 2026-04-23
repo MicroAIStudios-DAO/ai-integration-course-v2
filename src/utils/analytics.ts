@@ -24,13 +24,16 @@ const GA4_MEASUREMENT_ID = 'G-15SDDF1S5S';
 
 // Google Ads Conversion ID and Labels
 const GOOGLE_ADS_ID = 'AW-17956658756';
+// SECONDARY: fires on account creation (signup after checkout). Demoted from primary
+// so Smart Bidding optimizes toward actual revenue (purchase), not shallow signups.
 const GOOGLE_ADS_SIGNUP_LABEL = 'YJI_CJzD95EcEMS8s_JC';
-// Pro_Trial_Value secondary conversion label currently embedded in the live funnel:
-//   AW-17956658756/wFMCIPj_5gcEMS8s_JC
-// Google Ads action:
-//   Name: Pro_Trial_Value | Category: Lead | Value: Use value from tag | Count: One
-//   Set as: Secondary action (avoids double-counting with trial_start primary)
-const GOOGLE_ADS_PRO_TRIAL_LABEL = 'wFMCIPj_5gcEMS8s_JC'; // AW-17956658756/wFMCIPj_5gcEMS8s_JC
+// PRIMARY: fires on verified paid subscription (PaymentSuccessPage).
+// This is the conversion action Google Ads should optimize toward with tROAS/value-based bidding.
+// TODO: Create this conversion action in Google Ads → Goals → Conversions → New:
+//   Name: Paid_Subscription  |  Category: Purchase  |  Value: Use different values  |  Count: One
+//   Set as: PRIMARY action  |  Attribution: Data-driven
+//   Then paste the label here:
+const GOOGLE_ADS_PURCHASE_LABEL = 'wFMCIPj_5gcEMS8s_JC'; // Repurposed from Pro_Trial_Value (no trials exist)
 
 // Type definitions for gtag
 declare global {
@@ -42,35 +45,19 @@ declare global {
 
 /**
  * Initialize GA4 + Google Ads tracking
- * Call this once in App.tsx or index.tsx
+ * gtag.js is loaded once in index.html with both AW- and G- configs.
+ * This function ensures the gtag reference is available for SPA use.
  */
 export const initGA4 = (): void => {
-  // Check if already initialized
-  if (typeof window !== 'undefined' && !window.gtag) {
-    // Add gtag script (use GA4 ID as primary; Google Ads config piggybacks)
-    const script = document.createElement('script');
-    script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA4_MEASUREMENT_ID}`;
-    document.head.appendChild(script);
-
-    // Initialize dataLayer and gtag function
-    window.dataLayer = window.dataLayer || [];
-    window.gtag = function gtag() {
-      window.dataLayer.push(arguments);
-    };
-    window.gtag('js', new Date());
-
-    // Configure GA4
-    window.gtag('config', GA4_MEASUREMENT_ID, {
-      send_page_view: true,
-      cookie_flags: 'SameSite=None;Secure',
-    });
-
-    // Configure Google Ads conversion tracking (remarketing + conversion linker)
-    window.gtag('config', GOOGLE_ADS_ID);
-
-    console.log('[Analytics] GA4 initialized:', GA4_MEASUREMENT_ID);
-    console.log('[Analytics] Google Ads initialized:', GOOGLE_ADS_ID);
+  if (typeof window !== 'undefined') {
+    // gtag.js is loaded in index.html — just ensure the function reference exists
+    if (!window.gtag) {
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function gtag() {
+        window.dataLayer.push(arguments);
+      };
+    }
+    console.log('[Analytics] GA4 + Google Ads ready:', GA4_MEASUREMENT_ID, GOOGLE_ADS_ID);
   }
 };
 
@@ -121,6 +108,19 @@ export const trackSignUp = (method: 'Google' | 'Email' | 'GitHub' | string): voi
   }
 };
 
+export const trackFreeStarterOptIn = (
+  source: string,
+  destination: string = '/courses'
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'free_starter_optin', {
+      source,
+      destination,
+    });
+    console.log('[Analytics] free_starter_optin:', { source, destination });
+  }
+};
+
 /**
  * Track Google Ads conversion for completed account creation.
  * Use this after the user finishes signup so trials and paid enrollments both count
@@ -148,55 +148,43 @@ export const trackGoogleAdsSignupConversion = (
 };
 
 /**
- * Track Pro trial start as a secondary Google Ads conversion with predictive lead value.
+ * Track paid subscription as the PRIMARY Google Ads conversion with actual plan value.
  *
- * ONLY fires for Pro plan (planKey === 'pro') — NOT Explorer, NOT Corporate.
+ * Fires on PaymentSuccessPage AFTER the checkout session is verified as completed.
+ * This is the conversion action Google Ads should optimize with tROAS / value-based bidding.
  *
- * Rationale: Pro annual ($239.88/yr) trials have high purchase intent.
- * Seeding the Google Ads algorithm with $119.94 (50% of annual price) gives
- * Maximize Conversion Value a real signal to optimize against during the
- * 7-day trial window, instead of waiting for the Day-7 rebill to confirm value.
+ * Enhanced conversions: passes the subscriber's email so Google can match the
+ * ad click → conversion even when cookies are blocked or cross-device.
+ * Google hashes the email client-side before sending it to their servers.
  *
- * This is a SECONDARY conversion action — it does NOT replace trial_start.
- * It runs alongside trial_start on the same page load for Pro trials only.
- *
- * Google Ads setup required (one-time):
- *   Goals → Conversions → New conversion action → Website
- *   Name: Pro_Trial_Value
- *   Category: Lead (NOT Purchase — this is a predictive signal, not a charge)
- *   Value: Use different values for each conversion
- *   Count: One (one per trial start, not per session)
- *   Attribution: Data-driven (or Last click if DDA unavailable)
- *   Set as: Secondary action (prevents double-counting in bid strategy)
- *   After creating: replace GOOGLE_ADS_PRO_TRIAL_LABEL with the new label above.
+ * transaction_id (Stripe session ID) deduplicates if the user reloads the page.
  */
-export const trackProTrialValue = (transactionId: string): void => {
-  const PRO_TRIAL_LEAD_VALUE = 119.94; // 50% of $239.88 annual price
+export const trackGoogleAdsPurchaseConversion = (
+  transactionId: string,
+  value: number,
+  email: string,
+  currency: string = 'USD'
+): void => {
   if (typeof window !== 'undefined' && window.gtag) {
-    // Primary: fire Google Ads secondary conversion event.
-    // transaction_id (mapped to order_id) is passed to Google Ads for deduplication:
-    // if the /payment-success page reloads or the user navigates back, Google Ads
-    // will deduplicate on this ID and count only one conversion per Stripe session.
+    // Set enhanced conversion data (plain-text email; Google hashes it client-side)
+    if (email) {
+      window.gtag('set', 'user_data', { email: email.trim().toLowerCase() });
+    }
+
+    // Fire the Google Ads purchase conversion
     window.gtag('event', 'conversion', {
-      send_to: `${GOOGLE_ADS_ID}/${GOOGLE_ADS_PRO_TRIAL_LABEL}`,
-      value: PRO_TRIAL_LEAD_VALUE,
-      currency: 'USD',
-      transaction_id: transactionId, // Stripe session_id — prevents duplicate counting
-    });
-    // Secondary: fire named GA4 event for audience segmentation and reporting
-    window.gtag('event', 'Pro_Trial_Value', {
-      value: PRO_TRIAL_LEAD_VALUE,
-      currency: 'USD',
-      plan: 'pro',
+      send_to: `${GOOGLE_ADS_ID}/${GOOGLE_ADS_PURCHASE_LABEL}`,
+      value,
+      currency,
       transaction_id: transactionId,
-      event_category: 'conversion',
-      event_label: 'pro_trial_lead_value',
     });
-    console.log('[Analytics] Pro_Trial_Value fired:', {
-      send_to: `${GOOGLE_ADS_ID}/${GOOGLE_ADS_PRO_TRIAL_LABEL}`,
-      value: PRO_TRIAL_LEAD_VALUE,
-      currency: 'USD',
+
+    console.log('[Analytics] Google Ads purchase conversion fired:', {
+      send_to: `${GOOGLE_ADS_ID}/${GOOGLE_ADS_PURCHASE_LABEL}`,
+      value,
+      currency,
       transaction_id: transactionId,
+      enhanced_conversions: Boolean(email),
     });
   }
 };
@@ -235,25 +223,33 @@ export const trackViewPricing = (
 export const trackBeginCheckout = (
   price: number,
   currency: string = 'USD',
-  planName: string = 'Pro AI Architect',
-  planId: string = 'pro'
+  planName: string = 'Annual',
+  planId: string = 'pro',
+  quantity: number = 1
 ): void => {
   if (typeof window !== 'undefined' && window.gtag) {
-    window.gtag('event', 'begin_checkout', {
+    const payload = {
       currency: currency,
       value: price,
+      plan_id: planId,
+      plan_name: planName,
       items: [
         {
           item_id: planId,
           item_name: planName,
-          price: price,
-          quantity: 1,
+          price: quantity > 0 ? Number((price / quantity).toFixed(2)) : price,
+          quantity,
         },
       ],
-    });
-    console.log('[Analytics] begin_checkout:', { price, currency, planName });
+    };
+
+    window.gtag('event', 'begin_checkout', payload);
+    window.gtag('event', 'checkout_initiated', payload);
+    console.log('[Analytics] checkout_initiated:', { price, currency, planName, planId });
   }
 };
+
+export const trackCheckoutInitiated = trackBeginCheckout;
 
 /**
  * Track successful purchase (paid conversions only — NOT trials)
@@ -332,6 +328,23 @@ export const trackLessonComplete = (
   }
 };
 
+export const trackLesson1Completed = (
+  lessonId: string,
+  lessonTitle: string,
+  moduleId: string,
+  completionMethod: 'video_end' | 'button_click' | 'auto' = 'auto'
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'lesson_1_completed', {
+      lesson_id: lessonId,
+      lesson_title: lessonTitle,
+      module_id: moduleId,
+      completion_method: completionMethod,
+    });
+    console.log('[Analytics] lesson_1_completed:', { lessonId, completionMethod });
+  }
+};
+
 /**
  * Track video progress (for engagement metrics)
  */
@@ -350,6 +363,19 @@ export const trackVideoProgress = (
         percent_complete: percentComplete,
       });
     }
+  }
+};
+
+export const trackAITutorQueried = (
+  lessonId: string,
+  premium: boolean = false
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'ai_tutor_queried', {
+      lesson_id: lessonId,
+      premium,
+    });
+    console.log('[Analytics] ai_tutor_queried:', { lessonId, premium });
   }
 };
 
@@ -376,7 +402,7 @@ export const trackCTAClick = (
  */
 export const setUserProperties = (properties: {
   user_id?: string;
-  subscription_status?: 'free' | 'trial' | 'pro' | 'corporate';
+  subscription_status?: 'free' | 'explorer' | 'pro' | 'corporate' | 'trial';
   signup_date?: string;
   last_lesson_date?: string;
   lessons_completed?: number;
@@ -435,14 +461,18 @@ const analytics = {
   trackPageView,
   trackCustomEvent,
   trackSignUp,
+  trackFreeStarterOptIn,
   trackGoogleAdsSignupConversion,
-  trackProTrialValue,
+  trackGoogleAdsPurchaseConversion,
   trackViewPricing,
   trackBeginCheckout,
+  trackCheckoutInitiated,
   trackPurchase,
   trackLessonStart,
   trackLessonComplete,
+  trackLesson1Completed,
   trackVideoProgress,
+  trackAITutorQueried,
   trackCTAClick,
   setUserProperties,
   trackAudienceEvent,

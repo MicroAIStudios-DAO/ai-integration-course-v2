@@ -6,6 +6,7 @@ import { trackGoogleAdsSignupConversion, trackSignUp } from "../../utils/analyti
 import SEO from "../SEO";
 import { getPlan } from "../../config/pricing";
 import {
+  type CheckoutSessionSummary,
   attachCheckoutSessionToCurrentUser,
   clearStoredPlanKey,
   fetchCheckoutSessionSummary,
@@ -26,6 +27,7 @@ const SignupPage: React.FC = () => {
   const { executeAndVerify, isLoaded } = useReCaptcha();
   const checkoutSessionId = getCheckoutSessionIdFromSearch(location.search);
   const [planKey, setPlanKey] = useState<"explorer" | "pro" | "corporate" | null>(null);
+  const [checkoutSummary, setCheckoutSummary] = useState<CheckoutSessionSummary | null>(null);
 
   const selectedPlan = useMemo(() => (planKey ? getPlan(planKey) : null), [planKey]);
 
@@ -54,6 +56,7 @@ const SignupPage: React.FC = () => {
           return;
         }
 
+        setCheckoutSummary(summary);
         setPlanKey(summary.planKey);
         setEmail(summary.email);
         setError(null);
@@ -102,8 +105,12 @@ const SignupPage: React.FC = () => {
       await attachCheckoutSessionToCurrentUser(checkoutSessionId);
       trackSignUp("Email");
 
-      if (selectedPlan && selectedPlan.analyticsValue > 0) {
-        trackGoogleAdsSignupConversion(selectedPlan.analyticsValue, "USD");
+      // SECONDARY conversion — account creation after checkout.
+      // The PRIMARY purchase conversion fires earlier on PaymentSuccessPage.
+      // Mark this action as SECONDARY in Google Ads so Smart Bidding ignores it.
+      const signupConversionValue = checkoutSummary?.analyticsValue || selectedPlan?.analyticsValue || 0;
+      if (signupConversionValue > 0) {
+        trackGoogleAdsSignupConversion(signupConversionValue, "USD");
       }
 
       clearStoredPlanKey();

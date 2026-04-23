@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SubscribeButton from '../components/payment/SubscribeButton';
@@ -8,6 +8,7 @@ import SEO from '../components/SEO';
 import RoiGuaranteeBadge from '../components/conversion/RoiGuaranteeBadge';
 import ExitIntentLeadMagnet from '../components/lead-magnet/ExitIntentLeadMagnet';
 import { PlanKey, plans, formatPlanPrice } from '../config/pricing';
+import CopyableCodeBlock from '../components/common/CopyableCodeBlock';
 
 const CheckIcon = () => (
   <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -29,6 +30,8 @@ const PricingPage: React.FC = () => {
   const explorer = plans.explorer;
   const pro = plans.pro;
   const corporate = plans.corporate;
+  const [enterpriseSeats, setEnterpriseSeats] = useState(5);
+  const enterpriseMonthlyTotal = useMemo(() => Number((14.99 * enterpriseSeats).toFixed(2)), [enterpriseSeats]);
 
   useEffect(() => {
     trackViewPricing('USD', pro.analyticsValue, pro.name);
@@ -51,7 +54,8 @@ const PricingPage: React.FC = () => {
     return (
       <SubscribeButton
         planKey={planKey}
-        buttonText={plan.ctaText}
+        seatCount={planKey === 'corporate' ? enterpriseSeats : undefined}
+        buttonText={planKey === 'corporate' ? `Choose Enterprise · ${enterpriseSeats} Seats` : plan.ctaText}
         className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
           plan.featured
             ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
@@ -67,7 +71,7 @@ const PricingPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
       <SEO
         title="Pricing"
-        description="Compare the Explorer, Pro AI Architect, and Team plans for AI Integration Course. Start with a 7-day trial, then unlock the full premium curriculum after your first charge."
+        description="Compare the Monthly, Annual, and Enterprise billing options for AI Integration Course. Free lessons stay open, and premium builds unlock immediately after purchase."
         url="/pricing"
         keywords={[
           'AI Integration Course pricing',
@@ -104,7 +108,7 @@ const PricingPage: React.FC = () => {
             Ship Your First AI Workflow in 14 Days — Or Get Every Dollar Back
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
-            Start free. Go Pro to deploy. Scale your team with shared, audited AI workflows.
+            Three plans. One build path. Pick the billing that fits, start checkout, and unlock premium builds immediately.
           </p>
           <RoiGuaranteeBadge className="px-6 py-3 text-sm" />
 
@@ -115,7 +119,7 @@ const PricingPage: React.FC = () => {
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300">Founding Access Active</p>
             <h2 className="mt-3 text-2xl font-semibold text-white">Your founding benefits are already attached to this account.</h2>
             <p className="mt-3 max-w-3xl mx-auto text-sm leading-7 text-emerald-100">
-              Pricing stays at three tiers for comparison, but you do not need a separate plan. Your account already holds the permanent-access and priority-feedback benefits.
+              Pricing is now framed as three billing options for the same core system, but you do not need any of them. Your account already holds the permanent-access and priority-feedback benefits.
             </p>
           </div>
         )}
@@ -130,15 +134,16 @@ const PricingPage: React.FC = () => {
               <p className="text-gray-400">{explorer.tagline}</p>
             </div>
             <p className="mb-6 text-sm text-gray-400">
-              Best for evaluating the teaching style, lesson quality, and your first workflow idea before committing.
+              The full-price option. Best if you want maximum flexibility and the smallest commitment beyond the first payment.
             </p>
 
             <div className="mb-6">
               <span className="text-4xl font-bold text-white">${formatPlanPrice(explorer.displayPrice)}</span>
               <span className="text-gray-400">{explorer.intervalLabel}</span>
-              <p className="text-sm text-emerald-400 mt-1">7-day trial starts right away</p>
+              <p className="text-sm text-emerald-400 mt-1">Premium builds unlock immediately after purchase</p>
               <p className="text-xs text-slate-400 mt-2">No account wall before checkout. You will create your login after payment.</p>
-              <p className="text-xs text-gray-500 mt-1">Trial includes free lessons. Premium curriculum unlocks after the first charge.</p>
+              <p className="text-xs text-cyan-300 mt-1">Full monthly price for buyers who want flexibility first.</p>
+              <p className="text-xs text-gray-500 mt-1">Free lessons and the first two founder builds stay open. Premium curriculum unlocks as soon as you subscribe.</p>
             </div>
 
             <ul className="space-y-4 mb-8">
@@ -152,7 +157,7 @@ const PricingPage: React.FC = () => {
 
             {renderCTA('explorer')}
             <p className="text-center text-sm text-gray-400 mt-4">
-              Cancel anytime during the first 7 days.
+              Cancel anytime. Access stays live through the end of your billing period.
             </p>
           </div>
 
@@ -160,7 +165,7 @@ const PricingPage: React.FC = () => {
           <div className="bg-gradient-to-b from-indigo-900/50 to-slate-800/50 border-2 border-indigo-500 rounded-2xl p-8 relative">
             <div className="absolute -top-4 left-1/2 -translate-x-1/2">
               <span className="bg-indigo-600 text-white text-sm font-semibold px-4 py-1 rounded-full">
-                Best Value
+                Save $120/yr
               </span>
             </div>
 
@@ -169,7 +174,7 @@ const PricingPage: React.FC = () => {
               <p className="text-gray-400">{pro.tagline}</p>
             </div>
             <p className="mb-6 text-sm text-indigo-100">
-              Best for solo builders, operators, and founders who want one production-ready workflow this month.
+              The launch rate. Save $120/year compared to monthly billing and lock in $19.99/mo for 12 months.
             </p>
 
             <div className="mb-6">
@@ -185,10 +190,14 @@ const PricingPage: React.FC = () => {
               <p className="text-sm text-emerald-400 mt-1">
                 ${formatPlanPrice(pro.displayPrice)}/year &mdash; billed annually
               </p>
-              <p className="text-xs text-emerald-400 mt-1">7-day trial starts right away</p>
+              <p className="text-xs text-slate-500 mt-1">
+                Launch comparison: $359.88/year at the monthly rate vs $239.88/year on annual.
+              </p>
+              <p className="text-xs text-emerald-400 mt-1">Premium builds unlock immediately after purchase</p>
               <p className="text-xs text-slate-400 mt-2">Go straight from this page to secure checkout, then create your login after payment.</p>
-              <p className="text-xs text-gray-500 mt-1">Trial includes free lessons. Premium curriculum unlocks after the first charge.</p>
-              <p className="text-xs text-indigo-300 mt-1">Save 50% vs monthly equivalent</p>
+              <p className="text-xs text-gray-500 mt-1">Free lessons and the first two founder builds stay open. Premium curriculum unlocks immediately on the annual subscription.</p>
+              <p className="text-xs text-indigo-300 mt-1">Save $10/mo vs monthly billing — $120 back in your pocket each year</p>
+              <p className="text-xs text-slate-300 mt-1">Want more flexibility? Start monthly and switch to annual once the system is embedded.</p>
             </div>
 
             <ul className="space-y-4 mb-8">
@@ -218,13 +227,26 @@ const PricingPage: React.FC = () => {
               <p className="text-gray-400">{corporate.tagline}</p>
             </div>
             <p className="mb-6 text-sm text-gray-400">
-              Stop your team from guessing prompts. Standardize your AI operations with a shared library of audited, high-performance agents.
+              The team rate. Best for B2B clients who need multiple seats, shared standards, and a lower per-seat cost than individual billing.
             </p>
 
             <div className="mb-6">
-              <span className="text-4xl font-bold text-white">${formatPlanPrice(corporate.displayPrice)}</span>
-              <span className="text-gray-400">{corporate.intervalLabel}</span>
-              <p className="text-sm text-gray-500 mt-1">Up to {corporate.seatCount} seats included</p>
+              <span className="text-4xl font-bold text-white">${formatPlanPrice(enterpriseMonthlyTotal)}</span>
+              <span className="text-gray-400">/month</span>
+              <p className="text-sm text-gray-500 mt-1">$14.99 per seat · 5-seat minimum · 50% lower per seat than monthly</p>
+              <div className="mt-4">
+                <label htmlFor="enterprise-seats" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Seats</label>
+                <input
+                  id="enterprise-seats"
+                  type="number"
+                  min={5}
+                  step={1}
+                  value={enterpriseSeats}
+                  onChange={(e) => setEnterpriseSeats(Math.max(5, Number.parseInt(e.target.value || '5', 10) || 5))}
+                  className="mt-2 w-full rounded-lg border border-white/10 bg-slate-900/80 px-4 py-3 text-white focus:border-emerald-400 focus:outline-none"
+                />
+                <p className="mt-2 text-xs text-slate-400">Buy 5, 10, or more seats. Total updates instantly.</p>
+              </div>
             </div>
 
             <ul className="space-y-4 mb-8">
@@ -266,6 +288,65 @@ const PricingPage: React.FC = () => {
           </div>
         </div>
 
+        {/* No Blank-Screen Coding */}
+        <section className="mt-20 grid gap-8 lg:grid-cols-[1.05fr,0.95fr]">
+          <div className="rounded-3xl border border-cyan-400/20 bg-slate-800/40 p-8 text-left">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">No Blank-Screen Coding</p>
+            <h2 className="mt-3 text-3xl font-bold text-white">Copy. Paste. Customize. Ship.</h2>
+            <p className="mt-4 text-base leading-7 text-slate-300">
+              The hardest part for cold traffic is believing they can actually do this. So the first lessons are designed to prove it fast: open the guided environment, paste the starter script, swap in your business context, and run a real workflow.
+            </p>
+            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">Step 1</p>
+                <p className="mt-2 text-sm font-semibold text-white">Copy the starter script</p>
+                <p className="mt-2 text-sm leading-6 text-slate-400">No blank file. No architecture guesswork. The lesson starts with working code.</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">Step 2</p>
+                <p className="mt-2 text-sm font-semibold text-white">Swap in your prompt and API key</p>
+                <p className="mt-2 text-sm leading-6 text-slate-400">You are customizing a real template, not learning syntax from scratch.</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">Step 3</p>
+                <p className="mt-2 text-sm font-semibold text-white">Run the workflow and keep it</p>
+                <p className="mt-2 text-sm leading-6 text-slate-400">The goal is a deployed business asset, not finishing another theory lesson.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-slate-950/80 p-6 shadow-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Day 1 Workflow Preview</p>
+            <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-slate-950">
+              <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
+                <span className="h-3 w-3 rounded-full bg-rose-400/80" />
+                <span className="h-3 w-3 rounded-full bg-amber-300/80" />
+                <span className="h-3 w-3 rounded-full bg-emerald-400/80" />
+                <span className="ml-3 text-xs uppercase tracking-[0.16em] text-slate-500">copy-paste python workflow</span>
+              </div>
+              <CopyableCodeBlock
+                code={`from tutorkit import run_workflow
+
+client_name = "Acme Home Services"
+transcript = load_transcript("sales-call.txt")
+
+result = run_workflow(
+    workflow="follow_up_email",
+    business_context=client_name,
+    source_text=transcript,
+)
+
+print(result.subject)
+print(result.body)`}
+                preClassName="overflow-x-auto px-4 pb-5 text-sm leading-7 text-slate-200"
+              />
+            </div>
+            <p className="mt-4 text-sm leading-6 text-slate-400">
+              This is the point: you are not staring at a blank editor wondering what Python experts know that you do not. You are starting from a guided, working pattern and learning by shipping.
+            </p>
+          </div>
+        </section>
+
         {/* 14-Day Guarantee Section */}
         <div className="mt-20 max-w-4xl mx-auto">
           <div className="bg-gradient-to-r from-emerald-900/30 to-teal-900/30 border border-emerald-500/30 rounded-2xl p-8 md:p-12">
@@ -299,20 +380,20 @@ const PricingPage: React.FC = () => {
               <p className="text-gray-400">Build your first working AI Agent in 14 days, or we refund every penny. You keep the source code.</p>
             </div>
             <div className="bg-slate-800/50 rounded-lg p-6">
-              <h4 className="text-lg font-semibold text-white mb-2">How does the Explorer free trial work?</h4>
-              <p className="text-gray-400">Your Explorer trial starts immediately and runs for 7 days. During the trial you can use the free lessons and get a feel for the platform. If you stay active, the plan continues at $29.99/month and the premium curriculum unlocks after the first charge.</p>
+              <h4 className="text-lg font-semibold text-white mb-2">What is actually free?</h4>
+              <p className="text-gray-400">Anyone can browse the free lessons, and the first two founder builds remain open. The useful premium build path, AI tutor, and full curriculum unlock when you subscribe.</p>
             </div>
             <div className="bg-slate-800/50 rounded-lg p-6">
-              <h4 className="text-lg font-semibold text-white mb-2">How does the Pro AI Architect trial work?</h4>
-              <p className="text-gray-400">Your Pro AI Architect plan starts with a 7-day trial. During that trial you can access the free lessons and complete setup. If you stay active, the annual plan is charged after 7 days and the premium curriculum unlocks.</p>
+              <h4 className="text-lg font-semibold text-white mb-2">How does the annual discount work?</h4>
+              <p className="text-gray-400">Monthly is $29.99. Annual drops to $19.99/month billed as one $239.88 payment — that saves you $120 per year compared to paying monthly.</p>
             </div>
             <div className="bg-slate-800/50 rounded-lg p-6">
               <h4 className="text-lg font-semibold text-white mb-2">Can I cancel anytime?</h4>
               <p className="text-gray-400">Yes! You can cancel your subscription at any time. You will continue to have access until the end of your billing period.</p>
             </div>
             <div className="bg-slate-800/50 rounded-lg p-6">
-              <h4 className="text-lg font-semibold text-white mb-2">What is included in the Team plan?</h4>
-              <p className="text-gray-400">Team AI Standard includes up to 5 seats, shared workflow libraries with audited agent templates, priority support, and a team progress dashboard. If your team needs more than 5 seats, contact us.</p>
+              <h4 className="text-lg font-semibold text-white mb-2">How does Enterprise pricing work?</h4>
+              <p className="text-gray-400">Enterprise uses the lowest per-seat rate: $14.99 per seat with a 5-seat minimum, so the starting price is $74.95/month. It includes the full curriculum plus shared workflow libraries, team progress visibility, priority support, and implementation help.</p>
             </div>
             <div className="bg-slate-800/50 rounded-lg p-6 border border-cyan-500/20">
               <h4 className="text-lg font-semibold text-white mb-2">Will this course be outdated in 2 months?</h4>
@@ -327,9 +408,9 @@ const PricingPage: React.FC = () => {
 
         {/* Final CTA */}
         <div className="mt-20 text-center">
-          <h2 className="text-3xl font-bold text-white mb-6">Ready to Build Your First AI Solution?</h2>
+          <h2 className="text-3xl font-bold text-white mb-6">Ready to start building?</h2>
           <p className="text-xl text-gray-300 mb-8">
-            Start with a 7-day trial, then unlock the full premium curriculum after your first charge.
+            Monthly flexibility, annual savings, or team pricing — pick the path that fits and start your first build today.
           </p>
           {isFounding ? (
             <Link
@@ -342,18 +423,50 @@ const PricingPage: React.FC = () => {
               </svg>
             </Link>
           ) : (
-            <div className="mx-auto max-w-sm">
-              <SubscribeButton
-                planKey="pro"
-                buttonText="Start Checkout Now"
-                className="w-full inline-flex items-center justify-center px-8 py-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg transition-colors"
-              />
+            <div className="mx-auto grid max-w-5xl gap-4 sm:grid-cols-3">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">Full Price</p>
+                <h3 className="mt-2 text-xl font-semibold text-white">Choose Monthly</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-400">Use the full-price monthly option if you want flexibility and the cleanest starting point.</p>
+                <div className="mt-4">
+                  <SubscribeButton
+                    planKey="explorer"
+                    buttonText="Start Monthly Checkout"
+                    className="w-full inline-flex items-center justify-center px-8 py-4 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-semibold text-lg transition-colors"
+                  />
+                </div>
+              </div>
+              <div className="rounded-2xl border border-indigo-500/40 bg-indigo-900/30 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-300">Best Value</p>
+                <h3 className="mt-2 text-xl font-semibold text-white">Choose Annual</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-300">Lock in $19.99/mo billed annually at $239.88 — save $120/year vs monthly.</p>
+                <div className="mt-4">
+                  <SubscribeButton
+                    planKey="pro"
+                    buttonText="Start Annual Checkout"
+                    className="w-full inline-flex items-center justify-center px-8 py-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg transition-colors"
+                  />
+                </div>
+              </div>
+              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-900/20 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300">B2B Rate</p>
+                <h3 className="mt-2 text-xl font-semibold text-white">Choose Enterprise</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-300">Enterprise is the lower per-seat B2B rate: $14.99 per seat with a 5-seat minimum. At {enterpriseSeats} seats your monthly total is ${formatPlanPrice(enterpriseMonthlyTotal)}.</p>
+                <div className="mt-4">
+                  <SubscribeButton
+                    planKey="corporate"
+                    seatCount={enterpriseSeats}
+                    buttonText={`Start Enterprise Checkout · ${enterpriseSeats} Seats`}
+                    className="w-full inline-flex items-center justify-center px-8 py-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-lg transition-colors"
+                  />
+                </div>
+              </div>
             </div>
           )}
           {!isFounding && !isRegisteredUser && (
             <div className="mt-4 flex flex-col items-center gap-3">
               <RoiGuaranteeBadge />
-              <p className="text-sm text-slate-400">Plan selection leads straight into secure Stripe checkout. Login is created after purchase.</p>
+              <p className="text-sm text-slate-400">Free lessons stay open. Plan selection leads straight into secure Stripe checkout, and premium builds unlock immediately after payment.</p>
             </div>
           )}
         </div>

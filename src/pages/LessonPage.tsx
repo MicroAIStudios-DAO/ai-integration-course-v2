@@ -1,9 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import ReactPlayer from "react-player";
 import remarkGfm from "remark-gfm";
-import { getCourseById, getLessonMarkdownUrl, getSecureLessonContent, markLessonAsComplete, getUserProfile, getUserCourseProgress, isFoundersLesson, isFreeLesson, userCanAccessLesson } from "../firebaseService"; // Import Firestore service
+import {
+  getCourseById,
+  getLessonMarkdownUrl,
+  getSecureLessonContent,
+  getUserCourseProgress,
+  getUserProfile,
+  isFoundersLesson,
+  isFreeLesson,
+  isPublicPreviewLesson,
+  markLessonAsComplete,
+  userCanAccessLesson
+} from "../firebaseService"; // Import Firestore service
 import { Course, Lesson as LessonType, UserCourseProgress } from "../types/course"; // Import types
 import { useAuth } from "../context/AuthContext"; // For gating logic
 // Master access removed for production
@@ -12,7 +23,8 @@ import AITutor from "../components/AITutor";
 import CourseSchema from "../components/seo/CourseSchema";
 import SEO from "../components/SEO";
 import "../styles/lesson-content.css"; // Import textbook-style CSS
-import { trackLessonStart, trackLessonComplete } from "../utils/analytics";
+import { trackLessonStart, trackLessonComplete, trackLesson1Completed } from "../utils/analytics";
+import { MarkdownPre } from "../components/common/CopyableCodeBlock";
 
 const LessonPage: React.FC = () => {
   const { courseId, moduleId, lessonId } = useParams<{ courseId: string; moduleId: string; lessonId: string }>();
@@ -30,6 +42,19 @@ const LessonPage: React.FC = () => {
   const [userProgress, setUserProgress] = useState<UserCourseProgress | null>(null);
   const [videoUrlToPlay, setVideoUrlToPlay] = useState<string | undefined>(undefined);
   // no master access state
+
+  const isFirstCourseLesson = useMemo(() => {
+    if (!course || !lesson || !moduleId) return false;
+
+    const sortedModules = [...course.modules].sort((a, b) => a.order - b.order);
+    const firstModule = sortedModules[0];
+    if (!firstModule || firstModule.id !== moduleId) {
+      return false;
+    }
+
+    const firstLesson = [...firstModule.lessons].sort((a, b) => a.order - b.order)[0];
+    return firstLesson?.id === lesson.id;
+  }, [course, lesson, moduleId]);
 
   // master access removed
 
@@ -84,9 +109,11 @@ const LessonPage: React.FC = () => {
         if (canAccess) {
           // Try to get lesson content from multiple sources
           let contentToDisplay = "";
+          const shouldReadLessonContent =
+            isPublicPreviewLesson(currentLesson) || !isFreeLesson(currentLesson);
           
-          // Priority 1: Gated lessonContent document for protected lessons
-          if (!isFreeLesson(currentLesson)) {
+          // Public preview lessons still live in lessonContent, so load them here too.
+          if (shouldReadLessonContent) {
             try {
               contentToDisplay = await getSecureLessonContent(courseId, moduleId, lessonId) || "";
             } catch (secureContentError) {
@@ -176,6 +203,14 @@ The detailed content for this lesson is being prepared. Please check back soon o
           moduleId || '',
           'button_click'
         );
+        if (isFirstCourseLesson) {
+          trackLesson1Completed(
+            lessonId,
+            lesson?.title || '',
+            moduleId || '',
+            'button_click'
+          );
+        }
         alert("Lesson marked as complete!");
         const progress = await getUserCourseProgress(currentUser.uid, courseId);
         setUserProgress(progress);
@@ -346,7 +381,7 @@ The detailed content for this lesson is being prepared. Please check back soon o
               {/* Lesson Content with Textbook Styling */}
               {markdownContent && (
                 <div className="lesson-content">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdownContent}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ pre: MarkdownPre }}>{markdownContent}</ReactMarkdown>
                 </div>
               )}
 

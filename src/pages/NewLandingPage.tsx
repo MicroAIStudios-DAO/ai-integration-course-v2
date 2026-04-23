@@ -5,8 +5,12 @@ import FeedbackDrawer from '../components/feedback/FeedbackDrawer';
 import LeadMagnetForm from '../components/lead-magnet/LeadMagnetForm';
 import ExitIntentLeadMagnet from '../components/lead-magnet/ExitIntentLeadMagnet';
 import { topWorkflowsLeadMagnet } from '../content/leadMagnets';
+import { trackFreeStarterOptIn } from '../utils/analytics';
 
 const NewLandingPage: React.FC = () => {
+  const handleFreeStarterOptIn = () => {
+    trackFreeStarterOptIn('new_landing_explore_courses', '/courses');
+  };
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 text-white relative overflow-hidden">
       {/* Background Effects */}
@@ -111,6 +115,7 @@ const NewLandingPage: React.FC = () => {
           </Link>
           <Link
             to="/courses"
+            onClick={handleFreeStarterOptIn}
             className="border-2 border-white/20 hover:border-white/40 text-white px-8 py-4 rounded-xl text-lg font-semibold backdrop-blur-sm transition-all hover:bg-white/5"
           >
             Explore Courses

@@ -21,7 +21,6 @@ const DEFAULT_INTRO_LESSON_URL = 'https://aiintegrationcourse.com/lessons/intro'
 const DEFAULT_PRICING_URL = 'https://aiintegrationcourse.com/pricing';
 const PLAYBOOK_DELAY_MS = 15 * 60 * 1000;
 const CHECKOUT_ABANDONMENT_DELAY_MS = 60 * 60 * 1000;
-const TRIAL_DAY_3_DELAY_MS = 72 * 60 * 60 * 1000;
 
 export type EmailQueueStatus = 'pending' | 'processing' | 'sent' | 'retry' | 'error' | 'superseded';
 
@@ -96,11 +95,11 @@ const firstNameFromProfile = (displayName?: string | null, email?: string | null
 const humanizeTier = (subscriptionTier?: string | null): string => {
   switch ((subscriptionTier || '').toLowerCase()) {
     case 'explorer':
-      return 'Explorer';
+      return 'Monthly';
     case 'pro':
-      return 'Pro AI Architect';
+      return 'Annual';
     case 'corporate':
-      return 'Team AI Standard';
+      return 'Enterprise';
     case 'founding':
       return 'Founding Architect';
     default:
@@ -314,12 +313,6 @@ export async function queuePaidWelcomeEmail(options: QueueProfileOptions): Promi
   });
 }
 
-const hasMeaningfulLessonProgress = (profile: FirebaseFirestore.DocumentData): boolean => {
-  const lastLessonStartAt = profile.lastLessonStartAt as FirebaseFirestore.Timestamp | undefined;
-  const lessonsStarted = Number(profile.lessonsStarted || 0);
-  return Boolean(lastLessonStartAt) || lessonsStarted > 0;
-};
-
 export const queueLifecycleEmailCadenceV2 = onSchedule(
   {
     region: 'us-central1',
@@ -329,8 +322,6 @@ export const queueLifecycleEmailCadenceV2 = onSchedule(
   async () => {
     const now = new Date();
     const usersSnap = await db.collection('users').limit(500).get();
-    let day3Queued = 0;
-    let expiredQueued = 0;
     let checkoutQueued = 0;
 
     for (const userDoc of usersSnap.docs) {
@@ -343,50 +334,17 @@ export const queueLifecycleEmailCadenceV2 = onSchedule(
       const uid = userDoc.id;
       const subscriptionStatus = (profile.subscriptionStatus || 'none').toString().toLowerCase();
       const premium = profile.premium === true;
-      const trialStartedAt = profile.trialStartedAt as FirebaseFirestore.Timestamp | undefined;
-      const trialEndsAt = profile.trialEndsAt as FirebaseFirestore.Timestamp | undefined;
       const checkoutStartedAt = profile.checkoutStartedAt as FirebaseFirestore.Timestamp | undefined;
 
-      if (
-        subscriptionStatus === 'trialing' &&
-        trialStartedAt &&
-        trialStartedAt.toDate().getTime() <= now.getTime() - TRIAL_DAY_3_DELAY_MS &&
-        !hasMeaningfulLessonProgress(profile)
-      ) {
-        const queued = await queueTrialDay3Nudge({
-          uid,
-          email,
-          displayName: profile.displayName,
-          trialStartedAt,
-        });
-        if (queued) {
-          day3Queued += 1;
-        }
-      }
-
-      if (
-        !premium &&
-        trialEndsAt &&
-        trialEndsAt.toDate().getTime() <= now.getTime() &&
-        subscriptionStatus !== 'active'
-      ) {
-        const queued = await queueTrialExpiredOffer({
-          uid,
-          email,
-          displayName: profile.displayName,
-          trialEndsAt,
-        });
-        if (queued) {
-          expiredQueued += 1;
-        }
-      }
+      const hasPromoConsent = profile.promotionalEmailConsent === true;
 
       if (
         checkoutStartedAt &&
         checkoutStartedAt.toDate().getTime() <= now.getTime() - CHECKOUT_ABANDONMENT_DELAY_MS &&
         !premium &&
         subscriptionStatus !== 'trialing' &&
-        subscriptionStatus !== 'active'
+        subscriptionStatus !== 'active' &&
+        hasPromoConsent
       ) {
         const queued = await queueCheckoutAbandonmentEmail({
           uid,
@@ -400,6 +358,6 @@ export const queueLifecycleEmailCadenceV2 = onSchedule(
       }
     }
 
-    console.log(`Lifecycle cadence queued day3=${day3Queued} expired=${expiredQueued} checkout=${checkoutQueued}`);
+    console.log(`Lifecycle cadence queued checkout=${checkoutQueued}`);
   }
 );

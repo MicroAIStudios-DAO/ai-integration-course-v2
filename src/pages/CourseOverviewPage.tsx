@@ -81,7 +81,7 @@ const CourseOverviewPage: React.FC = () => {
         const sortedLessons = [...module.lessons].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
         const displayLessons = sortedLessons
           .filter((lesson) => !isPlaceholderOnlyLesson(lesson))
-          .filter((lesson) => !isFoundersLesson(lesson))
+          .filter((lesson) => !isFoundersLesson(lesson) || isFreeLesson(lesson))
           .map((lesson) => {
             const lessonNumber = resolveLessonNumber(lesson, fallbackNumber);
             if (!isFoundersLesson(lesson)) {
@@ -304,7 +304,7 @@ const CourseOverviewPage: React.FC = () => {
                       disabled={!isFreeLesson(lesson) && !currentUser}
                       className="text-slate-100"
                     >
-                      {module.title} - {lesson.displayTitle} {isFoundersLesson(lesson) ? '(Founders)' : isFreeLesson(lesson) ? '(Free)' : ''}
+                      {module.title} - {lesson.displayTitle} {isFreeLesson(lesson) ? '(Free)' : isFoundersLesson(lesson) ? '(Founders)' : ''}
                     </option>
                   ))
                 )}
@@ -383,14 +383,14 @@ const CourseOverviewPage: React.FC = () => {
                         {lessonIsFree && (
                           <span className="text-xs bg-emerald-400/20 text-emerald-200 px-2 py-1 rounded-full font-sans">Free</span>
                         )}
-                        {foundersLesson && (
+                        {foundersLesson && !lessonIsFree && (
                           <span className="text-xs bg-amber-400/20 text-amber-100 px-2 py-1 rounded-full font-sans">Founders</span>
                         )}
                         {(!lessonIsFree && !foundersLesson && (!currentUser)) && (
                           <span className="text-xs bg-amber-400/20 text-amber-200 px-2 py-1 rounded-full font-sans">Premium</span>
                         )}
                         <span className="text-slate-300 text-sm font-sans">
-                          {(!lessonIsFree && (!currentUser)) ? 'Login to access' : foundersLesson ? 'Open founders lesson' : 'View Lesson'}
+                          {(!lessonIsFree && (!currentUser)) ? 'Login to access' : foundersLesson && !lessonIsFree ? 'Open founders lesson' : 'View Lesson'}
                         </span>
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />

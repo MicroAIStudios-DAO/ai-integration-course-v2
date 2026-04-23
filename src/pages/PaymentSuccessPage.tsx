@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  trackCustomEvent,
-  trackProTrialValue,
   trackPurchase,
+  trackGoogleAdsPurchaseConversion,
   setUserProperties,
 } from "../utils/analytics";
 import { plans, type PlanKey } from "../config/pricing";
 import {
+  type CheckoutSessionSummary,
   clearStoredPlanKey,
   fetchCheckoutSessionSummary,
   getCheckoutSessionIdFromSearch,
@@ -20,18 +20,7 @@ const PaymentSuccessPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [redirectTarget, setRedirectTarget] = useState<"signup" | "login" | "welcome" | null>(null);
-  const [summary, setSummary] = useState<{
-    sessionId: string;
-    email: string;
-    displayName: string | null;
-    planKey: PlanKey;
-    planName: string;
-    status: string;
-    existingAccount: boolean;
-    attachedUid: string | null;
-    isAttachedToCurrentUser: boolean;
-    requiresLogin: boolean;
-  } | null>(null);
+  const [summary, setSummary] = useState<CheckoutSessionSummary | null>(null);
 
   const plan = useMemo(() => {
     if (summary) return plans[summary.planKey];
@@ -79,28 +68,26 @@ const PaymentSuccessPage: React.FC = () => {
       return;
     }
 
-    const isTrial = summary.planKey === "explorer" || summary.planKey === "pro";
+    const purchaseValue = summary.analyticsValue > 0 ? summary.analyticsValue : plan.analyticsValue;
+    trackPurchase(summary.sessionId, purchaseValue, "USD", 0, summary.planName, summary.planKey);
 
-    if (isTrial) {
-      trackCustomEvent("subscription", "trial_start", summary.planKey);
-      if (summary.planKey === "pro") {
-        trackProTrialValue(summary.sessionId);
-      }
-      setUserProperties({
-        subscription_status: "trial",
-        signup_date: new Date().toISOString().split("T")[0],
-      });
-    } else {
-      trackPurchase(summary.sessionId, plan.analyticsValue, "USD", 0, plan.name, summary.planKey);
-      setUserProperties({
-        subscription_status: summary.planKey === "corporate" ? "corporate" : "pro",
-        signup_date: new Date().toISOString().split("T")[0],
-      });
-    }
+    // PRIMARY Google Ads conversion — this is what Smart Bidding / tROAS optimizes toward.
+    // Fires with the actual plan value and enhanced conversion data (email) for cross-device attribution.
+    trackGoogleAdsPurchaseConversion(summary.sessionId, purchaseValue, summary.email);
+
+    setUserProperties({
+      subscription_status:
+        summary.planKey === "corporate"
+          ? "corporate"
+          : summary.planKey === "explorer"
+            ? "explorer"
+            : "pro",
+      signup_date: new Date().toISOString().split("T")[0],
+    });
 
     sessionStorage.setItem(analyticsKey, "1");
     clearStoredPlanKey();
-  }, [plan.analyticsValue, plan.name, summary]);
+  }, [plan.analyticsValue, summary]);
 
   useEffect(() => {
     if (!summary || !checkoutSessionId) return;
@@ -166,7 +153,7 @@ const PaymentSuccessPage: React.FC = () => {
       ? "Your account is already connected to this checkout. Taking you to your welcome dashboard now."
       : redirectTarget === "login"
         ? `We found an existing account for ${summary.email}. Sign in next so this paid checkout lands on the right login.`
-        : `Stripe checkout is complete for ${summary.planName}. Next you will set your password so your billing, lessons, and progress stay attached to one account.`;
+        : `Stripe checkout is complete for ${summary.planName}. Your paid access is active. Next you will set your password so your billing, lessons, and progress stay attached to one account.`;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 flex items-center justify-center px-4">

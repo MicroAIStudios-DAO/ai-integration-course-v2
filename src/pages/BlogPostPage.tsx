@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm';
 import SEO from '../components/SEO';
 import { getBlogPostBySlug } from '../content/blogPosts';
 import '../styles/blog-content.css';
+import { MarkdownPre } from '../components/common/CopyableCodeBlock';
 
 const formatDate = (value: string): string =>
   new Date(value).toLocaleDateString('en-US', {
@@ -127,7 +128,7 @@ const BlogPostPage: React.FC = () => {
           {error && !loading && <p className="text-red-600">{error}</p>}
           {!loading && !error && (
             <article className="blog-content">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ pre: MarkdownPre }}>{markdown}</ReactMarkdown>
             </article>
           )}
         </div>

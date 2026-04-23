@@ -57,6 +57,11 @@ service cloud.firestore {
     function canReadFoundersContent() {
       return isFoundingMember() || (isBetaTester() && hasPremiumAccess()) || isAdmin();
     }
+
+    function isPublicPreviewLessonContent(contentId) {
+      return contentId == 'course_01_id__module_01_id__lesson_founders_01_content_architect' ||
+        contentId == 'course_01_id__module_02_id__lesson_founders_02_informed_architect';
+    }
     
     // Check if lesson is free tier
     function isFreeLesson(lessonData) {
@@ -177,14 +182,14 @@ service cloud.firestore {
     
     match /lessonContent/{contentId} {
       // Gated read access based on tier
-      allow read: if isAuthenticated() && (
+      allow read: if isPublicPreviewLessonContent(contentId) || (isAuthenticated() && (
         // Free content accessible to all authenticated users
         resource.data.tier == 'free' ||
         // Founders content requires founding access or paid Pioneer beta access
         (resource.data.tier == 'founders' && canReadFoundersContent()) ||
         // Premium content requires premium access
         (resource.data.tier != 'founders' && hasPremiumAccess())
-      );
+      ));
       
       // Only admins can write content
       allow write: if isAdmin();

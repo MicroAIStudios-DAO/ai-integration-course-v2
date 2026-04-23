@@ -265,8 +265,8 @@ const PaidTrafficLandingPage: React.FC = () => {
                 a: 'No. The curriculum starts from scratch. Some lessons use Python, but we walk you through every step — copy, paste, customize, deploy. If you can follow a recipe, you can do this.',
               },
               {
-                q: 'What is Pro and when would I need it?',
-                a: 'Pro unlocks 50+ hours of advanced builds, a personal AI tutor that answers your questions in context, and live Q&A sessions. Most people try the free lessons first, then upgrade when they want to go deeper. From $19.99/month (billed annually) with a 14-day money-back guarantee.',
+                q: 'What does the paid subscription unlock?',
+                a: 'Pro unlocks 50+ hours of advanced builds, a personal AI tutor that answers your questions in context, and live Q&A sessions. The lowest-friction paid option is $29.99/month, and the annual plan drops the effective rate to $19.99/month with a 14-day money-back guarantee.',
               },
               {
                 q: 'How is this different from YouTube or ChatGPT?',

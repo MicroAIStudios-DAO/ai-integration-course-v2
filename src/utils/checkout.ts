@@ -14,6 +14,8 @@ export type CheckoutSessionSummary = {
   planKey: PlanKey;
   planName: string;
   status: string;
+  seatCount: number;
+  analyticsValue: number;
   existingAccount: boolean;
   attachedUid: string | null;
   isAttachedToCurrentUser: boolean;
@@ -50,7 +52,7 @@ const getStoredAttribution = (): Record<string, string> => {
   return attrs;
 };
 
-export const startCheckoutForPlan = async (planKey: PlanKey): Promise<void> => {
+export const startCheckoutForPlan = async (planKey: PlanKey, options?: { seatCount?: number }): Promise<void> => {
   storePlanKey(planKey);
 
   if (auth.currentUser?.isAnonymous) {
@@ -67,6 +69,7 @@ export const startCheckoutForPlan = async (planKey: PlanKey): Promise<void> => {
 
   const result = await createCheckoutSession({
     planKey,
+    ...(typeof options?.seatCount === 'number' ? { seatCount: options.seatCount } : {}),
     successUrl: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&plan=${planKey}`,
     cancelUrl: `${origin}/pricing?plan=${planKey}`,
     ...attribution,

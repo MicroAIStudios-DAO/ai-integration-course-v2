@@ -173,16 +173,16 @@ const WelcomePage: React.FC = () => {
                       Welcome, {memberName}.
                     </h1>
                     <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
-                      You are one of the 20 architects currently shaping the future of
+                      You are inside the builder environment. The free lessons stay open, the first two founder builds are public, and the deeper premium system unlocks when you subscribe.
                       {" "}
                       <span className="text-cyan-200">aiintegrationcourse.com</span>.
                     </p>
                     <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                       <Link
-                        to={hasPaidCohortAccess ? "/courses/course_01_id/modules/module_01_id/lessons/lesson_founders_01_content_architect" : "/pricing"}
+                        to="/courses/course_01_id/modules/module_01_id/lessons/lesson_founders_01_content_architect"
                         className="inline-flex items-center justify-center rounded-2xl bg-cyan-500 px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-slate-950 transition-colors hover:bg-cyan-400"
                       >
-                        {hasPaidCohortAccess ? "Enter The Forge" : "Activate Founding Rate"}
+                        {hasPaidCohortAccess ? "Enter The Forge" : "Start Free Founder Build"}
                       </Link>
                       {canUseDirectLine ? (
                         <button
@@ -407,7 +407,7 @@ const WelcomePage: React.FC = () => {
                 <p className="mt-3 text-sm leading-7 text-slate-200">
                   {hasPaidCohortAccess
                     ? "Paid access is active on this account. The cohort dashboard and feedback lane are live."
-                    : "The beta rate stays attached to this account. PIONEER tags the cohort lane, but checkout activates paid access and launch-week onboarding."}
+                    : "Free lessons and the first two founder builds are open. Paid checkout activates the full premium curriculum and direct feedback lane."}
                 </p>
               </div>
             </section>

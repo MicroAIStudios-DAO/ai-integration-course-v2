@@ -9,6 +9,7 @@ interface SubscribeButtonProps {
   buttonText?: string;
   className?: string;
   disabled?: boolean;
+  seatCount?: number;
 }
 
 const SubscribeButton: React.FC<SubscribeButtonProps> = ({
@@ -16,6 +17,7 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
   buttonText,
   className = 'bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded',
   disabled = false,
+  seatCount,
 }) => {
   const [loading, setLoading] = useState(false);
   const plan = getPlan(planKey);
@@ -26,14 +28,22 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
     setLoading(true);
 
     try {
+      const normalizedSeatCount = planKey === 'corporate' && typeof seatCount === 'number'
+        ? Math.max(5, Math.floor(seatCount))
+        : undefined;
+      const checkoutValue = planKey === 'corporate' && normalizedSeatCount
+        ? Number((14.99 * normalizedSeatCount).toFixed(2))
+        : plan.analyticsValue;
+
       trackBeginCheckout(
-        plan.analyticsValue,
+        checkoutValue,
         'USD',
         plan.name,
-        planKey
+        planKey,
+        normalizedSeatCount || 1
       );
 
-      await startCheckoutForPlan(planKey);
+      await startCheckoutForPlan(planKey, normalizedSeatCount ? { seatCount: normalizedSeatCount } : undefined);
       return;
     } catch (e: any) {
       console.error('[Checkout] Error:', e);

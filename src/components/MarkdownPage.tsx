@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { MarkdownPre } from './common/CopyableCodeBlock';
 
 interface MarkdownPageProps {
   src: string;  // path relative to public/, e.g. "/md/ai_chat_tutor_design.md"
@@ -23,7 +24,7 @@ const MarkdownPage: React.FC<MarkdownPageProps> = (props: MarkdownPageProps) => 
   return (
     <article className="prose mx-auto p-6">
       {content ? (
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ pre: MarkdownPre }}>{content}</ReactMarkdown>
       ) : (
         <p>Loading…</p>
       )}

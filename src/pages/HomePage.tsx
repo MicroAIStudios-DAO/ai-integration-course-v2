@@ -11,6 +11,7 @@ import {
   homepageFaqItems,
   homepageVideoObject,
 } from '../content/marketingPages';
+import { trackFreeStarterOptIn } from '../utils/analytics';
 
 const buildExternalUrl = (baseUrl: string, path: string): string => {
   try {
@@ -26,6 +27,9 @@ const buildExternalUrl = (baseUrl: string, path: string): string => {
 };
 
 const HomePage: React.FC = () => {
+  const handleFreeStarterOptIn = (source: string) => () => {
+    trackFreeStarterOptIn(source, '/courses');
+  };
   const { baseUrl } = appConfig;
   const nav = useMemo(() => ({
     home: baseUrl,
@@ -262,7 +266,7 @@ const HomePage: React.FC = () => {
             >
               Run the Content Architect Script
             </a>
-            <a href={nav.courses} className="text-sm font-semibold text-cyan-300 hover:text-cyan-200 transition-colors">
+            <a href={nav.courses} onClick={handleFreeStarterOptIn('homepage_curriculum_details')} className="text-sm font-semibold text-cyan-300 hover:text-cyan-200 transition-colors">
               View full curriculum details &rarr;
             </a>
           </div>
@@ -297,13 +301,13 @@ const HomePage: React.FC = () => {
               Build one workflow. Then decide.
             </h2>
             <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-slate-300">
-              Choose the plan that fits your stage. Then move directly into account
+              Choose the billing option that fits how you buy. Then move directly into account
               creation and checkout without a free-account detour slowing conversion.
             </p>
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
               <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
-                <p className="text-2xl font-black text-cyan-300">$19.99</p>
-                <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-400">Per month (billed annually)</p>
+                <p className="text-2xl font-black text-cyan-300">$29.99</p>
+                <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-400">Monthly or $19.99/mo annually</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
                 <p className="text-2xl font-black text-emerald-300">50+</p>
@@ -405,7 +409,7 @@ const HomePage: React.FC = () => {
             href={nav.pricing}
             className="flex w-full items-center justify-center rounded-xl bg-cyan-500 py-3 text-sm font-bold uppercase tracking-[0.1em] text-slate-950 shadow-lg shadow-cyan-500/25 transition-colors hover:bg-cyan-400"
           >
-            Get Started &mdash; From $19.99/mo
+            Get Started &mdash; Monthly $29.99
           </a>
         </div>
 

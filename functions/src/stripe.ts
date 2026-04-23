@@ -8,7 +8,6 @@ import { defineSecret } from 'firebase-functions/params';
 import {
   queuePaidWelcomeEmail,
   queuePlaybookDelivery,
-  queueTrialStartedEmail,
 } from './emailLifecycle';
 
 if (!admin.apps.length) {
@@ -21,6 +20,8 @@ const STRIPE_PRICE_EXPLORER_MONTHLY = defineSecret('STRIPE_PRICE_EXPLORER_MONTHL
 const STRIPE_PRICE_PRO_ANNUAL = defineSecret('STRIPE_PRICE_PRO_ANNUAL');
 const STRIPE_PRICE_CORPORATE_MONTHLY = defineSecret('STRIPE_PRICE_CORPORATE_MONTHLY');
 const CHECKOUT_SESSIONS_COLLECTION = 'checkout_sessions';
+const ANALYTICS_EVENTS_COLLECTION = 'analytics_events';
+const ENTERPRISE_SEAT_MINIMUM = 5;
 
 let stripe: Stripe | null = null;
 
@@ -94,10 +95,10 @@ const getPlanConfig = (
       stripeProductId: 'prod_UIh7e0eEE8c2kA',
       tier: 'explorer',
       billingInterval: 'month',
-      trialDays: 7,
+      trialDays: 0,
       seatCount: 1,
       displayPrice: 29.99,
-      name: 'Explorer',
+      name: 'Monthly',
       analyticsValue: 29.99,
     },
     pro: {
@@ -106,12 +107,12 @@ const getPlanConfig = (
       stripeProductId: 'prod_UIh7BnELJthIQb',
       tier: 'pro',
       billingInterval: 'year',
-      trialDays: 7,
+      trialDays: 0,
       seatCount: 1,
       displayPrice: 239.88,
       displayMonthlyEquivalent: 19.99,
-      anchorMonthlyPrice: 39.99,
-      name: 'Pro AI Architect',
+      anchorMonthlyPrice: 29.99,
+      name: 'Annual',
       analyticsValue: 239.88,
     },
     corporate: {
@@ -122,9 +123,9 @@ const getPlanConfig = (
       billingInterval: 'month',
       trialDays: 0,
       seatCount: 5,
-      displayPrice: 149.0,
-      name: 'Team AI Standard',
-      analyticsValue: 149.0,
+      displayPrice: 74.95,
+      name: 'Enterprise',
+      analyticsValue: 74.95,
     },
   };
 
@@ -160,7 +161,29 @@ const resolvePlanKey = (payload: Record<string, any> | undefined): CheckoutPlanK
 
 const isPremiumContentUnlocked = (status: unknown): boolean => status === 'active';
 
-const _isTrialPlan = (planKey: string | null | undefined): boolean => planKey === 'explorer';
+const resolveRequestedSeatCount = (planKey: CheckoutPlanKey, requestedSeatCount: unknown, fallbackSeatCount: number): number => {
+  if (planKey !== 'corporate') {
+    return fallbackSeatCount;
+  }
+
+  const parsedSeatCount = Number.parseInt(String(requestedSeatCount || ''), 10);
+  if (!Number.isFinite(parsedSeatCount)) {
+    return fallbackSeatCount;
+  }
+
+  return Math.max(ENTERPRISE_SEAT_MINIMUM, parsedSeatCount);
+};
+
+const getAnalyticsValueForPlan = (plan: CheckoutPlanDefinition, seatCount: number): number => {
+  if (plan.tier !== 'corporate') {
+    return plan.analyticsValue;
+  }
+
+  const pricePerSeat = plan.displayPrice / plan.seatCount;
+  return Number((pricePerSeat * seatCount).toFixed(2));
+};
+
+const _isTrialPlan = (_planKey: string | null | undefined): boolean => false;
 const _isCorporatePlan = (planKey: string | null | undefined): boolean => planKey === 'corporate';
 
 export { _isTrialPlan as isTrialPlan, _isCorporatePlan as isCorporatePlan };
@@ -236,6 +259,76 @@ const toTimestamp = (value: Date | null): FirebaseFirestore.Timestamp | null => 
   if (!value) return null;
   return admin.firestore.Timestamp.fromDate(value);
 };
+
+async function recordServerAnalyticsEvent(
+  eventName: string,
+  eventId: string,
+  payload: Record<string, unknown>
+): Promise<boolean> {
+  const eventRef = db.collection(ANALYTICS_EVENTS_COLLECTION).doc(eventId);
+
+  return db.runTransaction(async (transaction) => {
+    const eventSnap = await transaction.get(eventRef);
+    if (eventSnap.exists) {
+      return false;
+    }
+
+    transaction.set(eventRef, {
+      eventName,
+      ...payload,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    if (typeof payload.uid === 'string' && payload.uid) {
+      const userRef = db.doc(`users/${payload.uid}`);
+      transaction.set(
+        userRef,
+        {
+          proSubscriptionPurchasedAt: admin.firestore.FieldValue.serverTimestamp(),
+          proSubscriptionPurchaseCount: admin.firestore.FieldValue.increment(1),
+        },
+        { merge: true }
+      );
+    }
+
+    return true;
+  });
+}
+
+async function trackProSubscriptionPurchasedServerSide(
+  snapshot: CheckoutSessionSnapshot,
+  source: 'checkout.session.completed' | 'invoice.paid' | 'invoice.payment_succeeded'
+): Promise<void> {
+  if (snapshot.planKey !== 'pro' || snapshot.isTrialing || snapshot.status !== 'active') {
+    return;
+  }
+
+  const stableId = snapshot.subscriptionId || snapshot.customerId || snapshot.sessionId;
+  if (!stableId) {
+    return;
+  }
+
+  const wasRecorded = await recordServerAnalyticsEvent(
+    'pro_subscription_purchased',
+    `pro_subscription_purchased:${stableId}`,
+    {
+      uid: snapshot.attachedUid,
+      planKey: snapshot.planKey,
+      billingInterval: snapshot.billingInterval,
+      analyticsValue: snapshot.analyticsValue,
+      checkoutSessionId: snapshot.sessionId,
+      stripeSubscriptionId: snapshot.subscriptionId,
+      stripeCustomerId: snapshot.customerId,
+      source,
+      premiumUnlocked: snapshot.premiumUnlocked,
+      periodEnd: toTimestamp(snapshot.periodEnd),
+    }
+  );
+
+  if (wasRecorded) {
+    console.log(`Recorded pro_subscription_purchased for ${stableId}`);
+  }
+}
 
 const deriveMetadataUid = (metadata?: Stripe.Metadata | null): string | null => {
   const uid = metadata?.firebaseUID || metadata?.firebase_uid;
@@ -392,10 +485,11 @@ async function syncCheckoutSessionRecord(
     (subscription?.metadata?.billingInterval as 'month' | 'year' | undefined) ||
     (session.metadata?.billingInterval as 'month' | 'year' | undefined) ||
     plan.billingInterval;
-  const seatCount = Number.parseInt(
-    subscription?.metadata?.seatCount || session.metadata?.seatCount || String(plan.seatCount),
-    10
-  ) || plan.seatCount;
+  const seatCount = resolveRequestedSeatCount(
+    planKey,
+    subscription?.metadata?.seatCount || session.metadata?.seatCount,
+    plan.seatCount
+  );
   const status = subscription?.status || session.status || 'open';
   const isTrialing = status === 'trialing';
   const premiumUnlocked = isPremiumContentUnlocked(status);
@@ -410,6 +504,10 @@ async function syncCheckoutSessionRecord(
     deriveMetadataUid(session.metadata || null) ||
     (customerId ? await findUidByStripeCustomerId(customerId) : null);
 
+  const analyticsValue = Number.parseFloat(
+    String(subscription?.metadata?.analyticsValue || session.metadata?.analyticsValue || existingRecordSnap.get('analyticsValue') || '')
+  ) || getAnalyticsValueForPlan(plan, seatCount);
+
   const snapshot: CheckoutSessionSnapshot = {
     sessionId: session.id,
     email,
@@ -420,7 +518,7 @@ async function syncCheckoutSessionRecord(
     tier,
     billingInterval,
     seatCount,
-    analyticsValue: plan.analyticsValue,
+    analyticsValue,
     customerId,
     subscriptionId,
     attachedUid,
@@ -530,23 +628,12 @@ async function queueLifecycleEmailsOnce(
     return;
   }
 
-  if (snapshot.isTrialing) {
-    await queueTrialStartedEmail({
-      uid,
-      email,
-      displayName,
-      subscriptionTier: snapshot.tier,
-      trialStartedAt: admin.firestore.Timestamp.now(),
-      trialEndsAt: toTimestamp(snapshot.periodEnd),
-    });
-  } else {
-    await queuePaidWelcomeEmail({
-      uid,
-      email,
-      displayName,
-      subscriptionTier: snapshot.tier,
-    });
-  }
+  await queuePaidWelcomeEmail({
+    uid,
+    email,
+    displayName,
+    subscriptionTier: snapshot.tier,
+  });
 
   await queuePlaybookDelivery({
     uid,
@@ -650,7 +737,11 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
   const planKey = safePlanKey(subscription?.metadata?.planKey || invoice.subscription_details?.metadata?.planKey);
   const plan = getPlanConfig(planKey);
   const tier = subscription?.metadata?.tier || invoice.subscription_details?.metadata?.tier || plan.tier;
-  const seatCount = Number.parseInt(subscription?.metadata?.seatCount || '1', 10) || 1;
+  const seatCount = resolveRequestedSeatCount(
+    planKey,
+    subscription?.metadata?.seatCount,
+    plan.seatCount
+  );
   const periodEnd = subscription ? new Date(subscription.current_period_end * 1000) : null;
   const status = subscription?.status || 'active';
 
@@ -664,7 +755,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
     tier,
     billingInterval: plan.billingInterval,
     seatCount,
-    analyticsValue: plan.analyticsValue,
+    analyticsValue: getAnalyticsValueForPlan(plan, seatCount),
     customerId,
     subscriptionId,
     attachedUid: uid,
@@ -722,6 +813,11 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
       subscriptionTier: tier,
     });
   }
+
+  await trackProSubscriptionPurchasedServerSide(
+    { ...snapshot, attachedUid: uid },
+    invoice.status_transitions?.paid_at ? 'invoice.paid' : 'invoice.payment_succeeded'
+  );
 
   console.log(`Premium renewed for user ${uid}`);
 }
@@ -790,12 +886,19 @@ export const createCheckoutSessionV2 = onCall(
     const successUrl = request.data?.successUrl || `${baseUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}&plan=${planKey}`;
     const cancelUrl = request.data?.cancelUrl || `${baseUrl}/pricing`;
 
+    const requestedSeatCount = resolveRequestedSeatCount(
+      planKey,
+      request.data?.seatCount,
+      plan.seatCount
+    );
+    const analyticsValue = getAnalyticsValueForPlan(plan, requestedSeatCount);
+
     const baseMetadata: Record<string, string> = {
       planKey,
       tier: plan.tier,
       billingInterval: plan.billingInterval,
-      seatCount: String(plan.seatCount),
-      analyticsValue: String(plan.analyticsValue),
+      seatCount: String(requestedSeatCount),
+      analyticsValue: String(analyticsValue),
       gclid,
       utm_source: utmSource,
       utm_campaign: utmCampaign,
@@ -813,15 +916,6 @@ export const createCheckoutSessionV2 = onCall(
       metadata: { ...baseMetadata },
     };
 
-    if (plan.trialDays > 0) {
-      subscriptionData.trial_period_days = plan.trialDays;
-      subscriptionData.trial_settings = {
-        end_behavior: {
-          missing_payment_method: 'cancel',
-        },
-      };
-    }
-
     const customerId = uid ? await ensureStrictMapping(uid, email) : null;
     const checkoutPriceId = await resolveCheckoutStripePriceId(planKey, plan);
 
@@ -830,13 +924,13 @@ export const createCheckoutSessionV2 = onCall(
       ...(uid ? { client_reference_id: uid } : {}),
       mode: 'subscription',
       payment_method_collection: 'always',
-      payment_method_types: ['card'],
-      line_items: [{ price: checkoutPriceId, quantity: 1 }],
+      line_items: [{ price: checkoutPriceId, quantity: requestedSeatCount }],
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: baseMetadata,
       subscription_data: subscriptionData,
       allow_promotion_codes: true,
+      consent_collection: { promotions: 'auto' },
     });
 
     if (uid) {
@@ -857,8 +951,8 @@ export const createCheckoutSessionV2 = onCall(
         planName: plan.name,
         tier: plan.tier,
         billingInterval: plan.billingInterval,
-        seatCount: plan.seatCount,
-        analyticsValue: plan.analyticsValue,
+        seatCount: requestedSeatCount,
+        analyticsValue,
         attachedUid: uid,
         customerId,
         status: 'open',
@@ -905,6 +999,8 @@ export const getCheckoutSessionSummaryV2 = onCall(
       planKey: snapshot.planKey,
       planName: snapshot.planName,
       status: snapshot.status,
+      seatCount: snapshot.seatCount,
+      analyticsValue: snapshot.analyticsValue,
       existingAccount: Boolean(existingUser),
       attachedUid,
       isAttachedToCurrentUser,
@@ -1027,17 +1123,68 @@ export const stripeWebhookV2 = onRequest(
           const session = event.data.object as Stripe.Checkout.Session;
           const snapshot = await syncCheckoutSessionRecord(session);
 
+          const promoConsent = (session as any).consent?.promotions === 'opt_in';
+          const consentEmail = normalizeEmail(session.customer_details?.email);
+          if (consentEmail) {
+            await db.collection(CHECKOUT_SESSIONS_COLLECTION).doc(session.id).set(
+              { promotionalEmailConsent: promoConsent, consentEmail: consentEmail, updatedAt: admin.firestore.FieldValue.serverTimestamp() },
+              { merge: true }
+            );
+          }
+          if (promoConsent && snapshot.attachedUid) {
+            await db.doc(`users/${snapshot.attachedUid}`).set(
+              { promotionalEmailConsent: true, promotionalEmailConsentAt: admin.firestore.FieldValue.serverTimestamp() },
+              { merge: true }
+            );
+          }
+
           if (snapshot.attachedUid) {
             await attachCheckoutStateToUid(snapshot.attachedUid, snapshot, {
               email: snapshot.email,
               displayName: snapshot.displayName,
               queueEmails: true,
             });
+            await trackProSubscriptionPurchasedServerSide(snapshot, 'checkout.session.completed');
             console.log(`Subscription recorded for user ${snapshot.attachedUid} with plan ${snapshot.planKey}, status: ${snapshot.status}`);
           } else {
             await persistCheckoutStateWithoutUid(snapshot);
             console.log(`Checkout ${snapshot.sessionId} completed without attached Firebase user yet.`);
           }
+          break;
+        }
+
+        case 'checkout.session.expired': {
+          const session = event.data.object as Stripe.Checkout.Session;
+          const promoConsent = (session as any).consent?.promotions === 'opt_in';
+          const abandonedEmail = normalizeEmail(session.customer_details?.email);
+          const uid = session.client_reference_id || session.metadata?.firebaseUID || session.metadata?.firebase_uid || null;
+          const planKey = safePlanKey(session.metadata?.planKey);
+
+          await db.collection(CHECKOUT_SESSIONS_COLLECTION).doc(session.id).set(
+            {
+              sessionId: session.id,
+              status: 'expired',
+              promotionalEmailConsent: promoConsent,
+              consentEmail: abandonedEmail,
+              planKey,
+              abandonedAt: admin.firestore.FieldValue.serverTimestamp(),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          );
+
+          if (uid) {
+            await db.doc(`users/${uid}`).set(
+              {
+                promotionalEmailConsent: promoConsent,
+                lastAbandonedCheckoutAt: admin.firestore.FieldValue.serverTimestamp(),
+                lastAbandonedPlanKey: planKey,
+              },
+              { merge: true }
+            );
+          }
+
+          console.log(`Checkout ${session.id} expired (abandoned). Email: ${abandonedEmail || 'none'}, promo consent: ${promoConsent}, uid: ${uid || 'none'}`);
           break;
         }
 
@@ -1063,6 +1210,11 @@ export const stripeWebhookV2 = onRequest(
 
           const planKey = safePlanKey(subscription.metadata?.planKey);
           const plan = getPlanConfig(planKey);
+          const seatCount = resolveRequestedSeatCount(
+            planKey,
+            subscription.metadata?.seatCount,
+            plan.seatCount
+          );
           const snapshot: CheckoutSessionSnapshot = {
             sessionId: subscription.id,
             email: '',
@@ -1072,8 +1224,8 @@ export const stripeWebhookV2 = onRequest(
             status: 'cancelled',
             tier: subscription.metadata?.tier || plan.tier,
             billingInterval: (subscription.metadata?.billingInterval as 'month' | 'year' | undefined) || plan.billingInterval,
-            seatCount: Number.parseInt(subscription.metadata?.seatCount || '1', 10) || 1,
-            analyticsValue: plan.analyticsValue,
+            seatCount,
+            analyticsValue: getAnalyticsValueForPlan(plan, seatCount),
             customerId,
             subscriptionId: subscription.id,
             attachedUid: uid,
@@ -1130,6 +1282,11 @@ export const stripeWebhookV2 = onRequest(
           const plan = getPlanConfig(planKey);
           const periodEnd = new Date(subscription.current_period_end * 1000);
           const status = subscription.status;
+          const seatCount = resolveRequestedSeatCount(
+            planKey,
+            subscription.metadata?.seatCount,
+            plan.seatCount
+          );
           const snapshot: CheckoutSessionSnapshot = {
             sessionId: subscription.id,
             email: '',
@@ -1139,8 +1296,8 @@ export const stripeWebhookV2 = onRequest(
             status,
             tier: subscription.metadata?.tier || plan.tier,
             billingInterval: (subscription.metadata?.billingInterval as 'month' | 'year' | undefined) || plan.billingInterval,
-            seatCount: Number.parseInt(subscription.metadata?.seatCount || '1', 10) || 1,
-            analyticsValue: plan.analyticsValue,
+            seatCount,
+            analyticsValue: getAnalyticsValueForPlan(plan, seatCount),
             customerId,
             subscriptionId: subscription.id,
             attachedUid: uid,
