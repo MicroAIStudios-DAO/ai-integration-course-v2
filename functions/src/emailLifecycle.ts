@@ -343,8 +343,8 @@ export const queueLifecycleEmailCadenceV2 = onSchedule(
         checkoutStartedAt.toDate().getTime() <= now.getTime() - CHECKOUT_ABANDONMENT_DELAY_MS &&
         !premium &&
         subscriptionStatus !== 'trialing' &&
-        subscriptionStatus !== 'active' &&
-        hasPromoConsent
+        subscriptionStatus !== 'active'
+        // REMOVED: hasPromoConsent gate. Cart abandonment is transactional, not promotional.
       ) {
         const queued = await queueCheckoutAbandonmentEmail({
           uid,

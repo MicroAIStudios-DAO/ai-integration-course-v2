@@ -255,46 +255,48 @@ pick your plan, get back in, and finish one real build.
 
 export const checkoutAbandonmentTemplate: EmailTemplateDefinition = {
   type: 'checkout_abandonment_email',
-  campaignId: 'checkout_abandonment_email_v1_20260410',
-  templateVersion: 'v1',
-  subject: 'You were close — finish your enrollment',
-  previewText: 'Your plan is still waiting. Come back and complete checkout.',
-  replyTo: 'Info@aiintegrationcourse.com',
-  ctaLabel: 'Complete Checkout',
+  campaignId: 'checkout_abandonment_email_v2_2026',
+  templateVersion: 'v2',
+  subject: 'Did life get in the way? (Your AI build is waiting)',
+  previewText: 'You have zero risk with our 14-Day Build Guarantee.',
+  replyTo: 'info@aiintegrationcourse.com',
+  ctaLabel: 'Resume Your Checkout Here',
   body: `Hi {{firstName}},
 
-You were close.
+I noticed you started to enroll in the AI Integration Course but didn't finish checkout.
 
-You picked a plan and started checkout, but didn’t finish.
+Usually, when this happens, it's because of one of two things:
+1. You got distracted by the exact kind of busywork this course is designed to eliminate.
+2. You're wondering if you actually have the technical skills to pull this off.
 
-If you still want in, the next step is simple:
-come back and complete checkout.
+If it's the second one, let me reassure you: You do not need to be a coder.
 
-Why it’s worth doing now:
-- you already made the decision
-- the fastest way to get results is to start while the intent is still hot
-- once you begin, you can move straight into the course instead of re-deciding later
+The curriculum is built on copy-paste templates. We give you the working Python script for a customer service bot. You paste it in, add your business name, and hit run.
 
-Finish here:
+That's why we offer the 14-Day Build Guarantee. If you don't have a working AI automation saving you time within two weeks, I will refund every dollar.
+
+You have zero risk. But every week you wait is another 10 hours lost to manual tasks.
+
+Resume Your Checkout Here:
 {{ctaUrl}}
 
-If something blocked you — price, confusion, technical issue, timing — reply to this email and tell us.
-
-— AI Integration Course`,
+Best,
+Blaine Casey
+AI Solutions Architect`,
   html: `
     <p>Hi {{firstName}},</p>
-    <p>You were close.</p>
-    <p>You picked a plan and started checkout, but didn’t finish.</p>
-    <p>If you still want in, the next step is simple: <strong>come back and complete checkout.</strong></p>
-    <p><strong>Why it’s worth doing now:</strong></p>
-    <ul>
-      <li>you already made the decision</li>
-      <li>the fastest way to get results is to start while the intent is still hot</li>
-      <li>once you begin, you can move straight into the course instead of re-deciding later</li>
-    </ul>
-    <p><a href="{{ctaUrl}}" style="display:inline-block;padding:12px 20px;background:#111827;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;">Complete Checkout</a></p>
-    <p>If something blocked you — price, confusion, technical issue, timing — reply to this email and tell us.</p>
-    <p>— AI Integration Course</p>
+    <p>I noticed you started to enroll in the AI Integration Course but didn't finish checkout.</p>
+    <p>Usually, when this happens, it's because of one of two things:</p>
+    <ol>
+      <li>You got distracted by the exact kind of busywork this course is designed to eliminate.</li>
+      <li>You're wondering if you actually have the technical skills to pull this off.</li>
+    </ol>
+    <p>If it's the second one, let me reassure you: <strong>You do not need to be a coder.</strong></p>
+    <p>The curriculum is built on copy-paste templates. We give you the working Python script for a customer service bot. You paste it in, add your business name, and hit run.</p>
+    <p>That's why we offer the <strong>14-Day Build Guarantee</strong>. If you don't have a working AI automation saving you time within two weeks, I will refund every dollar.</p>
+    <p>You have zero risk. But every week you wait is another 10 hours lost to manual tasks.</p>
+    <p><a href="{{ctaUrl}}" style="display:inline-block;padding:12px 20px;background:#111827;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;">Resume Your Checkout Here</a></p>
+    <p>Best,<br>Blaine Casey<br>AI Solutions Architect</p>
   `,
 };
 

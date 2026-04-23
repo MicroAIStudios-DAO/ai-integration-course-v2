@@ -1184,6 +1184,31 @@ export const stripeWebhookV2 = onRequest(
             );
           }
 
+          // TRIGGER CART ABANDONMENT EMAIL QUEUE IMMEDIATELY IF EMAIL IS PRESENT
+          if (abandonedEmail) {
+            try {
+              // We queue this directly into the email_queue to bypass the cron job and consent gate
+              // since this is a transactional abandonment email, not a promotional newsletter
+              const firstName = (session.customer_details?.name || 'there').split(' ')[0];
+              await db.collection('email_queue').add({
+                to: abandonedEmail,
+                templateType: 'checkout_abandonment_email',
+                context: {
+                  firstName: firstName,
+                  ctaUrl: `https://aiintegrationcourse.com/pricing?utm_source=stripe_webhook&utm_medium=email&utm_campaign=checkout_abandonment_email_v2_2026&session_id=${session.id}`,
+                },
+                status: 'pending',
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                type: 'checkout_abandonment',
+                userId: uid || `anonymous_${session.id}`,
+                dedupeKey: `checkout_abandonment_email:${session.id}:v2`,
+              });
+              console.log(`Queued checkout abandonment email for ${abandonedEmail} (Session: ${session.id})`);
+            } catch (queueErr) {
+              console.error(`Failed to queue abandonment email for ${session.id}:`, queueErr);
+            }
+          }
+
           console.log(`Checkout ${session.id} expired (abandoned). Email: ${abandonedEmail || 'none'}, promo consent: ${promoConsent}, uid: ${uid || 'none'}`);
           break;
         }

@@ -61,6 +61,36 @@ const PaymentSuccessPage: React.FC = () => {
   }, [checkoutSessionId]);
 
   useEffect(() => {
+    // Fire fallback tracking immediately if we have a session ID, even before summary loads
+    // This ensures Google Ads gets the signal even if the backend fetch fails or is slow
+    if (checkoutSessionId) {
+      const fallbackKey = `checkout_analytics_fallback:${checkoutSessionId}`;
+      if (!sessionStorage.getItem(fallbackKey)) {
+        // We use the URL plan parameter to estimate value if summary isn't loaded yet
+        const queryPlan = new URLSearchParams(location.search).get("plan") as PlanKey | null;
+        const estimatedPlan = plans[queryPlan || "explorer"] || plans.explorer;
+        
+        // Push raw datalayer event as belt-and-suspenders
+        if (typeof window !== 'undefined' && (window as any).dataLayer) {
+          (window as any).dataLayer.push({
+            event: 'purchase',
+            ecommerce: {
+              transaction_id: checkoutSessionId,
+              value: estimatedPlan.analyticsValue,
+              currency: 'USD'
+            }
+          });
+        }
+        
+        trackPurchase(checkoutSessionId, estimatedPlan.analyticsValue, "USD", 0, estimatedPlan.name, queryPlan || "explorer" as PlanKey);
+        trackGoogleAdsPurchaseConversion(checkoutSessionId, estimatedPlan.analyticsValue);
+        
+        sessionStorage.setItem(fallbackKey, "true");
+      }
+    }
+  }, [checkoutSessionId, location.search]);
+
+  useEffect(() => {
     if (!summary) return;
 
     const analyticsKey = `checkout_analytics:${summary.sessionId}`;
@@ -69,6 +99,8 @@ const PaymentSuccessPage: React.FC = () => {
     }
 
     const purchaseValue = summary.analyticsValue > 0 ? summary.analyticsValue : plan.analyticsValue;
+    
+    // We still fire this when summary loads because it contains the enhanced conversion data (email)
     trackPurchase(summary.sessionId, purchaseValue, "USD", 0, summary.planName, summary.planKey);
 
     // PRIMARY Google Ads conversion — this is what Smart Bidding / tROAS optimizes toward.
