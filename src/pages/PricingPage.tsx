@@ -10,6 +10,23 @@ import ExitIntentLeadMagnet from '../components/lead-magnet/ExitIntentLeadMagnet
 import { PlanKey, plans, formatPlanPrice } from '../config/pricing';
 import CopyableCodeBlock from '../components/common/CopyableCodeBlock';
 
+const FAQItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="bg-slate-800/50 rounded-lg border border-slate-700/50">
+      <button
+        className="w-full text-left px-6 py-5 flex justify-between items-center gap-4"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+      >
+        <span className="text-white font-semibold">{q}</span>
+        <span className="text-emerald-400 text-xl flex-shrink-0">{open ? '−' : '+'}</span>
+      </button>
+      {open && <p className="px-6 pb-5 text-gray-400 leading-relaxed">{a}</p>}
+    </div>
+  );
+};
+
 const CheckIcon = () => (
   <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -27,6 +44,7 @@ const PricingPage: React.FC = () => {
   const { isFounding } = useFoundingAccess();
   const isRegisteredUser = !!currentUser && !currentUser.isAnonymous;
 
+  const trial = plans.pro_trial;
   const explorer = plans.explorer;
   const pro = plans.pro;
   const corporate = plans.corporate;
@@ -34,8 +52,9 @@ const PricingPage: React.FC = () => {
   const enterpriseMonthlyTotal = useMemo(() => Number((14.99 * enterpriseSeats).toFixed(2)), [enterpriseSeats]);
 
   useEffect(() => {
-    trackViewPricing('USD', pro.analyticsValue, pro.name);
-  }, [pro.analyticsValue, pro.name]);
+    // Track primary offer (trial) for analytics
+    trackViewPricing('USD', trial.analyticsValue, trial.name);
+  }, [trial.analyticsValue, trial.name]);
 
   const renderCTA = (planKey: PlanKey) => {
     const plan = plans[planKey];
@@ -105,13 +124,33 @@ const PricingPage: React.FC = () => {
         {/* Hero */}
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Ship Your First AI Workflow in 14 Days — Or Get Every Dollar Back
+            Stop watching AI happen.<br />
+            <span className="text-emerald-400">Start using it this week.</span>
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
-            Three plans. One build path. Pick the billing that fits, start checkout, and unlock premium builds immediately.
+            Build your first real AI workflow in under 10 minutes — even if you're not technical.
           </p>
+          {/* Primary + Secondary CTA row */}
+          {!isFounding && (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+              <SubscribeButton
+                planKey="pro_trial"
+                buttonText="Start 7-Day Trial for $1"
+                className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-lg shadow-lg shadow-emerald-500/20 transition-all"
+              />
+              <SubscribeButton
+                planKey="pro"
+                buttonText="Get Annual Access — Save $120"
+                className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 font-bold text-lg transition-all"
+              />
+            </div>
+          )}
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-slate-400 mb-6">
+            <span className="flex items-center gap-1.5"><CheckIcon /> Instant access after checkout</span>
+            <span className="flex items-center gap-1.5"><CheckIcon /> 14-Day Build Guarantee</span>
+            <span className="flex items-center gap-1.5"><CheckIcon /> Cancel trial anytime before day 8</span>
+          </div>
           <RoiGuaranteeBadge className="px-6 py-3 text-sm" />
-
         </div>
 
         {isFounding && (
@@ -121,6 +160,41 @@ const PricingPage: React.FC = () => {
             <p className="mt-3 max-w-3xl mx-auto text-sm leading-7 text-emerald-100">
               Pricing is now framed as three billing options for the same core system, but you do not need any of them. Your account already holds the permanent-access and priority-feedback benefits.
             </p>
+          </div>
+        )}
+
+        {/* ── TRIAL CARD — Primary Offer ── */}
+        {!isFounding && (
+          <div className="mb-12 max-w-lg mx-auto">
+            <div className="relative rounded-2xl border-2 border-emerald-500 bg-gradient-to-b from-emerald-950/40 to-slate-800/50 p-8">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                <span className="bg-emerald-500 text-slate-950 text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wide">
+                  Lowest Risk — Start Here
+                </span>
+              </div>
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-bold text-white mb-1">{trial.name}</h3>
+                <div className="flex items-baseline justify-center gap-1 mb-2">
+                  <span className="text-6xl font-bold text-emerald-400">$1</span>
+                  <span className="text-slate-400 text-xl">today</span>
+                </div>
+                <p className="text-slate-400 text-sm">7 days of full access, then $29.99/month unless cancelled before renewal.</p>
+              </div>
+              <ul className="space-y-3 mb-8">
+                {trial.features.map((f) => (
+                  <li key={f.text} className="flex items-start gap-3">
+                    <CheckIcon />
+                    <span className={`text-slate-300 text-sm ${f.bold ? 'font-semibold text-white' : ''}`}>{f.text}</span>
+                  </li>
+                ))}
+              </ul>
+              <SubscribeButton
+                planKey="pro_trial"
+                buttonText="Start My $1 Trial — Instant Access"
+                className="w-full py-4 px-6 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-lg shadow-lg shadow-emerald-500/20 transition-all"
+              />
+              <p className="text-center text-slate-500 text-xs mt-3">Cancel before day 8 in 2 clicks. No games.</p>
+            </div>
           </div>
         )}
 
@@ -406,11 +480,28 @@ print(result.body)`}
           </div>
         </div>
 
+        {/* Objection Handling */}
+        <div className="mt-20 max-w-3xl mx-auto">
+          <h2 className="text-2xl font-bold text-white text-center mb-8">What usually stops people from starting</h2>
+          <div className="space-y-4">
+            {[
+              { q: '"I\'m not technical."', a: 'You do not need to be technical to start. The path is built to get you moving with guided, practical steps — not coding or heavy theory.' },
+              { q: '"I don\'t have time."', a: 'Your first useful win should take minutes, not days. Most lessons are intentionally short and built for real schedules.' },
+              { q: '"What if it\'s not worth it?"', a: "That's exactly why the guarantee exists. If you don't build something useful in 14 days, you get your money back." },
+            ].map(({ q, a }) => (
+              <div key={q} className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
+                <p className="text-emerald-400 font-semibold mb-2">{q}</p>
+                <p className="text-slate-300 leading-relaxed">{a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Final CTA */}
         <div className="mt-20 text-center">
-          <h2 className="text-3xl font-bold text-white mb-6">Ready to start building?</h2>
-          <p className="text-xl text-gray-300 mb-8">
-            Monthly flexibility, annual savings, or team pricing — pick the path that fits and start your first build today.
+          <h2 className="text-3xl font-bold text-white mb-4">You're already doing the hard part.</h2>
+          <p className="text-xl text-gray-300 mb-10">
+            The only real difference now is whether you keep circling the idea — or start using it.
           </p>
           {isFounding ? (
             <Link
@@ -423,46 +514,20 @@ print(result.body)`}
               </svg>
             </Link>
           ) : (
-            <div className="mx-auto grid max-w-5xl gap-4 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">Full Price</p>
-                <h3 className="mt-2 text-xl font-semibold text-white">Choose Monthly</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-400">Use the full-price monthly option if you want flexibility and the cleanest starting point.</p>
-                <div className="mt-4">
-                  <SubscribeButton
-                    planKey="explorer"
-                    buttonText="Start Monthly Checkout"
-                    className="w-full inline-flex items-center justify-center px-8 py-4 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-semibold text-lg transition-colors"
-                  />
-                </div>
-              </div>
-              <div className="rounded-2xl border border-indigo-500/40 bg-indigo-900/30 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-300">Best Value</p>
-                <h3 className="mt-2 text-xl font-semibold text-white">Choose Annual</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-300">Lock in $19.99/mo billed annually at $239.88 — save $120/year vs monthly.</p>
-                <div className="mt-4">
-                  <SubscribeButton
-                    planKey="pro"
-                    buttonText="Start Annual Checkout"
-                    className="w-full inline-flex items-center justify-center px-8 py-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg transition-colors"
-                  />
-                </div>
-              </div>
-              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-900/20 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300">B2B Rate</p>
-                <h3 className="mt-2 text-xl font-semibold text-white">Choose Enterprise</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-300">Enterprise is the lower per-seat B2B rate: $14.99 per seat with a 5-seat minimum. At {enterpriseSeats} seats your monthly total is ${formatPlanPrice(enterpriseMonthlyTotal)}.</p>
-                <div className="mt-4">
-                  <SubscribeButton
-                    planKey="corporate"
-                    seatCount={enterpriseSeats}
-                    buttonText={`Start Enterprise Checkout · ${enterpriseSeats} Seats`}
-                    className="w-full inline-flex items-center justify-center px-8 py-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-lg transition-colors"
-                  />
-                </div>
-              </div>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <SubscribeButton
+                planKey="pro_trial"
+                buttonText="Start 7-Day Trial for $1"
+                className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-lg shadow-lg shadow-emerald-500/20 transition-all"
+              />
+              <SubscribeButton
+                planKey="pro"
+                buttonText="Get Annual Access"
+                className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 font-bold text-lg transition-all"
+              />
             </div>
           )}
+          <p className="text-slate-500 text-sm mt-6">Instant access · 14-Day Build Guarantee · Cancel anytime</p>
           {!isFounding && !isRegisteredUser && (
             <div className="mt-4 flex flex-col items-center gap-3">
               <RoiGuaranteeBadge />

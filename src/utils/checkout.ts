@@ -23,7 +23,7 @@ export type CheckoutSessionSummary = {
 };
 
 export const isPlanKey = (value: unknown): value is PlanKey =>
-  value === 'explorer' || value === 'pro' || value === 'corporate';
+  value === 'explorer' || value === 'pro' || value === 'pro_trial' || value === 'corporate';
 
 export const getStoredPlanKey = (): PlanKey | null => {
   const rawValue = sessionStorage.getItem(INTENDED_PLAN_STORAGE_KEY);

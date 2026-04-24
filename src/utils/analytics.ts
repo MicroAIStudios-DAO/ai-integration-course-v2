@@ -398,6 +398,136 @@ export const trackCTAClick = (
 };
 
 /**
+ * Track $1 trial start (separate from full purchase)
+ * Trigger: PaymentSuccessPage when plan === 'pro_trial'
+ */
+export const trackTrialStart = (
+  transactionId: string,
+  email: string,
+  currency: string = 'USD'
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    if (email) {
+      window.gtag('set', 'user_data', { email: email.trim().toLowerCase() });
+    }
+    window.gtag('event', 'trial_start', {
+      transaction_id: transactionId,
+      value: 1.00,
+      currency,
+      plan_id: 'pro_trial',
+      plan_name: 'Pro Trial ($1 for 7 days)',
+    });
+    // Also push to dataLayer for GTM retargeting audiences
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'trial_start',
+      plan_id: 'pro_trial',
+      transaction_id: transactionId,
+    });
+    console.log('[Analytics] trial_start:', { transactionId });
+  }
+};
+
+/**
+ * Track when a user clicks a recovery CTA from an abandonment email
+ * Trigger: URL contains utm_source=checkout_abandonment on pricing/checkout page load
+ */
+export const trackEmailRecoveryClick = (
+  emailNumber: number,
+  planKey?: string
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'email_recovery_click', {
+      email_number: emailNumber,
+      plan_key: planKey || 'unknown',
+      utm_campaign: new URLSearchParams(window.location.search).get('utm_campaign') || '',
+    });
+    console.log('[Analytics] email_recovery_click:', { emailNumber, planKey });
+  }
+};
+
+/**
+ * Track cancellation page view with plan context
+ * Trigger: PaymentCancelPage load
+ */
+export const trackCancellationPageView = (
+  planKey: string,
+  source: string = 'checkout_cancel'
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'cancellation_page_view', {
+      plan_key: planKey,
+      source,
+    });
+    // Push to dataLayer for GTM retargeting — this is the highest-intent abandonment signal
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'cancellation_page_view',
+      plan_key: planKey,
+      retargeting_audience: 'checkout_cancellers',
+    });
+    console.log('[Analytics] cancellation_page_view:', { planKey, source });
+  }
+};
+
+/**
+ * Track recovery CTA click on the cancellation page
+ * Trigger: "Resume Checkout" button click on PaymentCancelPage
+ */
+export const trackCancellationRecoveryClick = (
+  planKey: string,
+  objectionHandled?: string
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'cancellation_recovery_click', {
+      plan_key: planKey,
+      objection_handled: objectionHandled || 'none',
+    });
+    console.log('[Analytics] cancellation_recovery_click:', { planKey, objectionHandled });
+  }
+};
+
+/**
+ * Push abandonment funnel state to dataLayer for GTM retargeting audiences
+ * Call this on every checkout step to build precise retargeting segments
+ */
+export const pushAbandonmentFunnelState = (
+  stage: 'pricing_viewed' | 'checkout_started' | 'checkout_cancelled' | 'checkout_expired',
+  planKey: string,
+  value?: number
+): void => {
+  if (typeof window !== 'undefined') {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'abandonment_funnel',
+      funnel_stage: stage,
+      plan_key: planKey,
+      plan_value: value || 0,
+      retargeting_audience: `abandonment_${stage}`,
+    });
+    console.log('[Analytics] abandonment_funnel:', { stage, planKey, value });
+  }
+};
+
+/**
+ * Track annual upsell CTA click
+ * Trigger: "Switch to Annual" button click in upsell email landing or dashboard
+ */
+export const trackAnnualUpsellClick = (
+  currentPlan: string,
+  source: 'email' | 'dashboard' | 'pricing'
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'annual_upsell_click', {
+      current_plan: currentPlan,
+      source,
+      potential_value: 239,
+    });
+    console.log('[Analytics] annual_upsell_click:', { currentPlan, source });
+  }
+};
+
+/**
  * Set user properties for audience segmentation
  */
 export const setUserProperties = (properties: {

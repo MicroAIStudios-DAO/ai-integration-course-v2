@@ -20,7 +20,12 @@ const DEFAULT_CURRICULUM_URL = 'https://aiintegrationcourse.com/curriculum';
 const DEFAULT_INTRO_LESSON_URL = 'https://aiintegrationcourse.com/lessons/intro';
 const DEFAULT_PRICING_URL = 'https://aiintegrationcourse.com/pricing';
 const PLAYBOOK_DELAY_MS = 15 * 60 * 1000;
-const CHECKOUT_ABANDONMENT_DELAY_MS = 60 * 60 * 1000;
+const CHECKOUT_ABANDONMENT_DELAY_MS = 10 * 60 * 1000;       // Email 1: 10 minutes
+const CHECKOUT_ABANDONMENT_2_DELAY_MS = 6 * 60 * 60 * 1000; // Email 2: 6 hours
+const CHECKOUT_ABANDONMENT_3_DELAY_MS = 24 * 60 * 60 * 1000; // Email 3: 24 hours
+const CHECKOUT_ABANDONMENT_4_DELAY_MS = 48 * 60 * 60 * 1000; // Email 4: 48 hours
+const TRIAL_ENDING_SOON_DELAY_DAYS = 6; // Day 6 of 7-day trial
+const ANNUAL_UPSELL_DELAY_DAYS = 30;    // Day 30 for monthly subscribers
 
 export type EmailQueueStatus = 'pending' | 'processing' | 'sent' | 'retry' | 'error' | 'superseded';
 
@@ -295,6 +300,95 @@ export async function queueCheckoutAbandonmentEmail(options: QueueProfileOptions
   });
 }
 
+export async function queueCheckoutAbandonmentEmail2(options: QueueProfileOptions & { planName?: string; recoveryUrl?: string }): Promise<boolean> {
+  return queueTemplatedEmail({
+    userId: options.uid,
+    email: options.email || '',
+    displayName: options.displayName,
+    templateType: 'checkout_abandonment_email_2',
+    dedupeKey: `checkout_abandonment_email_2:${options.uid}:v1`,
+    context: {
+      planName: options.planName || 'Pro Trial',
+      ctaUrl: options.recoveryUrl || `${DEFAULT_PRICING_URL}?utm_source=checkout_abandonment&utm_medium=email&utm_campaign=checkout_abandonment_email_2_v1_2026&utm_content=email2_objections`,
+    },
+    meta: { trigger: 'checkout_abandonment_2', checkoutStartedAt: options.checkoutStartedAt || null },
+    scheduledFor: new Date(Date.now() + CHECKOUT_ABANDONMENT_2_DELAY_MS),
+  });
+}
+
+export async function queueCheckoutAbandonmentEmail3(options: QueueProfileOptions & { recoveryUrl?: string }): Promise<boolean> {
+  return queueTemplatedEmail({
+    userId: options.uid,
+    email: options.email || '',
+    displayName: options.displayName,
+    templateType: 'checkout_abandonment_email_3',
+    dedupeKey: `checkout_abandonment_email_3:${options.uid}:v1`,
+    context: {
+      ctaUrl: options.recoveryUrl || `${DEFAULT_PRICING_URL}?utm_source=checkout_abandonment&utm_medium=email&utm_campaign=checkout_abandonment_email_3_v1_2026&utm_content=email3_transformation`,
+    },
+    meta: { trigger: 'checkout_abandonment_3', checkoutStartedAt: options.checkoutStartedAt || null },
+    scheduledFor: new Date(Date.now() + CHECKOUT_ABANDONMENT_3_DELAY_MS),
+  });
+}
+
+export async function queueCheckoutAbandonmentEmail4(options: QueueProfileOptions & { recoveryUrl?: string }): Promise<boolean> {
+  return queueTemplatedEmail({
+    userId: options.uid,
+    email: options.email || '',
+    displayName: options.displayName,
+    templateType: 'checkout_abandonment_email_4',
+    dedupeKey: `checkout_abandonment_email_4:${options.uid}:v1`,
+    context: {
+      ctaUrl: options.recoveryUrl || `${DEFAULT_PRICING_URL}?utm_source=checkout_abandonment&utm_medium=email&utm_campaign=checkout_abandonment_email_4_v1_2026&utm_content=email4_bonus`,
+    },
+    meta: { trigger: 'checkout_abandonment_4', checkoutStartedAt: options.checkoutStartedAt || null },
+    scheduledFor: new Date(Date.now() + CHECKOUT_ABANDONMENT_4_DELAY_MS),
+  });
+}
+
+export async function queueTrialEndingSoon(options: QueueProfileOptions): Promise<boolean> {
+  return queueTemplatedEmail({
+    userId: options.uid,
+    email: options.email || '',
+    displayName: options.displayName,
+    templateType: 'trial_ending_soon',
+    dedupeKey: `trial_ending_soon:${options.uid}:v1`,
+    context: {
+      ctaUrl: `${DEFAULT_DASHBOARD_URL}?utm_source=trial_ending&utm_medium=email&utm_campaign=trial_ending_soon_v1_2026`,
+    },
+    meta: { trigger: 'trial_ending_soon', trialEndsAt: options.trialEndsAt || null },
+  });
+}
+
+export async function queuePaymentFailedEmail(options: QueueProfileOptions): Promise<boolean> {
+  return queueTemplatedEmail({
+    userId: options.uid,
+    email: options.email || '',
+    displayName: options.displayName,
+    templateType: 'payment_failed_email',
+    dedupeKey: `payment_failed_email:${options.uid}:${Date.now()}`,
+    context: {
+      planName: options.subscriptionTier ? humanizeTier(options.subscriptionTier) : 'your plan',
+      ctaUrl: `${DEFAULT_DASHBOARD_URL}/billing?utm_source=payment_failed&utm_medium=email&utm_campaign=payment_failed_email_v1_2026`,
+    },
+    meta: { trigger: 'payment_failed', subscriptionTier: options.subscriptionTier || '' },
+  });
+}
+
+export async function queueAnnualUpsellEmail(options: QueueProfileOptions): Promise<boolean> {
+  return queueTemplatedEmail({
+    userId: options.uid,
+    email: options.email || '',
+    displayName: options.displayName,
+    templateType: 'annual_upsell_email',
+    dedupeKey: `annual_upsell_email:${options.uid}:v1`,
+    context: {
+      ctaUrl: `${DEFAULT_PRICING_URL}?plan=pro&utm_source=annual_upsell&utm_medium=email&utm_campaign=annual_upsell_email_v1_2026`,
+    },
+    meta: { trigger: 'annual_upsell_day30', subscriptionTier: options.subscriptionTier || '' },
+  });
+}
+
 export async function queuePaidWelcomeEmail(options: QueueProfileOptions): Promise<boolean> {
   return queueTemplatedEmail({
     userId: options.uid,
@@ -323,6 +417,8 @@ export const queueLifecycleEmailCadenceV2 = onSchedule(
     const now = new Date();
     const usersSnap = await db.collection('users').limit(500).get();
     let checkoutQueued = 0;
+    let trialEndingSoonQueued = 0;
+    let annualUpsellQueued = 0;
 
     for (const userDoc of usersSnap.docs) {
       const profile = userDoc.data();
@@ -335,29 +431,64 @@ export const queueLifecycleEmailCadenceV2 = onSchedule(
       const subscriptionStatus = (profile.subscriptionStatus || 'none').toString().toLowerCase();
       const premium = profile.premium === true;
       const checkoutStartedAt = profile.checkoutStartedAt as FirebaseFirestore.Timestamp | undefined;
+      const trialEndsAt = profile.trialEndsAt as FirebaseFirestore.Timestamp | undefined;
+      const subscriptionStartedAt = profile.subscriptionStartedAt as FirebaseFirestore.Timestamp | undefined;
+      const billingInterval = (profile.billingInterval || '').toString().toLowerCase();
 
-      const hasPromoConsent = profile.promotionalEmailConsent === true;
-
+      // ── ABANDONMENT SEQUENCE (4 emails) ──────────────────────────────────────────────
       if (
         checkoutStartedAt &&
-        checkoutStartedAt.toDate().getTime() <= now.getTime() - CHECKOUT_ABANDONMENT_DELAY_MS &&
         !premium &&
         subscriptionStatus !== 'trialing' &&
         subscriptionStatus !== 'active'
-        // REMOVED: hasPromoConsent gate. Cart abandonment is transactional, not promotional.
       ) {
-        const queued = await queueCheckoutAbandonmentEmail({
-          uid,
-          email,
-          displayName: profile.displayName,
-          checkoutStartedAt,
-        });
-        if (queued) {
-          checkoutQueued += 1;
+        const elapsedMs = now.getTime() - checkoutStartedAt.toDate().getTime();
+        const opts = { uid, email, displayName: profile.displayName, checkoutStartedAt };
+
+        // Email 1: 10 minutes
+        if (elapsedMs >= CHECKOUT_ABANDONMENT_DELAY_MS) {
+          const queued = await queueCheckoutAbandonmentEmail(opts);
+          if (queued) checkoutQueued += 1;
+        }
+        // Email 2: 6 hours
+        if (elapsedMs >= CHECKOUT_ABANDONMENT_2_DELAY_MS) {
+          await queueCheckoutAbandonmentEmail2({ ...opts, planName: profile.pendingCheckoutPlanKey || 'Pro Trial' });
+        }
+        // Email 3: 24 hours
+        if (elapsedMs >= CHECKOUT_ABANDONMENT_3_DELAY_MS) {
+          await queueCheckoutAbandonmentEmail3(opts);
+        }
+        // Email 4: 48 hours
+        if (elapsedMs >= CHECKOUT_ABANDONMENT_4_DELAY_MS) {
+          await queueCheckoutAbandonmentEmail4(opts);
+        }
+      }
+
+      // ── TRIAL ENDING SOON (Day 6 of trial) ───────────────────────────────────────────
+      if (trialEndsAt && subscriptionStatus === 'trialing') {
+        const msUntilTrialEnd = trialEndsAt.toDate().getTime() - now.getTime();
+        const msInOneDay = 24 * 60 * 60 * 1000;
+        // Send when between 24h and 48h remain (Day 6 window)
+        if (msUntilTrialEnd > 0 && msUntilTrialEnd <= msInOneDay * 2 && msUntilTrialEnd > msInOneDay) {
+          const queued = await queueTrialEndingSoon({ uid, email, displayName: profile.displayName, trialEndsAt });
+          if (queued) trialEndingSoonQueued += 1;
+        }
+      }
+
+      // ── ANNUAL UPSELL (Day 30 for monthly subscribers) ─────────────────────────────
+      if (
+        subscriptionStatus === 'active' &&
+        billingInterval === 'month' &&
+        subscriptionStartedAt
+      ) {
+        const daysSinceStart = (now.getTime() - subscriptionStartedAt.toDate().getTime()) / (24 * 60 * 60 * 1000);
+        if (daysSinceStart >= ANNUAL_UPSELL_DELAY_DAYS && daysSinceStart < ANNUAL_UPSELL_DELAY_DAYS + 1) {
+          const queued = await queueAnnualUpsellEmail({ uid, email, displayName: profile.displayName, subscriptionTier: profile.subscriptionTier });
+          if (queued) annualUpsellQueued += 1;
         }
       }
     }
 
-    console.log(`Lifecycle cadence queued checkout=${checkoutQueued}`);
+    console.log(`Lifecycle cadence queued checkout=${checkoutQueued} trialEndingSoon=${trialEndingSoonQueued} annualUpsell=${annualUpsellQueued}`);
   }
 );

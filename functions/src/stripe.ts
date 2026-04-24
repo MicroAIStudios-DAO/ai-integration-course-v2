@@ -25,7 +25,7 @@ const ENTERPRISE_SEAT_MINIMUM = 5;
 
 let stripe: Stripe | null = null;
 
-type CheckoutPlanKey = 'explorer' | 'pro' | 'corporate';
+type CheckoutPlanKey = 'explorer' | 'pro' | 'pro_trial' | 'corporate';
 
 type CheckoutPlanDefinition = {
   stripePriceId: string;
@@ -84,11 +84,27 @@ const getStripePriceId = (
   }
 };
 
+// $1 trial fee price ID — created via Stripe API
+const STRIPE_TRIAL_FEE_PRICE_ID = 'price_1TPpCOKnsQ10RdBLmD7uiWti';
+
 const getPlanConfig = (
   planKey: CheckoutPlanKey,
   options?: { requireStripePrice?: boolean }
 ): CheckoutPlanDefinition => {
   const planConfig: Record<CheckoutPlanKey, CheckoutPlanDefinition> = {
+    pro_trial: {
+      // Recurring price = explorer monthly ($29.99/mo) with 7-day trial
+      stripePriceId: getStripePriceId('STRIPE_PRICE_EXPLORER_MONTHLY'),
+      stripePriceLookupKey: 'ai_integration_course_explorer_monthly',
+      stripeProductId: 'prod_UOcR2NYunhxjav',
+      tier: 'explorer',
+      billingInterval: 'month',
+      trialDays: 7,
+      seatCount: 1,
+      displayPrice: 1,
+      name: 'Pro Trial',
+      analyticsValue: 1,
+    },
     explorer: {
       stripePriceId: getStripePriceId('STRIPE_PRICE_EXPLORER_MONTHLY'),
       stripePriceLookupKey: 'ai_integration_course_explorer_monthly',
@@ -145,7 +161,7 @@ const getPlanConfig = (
 };
 
 const safePlanKey = (value: unknown): CheckoutPlanKey => {
-  if (value === 'explorer' || value === 'pro' || value === 'corporate') {
+  if (value === 'explorer' || value === 'pro' || value === 'pro_trial' || value === 'corporate') {
     return value;
   }
   return 'explorer';
@@ -153,7 +169,7 @@ const safePlanKey = (value: unknown): CheckoutPlanKey => {
 
 const resolvePlanKey = (payload: Record<string, any> | undefined): CheckoutPlanKey => {
   const requested = payload?.planKey;
-  if (requested === 'explorer' || requested === 'pro' || requested === 'corporate') {
+  if (requested === 'explorer' || requested === 'pro' || requested === 'pro_trial' || requested === 'corporate') {
     return requested;
   }
   throw new HttpsError('invalid-argument', 'A valid plan selection is required to start checkout.');
@@ -183,7 +199,7 @@ const getAnalyticsValueForPlan = (plan: CheckoutPlanDefinition, seatCount: numbe
   return Number((pricePerSeat * seatCount).toFixed(2));
 };
 
-const _isTrialPlan = (_planKey: string | null | undefined): boolean => false;
+const _isTrialPlan = (planKey: string | null | undefined): boolean => planKey === 'pro_trial';
 const _isCorporatePlan = (planKey: string | null | undefined): boolean => planKey === 'corporate';
 
 export { _isTrialPlan as isTrialPlan, _isCorporatePlan as isCorporatePlan };
@@ -918,6 +934,25 @@ export const createCheckoutSessionV2 = onCall(
 
     const customerId = uid ? await ensureStrictMapping(uid, email) : null;
     const checkoutPriceId = await resolveCheckoutStripePriceId(planKey, plan);
+    const isTrialPlan = planKey === 'pro_trial';
+
+    // For the $1 trial: add 7-day trial period to the subscription
+    if (isTrialPlan) {
+      subscriptionData.trial_period_days = 7;
+      subscriptionData.trial_settings = {
+        end_behavior: { missing_payment_method: 'cancel' },
+      };
+    }
+
+    // Build line items: trial gets dual items ($1 fee + recurring subscription)
+    const lineItems: Stripe.Checkout.SessionCreateParams['line_items'] = isTrialPlan
+      ? [
+          // One-time $1 trial access fee — collected immediately
+          { price: STRIPE_TRIAL_FEE_PRICE_ID, quantity: 1 },
+          // Recurring subscription — starts after 7-day trial
+          { price: checkoutPriceId, quantity: 1 },
+        ]
+      : [{ price: checkoutPriceId, quantity: requestedSeatCount }];
 
     const session = await stripe.checkout.sessions.create({
       ...(customerId ? { customer: customerId } : {}),
@@ -942,7 +977,7 @@ export const createCheckoutSessionV2 = onCall(
         'amazon_pay',     // Amazon Pay
         'klarna',         // Buy Now Pay Later
       ],
-      line_items: [{ price: checkoutPriceId, quantity: requestedSeatCount }],
+      line_items: lineItems,
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: baseMetadata,
