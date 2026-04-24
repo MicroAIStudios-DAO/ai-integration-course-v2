@@ -30,6 +30,7 @@ import { UserJotWidget } from './components/UserJotWidget';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import AdminAddLesson from './pages/AdminAddLesson';
+import PlanSelectorPage from './pages/PlanSelectorPage';
 import { initGA4, trackPageView } from './utils/analytics';
 
 // Component to track page views on route changes
@@ -66,6 +67,9 @@ const App: React.FC = () => {
         <Route path="/start" element={<PaidTrafficLandingPage />} />
         {/* PricingPage renders without Layout for full-screen pricing page */}
         <Route path="/pricing" element={<PricingPage />} />
+        {/* Plan Selector: Section 3 — pre-checkout plan selector with source-aware copy */}
+        <Route path="/start-trial" element={<PlanSelectorPage />} />
+        <Route path="/get-access" element={<PlanSelectorPage />} />
         {/* Admin page for adding lessons - hidden route */}
         <Route path="/admin/add-lesson" element={<AdminAddLesson />} />
 

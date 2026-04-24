@@ -11,10 +11,18 @@ export type LifecycleEmailType =
   | 'checkout_abandonment_email_2'
   | 'checkout_abandonment_email_3'
   | 'checkout_abandonment_email_4'
+  | 'checkout_abandonment_email_5'
   | 'paid_welcome_email'
   | 'trial_ending_soon'
+  | 'trial_day_1_email'
+  | 'trial_day_5_email'
+  | 'trial_day_7_email'
+  | 'trial_concierge_email'
   | 'payment_failed_email'
-  | 'annual_upsell_email';
+  | 'payment_failed_email_2'
+  | 'payment_failed_email_3'
+  | 'annual_upsell_email'
+  | 'rescue_link_email';
 
 export type EmailTemplateDefinition = {
   type: LifecycleEmailType;
@@ -353,132 +361,275 @@ Welcome in.
   `,
 };
 
-// ── ABANDONMENT EMAIL 2 (6 hours) — Objection Handling ──────────────────────
+// ── ABANDONMENT EMAIL 2 (~22-24 hours) — Objection Handler — Exact brief copy ─
 export const checkoutAbandonmentTemplate2: EmailTemplateDefinition = {
   type: 'checkout_abandonment_email_2',
-  campaignId: 'checkout_abandonment_email_2_v1_2026',
-  templateVersion: 'v1',
-  subject: 'The 3 reasons people hesitate (and why none of them apply here)',
-  previewText: 'Price, time, and "I can figure this out myself" — let me address all three.',
+  campaignId: 'checkout_abandonment_email_2_v3_2026',
+  templateVersion: 'v3',
+  subject: 'Most people pause at this step',
+  previewText: 'Usually it\'s price, time, or uncertainty',
   replyTo: 'info@aiintegrationcourse.com',
-  ctaLabel: 'Start My $1 Trial',
-  body: `Hi {{firstName}},
+  // CTA is plan-aware: annual abandoners get trial CTA, trial abandoners get resume CTA
+  ctaLabel: '{{ctaLabel}}',
+  body: `Totally normal.
 
-You started checkout for the {{planName}} plan a few hours ago but didn't finish.
+Most people hesitate here for one of three reasons:
 
-I've seen three things stop people at this exact point. Let me address all three directly.
+1. "I'm not sure I'll use it."
+You should be able to get your first real win in the first session.
 
-1. "It's not the right time."
-There is no right time. There is only now, and later. Later almost always means never. The course is built for people with real schedules — most lessons take under 15 minutes.
+2. "I don't have time."
+This was built for real schedules, not marathon study sessions.
 
-2. "I'm not technical enough."
-You don't need to be. The path is built on copy-paste templates and guided walkthroughs. If you can follow a recipe, you can follow this.
+3. "What if it's not worth it?"
+You're protected by the 14-Day Build Guarantee.
 
-3. "I can figure this out from YouTube."
-You can. It'll take 6 months of fragmented tutorials to get what this course delivers in a structured week. Your time is worth more than that.
+If the hesitation is commitment, take the lowest-risk path.
 
-And here's the thing: your first $1 trial removes all the risk. You get 7 days of full access. If it's not for you, cancel before day 8 and you're out $1.
-
-Resume your checkout here:
-{{ctaUrl}}
-
-— AI Integration Course`,
+{{ctaUrl}}`,
   html: `
-    <p>Hi {{firstName}},</p>
-    <p>You started checkout for the <strong>{{planName}}</strong> plan a few hours ago but didn't finish.</p>
-    <p>I've seen three things stop people at this exact point. Let me address all three directly.</p>
-    <p><strong>1. "It's not the right time."</strong><br>There is no right time. There is only now, and later. Later almost always means never. The course is built for people with real schedules — most lessons take under 15 minutes.</p>
-    <p><strong>2. "I'm not technical enough."</strong><br>You don't need to be. The path is built on copy-paste templates and guided walkthroughs. If you can follow a recipe, you can follow this.</p>
-    <p><strong>3. "I can figure this out from YouTube."</strong><br>You can. It'll take 6 months of fragmented tutorials to get what this course delivers in a structured week. Your time is worth more than that.</p>
-    <p>And here's the thing: your first <strong>$1 trial removes all the risk</strong>. You get 7 days of full access. If it's not for you, cancel before day 8 and you're out $1.</p>
-    <p><a href="{{ctaUrl}}" style="display:inline-block;padding:12px 20px;background:#10b981;color:#000000;text-decoration:none;border-radius:8px;font-weight:700;">Start My $1 Trial →</a></p>
+    <p>Totally normal.</p>
+    <p>Most people hesitate here for one of three reasons:</p>
+    <p><strong>1. "I'm not sure I'll use it."</strong><br>You should be able to get your first real win in the first session.</p>
+    <p><strong>2. "I don't have time."</strong><br>This was built for real schedules, not marathon study sessions.</p>
+    <p><strong>3. "What if it's not worth it?"</strong><br>You're protected by the 14-Day Build Guarantee.</p>
+    <p>If the hesitation is commitment, take the lowest-risk path.</p>
+    <p><a href="{{ctaUrl}}" style="display:inline-block;padding:12px 20px;background:#10b981;color:#000000;text-decoration:none;border-radius:8px;font-weight:700;">{{ctaLabel}} →</a></p>
+    <p style="font-size:12px;color:#6b7280;">You're protected by the 14-Day Build Guarantee.</p>
     <p>— AI Integration Course</p>
   `,
 };
 
-// ── ABANDONMENT EMAIL 3 (24 hours) — Urgency + Transformation ────────────────
+// ── ABANDONMENT EMAIL 3 (~46-48 hours) — Momentum / Identity — Exact brief copy
 export const checkoutAbandonmentTemplate3: EmailTemplateDefinition = {
   type: 'checkout_abandonment_email_3',
-  campaignId: 'checkout_abandonment_email_3_v1_2026',
-  templateVersion: 'v1',
-  subject: 'What your business looks like in 30 days with AI running',
-  previewText: 'This is not a motivational email. This is a practical picture of what changes.',
+  campaignId: 'checkout_abandonment_email_3_v3_2026',
+  templateVersion: 'v3',
+  subject: 'Don\'t just learn AI. Start using it.',
+  previewText: 'This is where momentum starts',
   replyTo: 'info@aiintegrationcourse.com',
-  ctaLabel: 'Start Building Today',
-  body: `Hi {{firstName}},
+  ctaLabel: 'Finish What You Started',
+  body: `The people who benefit most from AI will not be the ones who keep reading about it.
 
-This is not a motivational email. I want to give you a practical picture of what actually changes.
+They'll be the ones who start using it while everyone else is still watching.
 
-In 30 days with AI workflows running in your business:
+You were already at the door.
 
-- Customer follow-ups go out automatically, not when you remember
-- Lead qualification happens before you ever pick up the phone
-- Repetitive writing tasks take minutes, not hours
-- You have a system that works while you sleep
-
-None of this requires a developer. None of it requires a big budget. It requires one week of focused implementation — which is exactly what this course is built for.
-
-Your checkout is still open. Your $1 trial is still available.
-
-The only question is whether you start today or keep watching others build the advantage you're thinking about.
-
-Start here:
 {{ctaUrl}}
 
-14-Day Build Guarantee — if you don't ship your first workflow in 14 days, reply for a full refund.
-
-— AI Integration Course`,
+{{annualFallback}}`,
   html: `
-    <p>Hi {{firstName}},</p>
-    <p>This is not a motivational email. I want to give you a practical picture of what actually changes.</p>
-    <p><strong>In 30 days with AI workflows running in your business:</strong></p>
-    <ul>
-      <li>Customer follow-ups go out automatically, not when you remember</li>
-      <li>Lead qualification happens before you ever pick up the phone</li>
-      <li>Repetitive writing tasks take minutes, not hours</li>
-      <li>You have a system that works while you sleep</li>
-    </ul>
-    <p>None of this requires a developer. None of it requires a big budget. It requires one week of focused implementation — which is exactly what this course is built for.</p>
-    <p>Your checkout is still open. Your <strong>$1 trial is still available.</strong></p>
-    <p><a href="{{ctaUrl}}" style="display:inline-block;padding:12px 20px;background:#10b981;color:#000000;text-decoration:none;border-radius:8px;font-weight:700;">Start Building Today →</a></p>
-    <p style="font-size:12px;color:#6b7280;">14-Day Build Guarantee — if you don't ship your first workflow in 14 days, reply for a full refund.</p>
+    <p>The people who benefit most from AI will not be the ones who keep reading about it.</p>
+    <p>They'll be the ones who start using it while everyone else is still watching.</p>
+    <p>You were already at the door.</p>
+    <p><a href="{{ctaUrl}}" style="display:inline-block;padding:12px 20px;background:#10b981;color:#000000;text-decoration:none;border-radius:8px;font-weight:700;">Finish What You Started →</a></p>
+    {{annualFallbackHtml}}
     <p>— AI Integration Course</p>
   `,
 };
 
-// ── ABANDONMENT EMAIL 4 (48 hours) — Incentive / Final ───────────────────────
+// ── ABANDONMENT EMAIL 4 (~72 hours) — Conditional Incentive — Exact brief copy ─
+// Only send to: first-time buyers, no prior purchase, still not converted
 export const checkoutAbandonmentTemplate4: EmailTemplateDefinition = {
   type: 'checkout_abandonment_email_4',
-  campaignId: 'checkout_abandonment_email_4_v1_2026',
-  templateVersion: 'v1',
-  subject: 'Last note — and a bonus if you start today',
-  previewText: 'I\'m adding the Automation Playbook PDF to your account if you start today.',
+  campaignId: 'checkout_abandonment_email_4_v3_2026',
+  templateVersion: 'v3',
+  subject: 'I\'ll make this easier',
+  previewText: 'A small push to get you moving',
   replyTo: 'info@aiintegrationcourse.com',
-  ctaLabel: 'Claim My Bonus and Start',
-  body: `Hi {{firstName}},
+  ctaLabel: 'Complete My Access',
+  body: `If price was the sticking point, here's the nudge:
 
-This is my last note about your incomplete checkout.
+Complete your signup today and we'll include the AI Workflow Starter Pack bonus at no extra charge.
 
-I don't want to be another email in your inbox. So I'll make this simple.
+You still get:
+- full access
+- the guarantee
+- immediate unlock
 
-If you start your $1 trial today, I'll make sure the Prompt Engineering Automation Playbook PDF is waiting in your account the moment you log in. It's the same reference document our most active members use to build faster.
-
-That's it. No countdown timer. No fake scarcity. Just a practical bonus for people who decide to start.
-
-Start here:
 {{ctaUrl}}
 
-If now isn't the right time, no hard feelings. You can always come back when it is.
+{{annualFallback}}`,
+  html: `
+    <p>If price was the sticking point, here's the nudge:</p>
+    <p>Complete your signup today and we'll include the <strong>AI Workflow Starter Pack bonus</strong> at no extra charge.</p>
+    <p>You still get:</p>
+    <ul>
+      <li>full access</li>
+      <li>the guarantee</li>
+      <li>immediate unlock</li>
+    </ul>
+    <p><a href="{{ctaUrl}}" style="display:inline-block;padding:12px 20px;background:#10b981;color:#000000;text-decoration:none;border-radius:8px;font-weight:700;">Complete My Access →</a></p>
+    {{annualFallbackHtml}}
+    <p>— AI Integration Course</p>
+  `,
+};
+
+// ── ABANDONMENT EMAIL 5 (~6-7 days) — Closeout — Exact brief copy ─────────────
+export const checkoutAbandonmentTemplate5: EmailTemplateDefinition = {
+  type: 'checkout_abandonment_email_5',
+  campaignId: 'checkout_abandonment_email_5_v1_2026',
+  templateVersion: 'v1',
+  subject: 'Closing your access link soon',
+  previewText: 'Last easy path back in',
+  replyTo: 'info@aiintegrationcourse.com',
+  ctaLabel: 'Resume Checkout',
+  body: `No pressure.
+
+But if you still want in, here's the fastest path back.
+
+{{ctaUrl}}
+
+Start 7-Day Trial for $1:
+{{trialUrl}}`,
+  html: `
+    <p>No pressure.</p>
+    <p>But if you still want in, here's the fastest path back.</p>
+    <p><a href="{{ctaUrl}}" style="display:inline-block;padding:12px 20px;background:#111827;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;">Resume Checkout →</a></p>
+    <p style="margin-top:12px;"><a href="{{trialUrl}}" style="display:inline-block;padding:10px 18px;background:#10b981;color:#000000;text-decoration:none;border-radius:8px;font-weight:700;">Start 7-Day Trial for $1 →</a></p>
+    <p style="font-size:12px;color:#6b7280;">— AI Integration Course</p>
+  `,
+};
+
+// ── TRIAL DAY 1 — Get Your First Win ────────────────────────────────────────
+export const trialDay1Template: EmailTemplateDefinition = {
+  type: 'trial_day_1_email',
+  campaignId: 'trial_day_1_v1_2026',
+  templateVersion: 'v1',
+  subject: 'Get your first win today',
+  previewText: 'The goal is not to consume content',
+  replyTo: 'info@aiintegrationcourse.com',
+  ctaLabel: 'Build My First Workflow',
+  body: `The goal is not to consume content.
+The goal is to build one useful thing.
+
+Start here:
+{{quickStartLink}}
 
 — AI Integration Course`,
   html: `
-    <p>Hi {{firstName}},</p>
-    <p>This is my last note about your incomplete checkout.</p>
-    <p>I don't want to be another email in your inbox. So I'll make this simple.</p>
-    <p>If you start your <strong>$1 trial today</strong>, I'll make sure the <strong>Prompt Engineering Automation Playbook PDF</strong> is waiting in your account the moment you log in. It's the same reference document our most active members use to build faster.</p>
-    <p>That's it. No countdown timer. No fake scarcity. Just a practical bonus for people who decide to start.</p>
-    <p><a href="{{ctaUrl}}" style="display:inline-block;padding:12px 20px;background:#10b981;color:#000000;text-decoration:none;border-radius:8px;font-weight:700;">Claim My Bonus and Start →</a></p>
-    <p style="font-size:12px;color:#6b7280;">If now isn't the right time, no hard feelings. You can always come back when it is.</p>
+    <p>The goal is not to consume content.</p>
+    <p>The goal is to build one useful thing.</p>
+    <p><a href="{{quickStartLink}}" style="display:inline-block;padding:12px 20px;background:#10b981;color:#000000;text-decoration:none;border-radius:8px;font-weight:700;">Build My First Workflow →</a></p>
+    <p>— AI Integration Course</p>
+  `,
+};
+
+// ── TRIAL DAY 3 — Fastest Path ───────────────────────────────────────────────
+export const trialDay3Template: EmailTemplateDefinition = {
+  type: 'trial_day_3_nudge',
+  campaignId: 'trial_day_3_v2_2026',
+  templateVersion: 'v2',
+  subject: 'Here\'s the easiest workflow to build next',
+  previewText: 'The fastest way to turn your trial into something tangible',
+  replyTo: 'info@aiintegrationcourse.com',
+  ctaLabel: 'Use the Fastest Path',
+  body: `If you've been busy, use this path.
+It's the fastest way to turn your trial into something tangible.
+
+{{ctaUrl}}
+
+— AI Integration Course`,
+  html: `
+    <p>If you've been busy, use this path.</p>
+    <p>It's the fastest way to turn your trial into something tangible.</p>
+    <p><a href="{{ctaUrl}}" style="display:inline-block;padding:12px 20px;background:#10b981;color:#000000;text-decoration:none;border-radius:8px;font-weight:700;">Use the Fastest Path →</a></p>
+    <p>— AI Integration Course</p>
+  `,
+};
+
+// ── TRIAL DAY 5 — Trial Moving Fast ──────────────────────────────────────────
+export const trialDay5Template: EmailTemplateDefinition = {
+  type: 'trial_day_5_email',
+  campaignId: 'trial_day_5_v1_2026',
+  templateVersion: 'v1',
+  subject: 'Your trial is moving fast',
+  previewText: 'A few days left to make this real',
+  replyTo: 'info@aiintegrationcourse.com',
+  ctaLabel: 'Finish My First Win',
+  body: `You've got a few days left to make this real.
+
+Before the trial ends, make sure you do one of these:
+- build one workflow
+- save one template
+- complete the quick-start lesson
+
+{{ctaUrl}}
+
+— AI Integration Course`,
+  html: `
+    <p>You've got a few days left to make this real.</p>
+    <p>Before the trial ends, make sure you do one of these:</p>
+    <ul>
+      <li>build one workflow</li>
+      <li>save one template</li>
+      <li>complete the quick-start lesson</li>
+    </ul>
+    <p><a href="{{ctaUrl}}" style="display:inline-block;padding:12px 20px;background:#10b981;color:#000000;text-decoration:none;border-radius:8px;font-weight:700;">Finish My First Win →</a></p>
+    <p>— AI Integration Course</p>
+  `,
+};
+
+// ── TRIAL DAY 7 — Final Day ───────────────────────────────────────────────────
+export const trialDay7Template: EmailTemplateDefinition = {
+  type: 'trial_day_7_email',
+  campaignId: 'trial_day_7_v1_2026',
+  templateVersion: 'v1',
+  subject: 'Final day of your trial',
+  previewText: 'Your access continues tomorrow unless you cancel before renewal',
+  replyTo: 'info@aiintegrationcourse.com',
+  ctaLabel: 'Go to My Dashboard',
+  body: `Your access continues tomorrow unless you cancel before renewal.
+
+If you want to keep the momentum, stay in.
+If not, cancel before renewal in your account area.
+
+{{ctaUrl}}
+
+— AI Integration Course`,
+  html: `
+    <p>Your access continues tomorrow unless you cancel before renewal.</p>
+    <p>If you want to keep the momentum, stay in.<br>If not, cancel before renewal in your account area.</p>
+    <p><a href="{{ctaUrl}}" style="display:inline-block;padding:12px 20px;background:#111827;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;">Go to My Dashboard →</a></p>
+    <p>— AI Integration Course</p>
+  `,
+};
+
+// ── TRIAL CONCIERGE — Non-Activated by Day 3 ─────────────────────────────────
+export const trialConciergeTemplate: EmailTemplateDefinition = {
+  type: 'trial_concierge_email',
+  campaignId: 'trial_concierge_v1_2026',
+  templateVersion: 'v1',
+  subject: 'Want help getting your first win?',
+  previewText: 'Reply with one sentence and we\'ll point you to the fastest path',
+  replyTo: 'info@aiintegrationcourse.com',
+  ctaLabel: 'Reply to This Email',
+  body: `Reply to this email with one sentence about what you want to do with AI, and we'll point you to the fastest starting path.
+
+— AI Integration Course`,
+  html: `
+    <p>Reply to this email with one sentence about what you want to do with AI, and we'll point you to the fastest starting path.</p>
+    <p>— AI Integration Course</p>
+  `,
+};
+
+// ── RESCUE LINK EMAIL — Exit Intent / "Send Me My Link" ──────────────────────
+export const rescueLinkTemplate: EmailTemplateDefinition = {
+  type: 'rescue_link_email',
+  campaignId: 'rescue_link_v1_2026',
+  templateVersion: 'v1',
+  subject: 'Your secure access link',
+  previewText: 'Here\'s your link to pick up where you left off',
+  replyTo: 'info@aiintegrationcourse.com',
+  ctaLabel: 'Pick Up Where You Left Off',
+  body: `Here's your link to pick up where you left off:
+
+{{resumeUrl}}
+
+— AI Integration Course`,
+  html: `
+    <p>Here's your link to pick up where you left off:</p>
+    <p><a href="{{resumeUrl}}" style="display:inline-block;padding:12px 20px;background:#10b981;color:#000000;text-decoration:none;border-radius:8px;font-weight:700;">Pick Up Where You Left Off →</a></p>
     <p>— AI Integration Course</p>
   `,
 };
@@ -522,7 +673,7 @@ Manage your access here:
   `,
 };
 
-// ── PAYMENT FAILED — Dunning Email ───────────────────────────────────────────
+// ── PAYMENT FAILED EMAIL 1 — Immediate ────────────────────────────────────
 export const paymentFailedTemplate: EmailTemplateDefinition = {
   type: 'payment_failed_email',
   campaignId: 'payment_failed_email_v1_2026',
@@ -553,6 +704,50 @@ If you have questions or want to switch plans, just reply to this email.
     <p><a href="{{ctaUrl}}" style="display:inline-block;padding:12px 20px;background:#dc2626;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:700;">Update My Payment Method →</a></p>
     <p style="font-size:12px;color:#6b7280;">It takes less than 2 minutes. Your progress and access stay exactly where they are.</p>
     <p>If you have questions or want to switch plans, just reply to this email.</p>
+    <p>— AI Integration Course</p>
+  `,
+};
+
+// ── PAYMENT FAILED EMAIL 2 — 2 days later ─────────────────────────────
+export const paymentFailedTemplate2: EmailTemplateDefinition = {
+  type: 'payment_failed_email_2',
+  campaignId: 'payment_failed_email_2_v1_2026',
+  templateVersion: 'v1',
+  subject: 'Your access is at risk',
+  previewText: 'Your renewal still has not gone through',
+  replyTo: 'info@aiintegrationcourse.com',
+  ctaLabel: 'Fix My Payment Method',
+  body: `Your renewal still has not gone through.
+
+Update your payment method to keep your access active:
+{{ctaUrl}}
+
+— AI Integration Course`,
+  html: `
+    <p>Your renewal still has not gone through.</p>
+    <p>Update your payment method to keep your access active:</p>
+    <p><a href="{{ctaUrl}}" style="display:inline-block;padding:12px 20px;background:#dc2626;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:700;">Fix My Payment Method →</a></p>
+    <p>— AI Integration Course</p>
+  `,
+};
+
+// ── PAYMENT FAILED EMAIL 3 — 5 days later (Final Warning) ─────────────────
+export const paymentFailedTemplate3: EmailTemplateDefinition = {
+  type: 'payment_failed_email_3',
+  campaignId: 'payment_failed_email_3_v1_2026',
+  templateVersion: 'v1',
+  subject: 'Final reminder before access is interrupted',
+  previewText: 'This is the final reminder to update your payment method',
+  replyTo: 'info@aiintegrationcourse.com',
+  ctaLabel: 'Update Payment Method',
+  body: `This is the final reminder to update your payment method and keep your access active.
+
+{{ctaUrl}}
+
+— AI Integration Course`,
+  html: `
+    <p>This is the final reminder to update your payment method and keep your access active.</p>
+    <p><a href="{{ctaUrl}}" style="display:inline-block;padding:12px 20px;background:#dc2626;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:700;">Update Payment Method →</a></p>
     <p>— AI Integration Course</p>
   `,
 };
@@ -604,16 +799,24 @@ export const lifecycleEmailTemplates: Record<LifecycleEmailType, EmailTemplateDe
   welcome_email: welcomeEmailTemplate,
   trial_started_email: trialStartedEmailTemplate,
   playbook_delivery: playbookDeliveryTemplate,
-  trial_day_3_nudge: trialDay3NudgeTemplate,
+  trial_day_3_nudge: trialDay3Template,
   trial_expired_offer: trialExpiredOfferTemplate,
   checkout_abandonment_email: checkoutAbandonmentTemplate,
   checkout_abandonment_email_2: checkoutAbandonmentTemplate2,
   checkout_abandonment_email_3: checkoutAbandonmentTemplate3,
   checkout_abandonment_email_4: checkoutAbandonmentTemplate4,
+  checkout_abandonment_email_5: checkoutAbandonmentTemplate5,
   paid_welcome_email: paidWelcomeEmailTemplate,
   trial_ending_soon: trialEndingSoonTemplate,
+  trial_day_1_email: trialDay1Template,
+  trial_day_5_email: trialDay5Template,
+  trial_day_7_email: trialDay7Template,
+  trial_concierge_email: trialConciergeTemplate,
   payment_failed_email: paymentFailedTemplate,
+  payment_failed_email_2: paymentFailedTemplate2,
+  payment_failed_email_3: paymentFailedTemplate3,
   annual_upsell_email: annualUpsellTemplate,
+  rescue_link_email: rescueLinkTemplate,
 };
 
 export const renderEmailTemplate = (
