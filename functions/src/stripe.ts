@@ -931,6 +931,27 @@ export const createCheckoutSessionV2 = onCall(
       subscription_data: subscriptionData,
       allow_promotion_codes: true,
       consent_collection: { promotions: 'auto' },
+      // Stripe-native recovery: keeps session URL alive 30 days post-expiration
+      // and enables Stripe's own abandonment recovery email as a secondary layer
+      after_expiration: {
+        recovery: {
+          enabled: true,
+          allow_promotion_codes: true,
+        },
+      },
+      // Trust copy displayed at the payment submit button and post-submit screen
+      custom_text: {
+        submit: {
+          message: '14-Day Build Guarantee · Cancel anytime · Secure 256-bit SSL',
+        },
+        after_submit: {
+          message: "You're in. Access unlocks immediately. If you don't ship your first AI workflow in 14 days, reply to any email for a full refund — no questions.",
+        },
+      },
+      // Extend session to 2 hours so mobile users switching to desktop don't lose their session
+      expires_at: Math.floor(Date.now() / 1000) + 60 * 60 * 2,
+      // Auto-detect locale for international buyers
+      locale: 'auto',
     });
 
     if (uid) {
@@ -1190,12 +1211,18 @@ export const stripeWebhookV2 = onRequest(
               // We queue this directly into the email_queue to bypass the cron job and consent gate
               // since this is a transactional abandonment email, not a promotional newsletter
               const firstName = (session.customer_details?.name || 'there').split(' ')[0];
+              // Use Stripe's native recovery URL if available (keeps pre-filled email/plan)
+              // Falls back to pricing page with session_id for context
+              const stripeRecoveryUrl = (session as any).after_expiration?.recovery?.url;
+              const recoveryCtaUrl = stripeRecoveryUrl
+                ? `${stripeRecoveryUrl}&utm_source=stripe_webhook&utm_medium=email&utm_campaign=checkout_abandonment_email_v2_2026`
+                : `https://aiintegrationcourse.com/pricing?plan=${planKey}&utm_source=stripe_webhook&utm_medium=email&utm_campaign=checkout_abandonment_email_v2_2026&session_id=${session.id}`;
               await db.collection('email_queue').add({
                 to: abandonedEmail,
                 templateType: 'checkout_abandonment_email',
                 context: {
                   firstName: firstName,
-                  ctaUrl: `https://aiintegrationcourse.com/pricing?utm_source=stripe_webhook&utm_medium=email&utm_campaign=checkout_abandonment_email_v2_2026&session_id=${session.id}`,
+                  ctaUrl: recoveryCtaUrl,
                 },
                 status: 'pending',
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
