@@ -924,6 +924,24 @@ export const createCheckoutSessionV2 = onCall(
       ...(uid ? { client_reference_id: uid } : {}),
       mode: 'subscription',
       payment_method_collection: 'always',
+      // ── Payment Methods ──────────────────────────────────────────────────
+      // 'card' enables Apple Pay and Google Pay automatically via Stripe's
+      // wallet detection (no separate type needed — Stripe shows the wallet
+      // button when the browser/device supports it).
+      // 'link' = Stripe Link (one-click checkout with saved cards)
+      // 'us_bank_account' = ACH Direct Debit (closest Stripe equivalent to Zelle
+      //   for US bank-to-bank transfers; lower fees at 0.8% capped at $5)
+      // 'cashapp' = Cash App Pay
+      // 'amazon_pay' = Amazon Pay
+      // 'klarna' = Buy Now Pay Later
+      payment_method_types: [
+        'card',           // Includes Apple Pay + Google Pay via wallet detection
+        'link',           // Stripe Link one-click checkout
+        'us_bank_account', // ACH / bank transfer (Zelle equivalent)
+        'cashapp',        // Cash App Pay
+        'amazon_pay',     // Amazon Pay
+        'klarna',         // Buy Now Pay Later
+      ],
       line_items: [{ price: checkoutPriceId, quantity: requestedSeatCount }],
       success_url: successUrl,
       cancel_url: cancelUrl,
@@ -1244,6 +1262,14 @@ export const stripeWebhookV2 = onRequest(
         case 'invoice.paid': {
           const invoice = event.data.object as Stripe.Invoice;
           await handleInvoicePaid(invoice);
+          break;
+        }
+
+        case 'invoice.payment_failed': {
+          const invoice = event.data.object as Stripe.Invoice;
+          console.error(`[Stripe Webhook] Invoice payment failed for invoice ${invoice.id}, customer ${invoice.customer}`);
+          // Add logic to handle failed payments (e.g., notify user, update DB status)
+          // For now, we log it so it's captured and the webhook returns 200 OK
           break;
         }
 
