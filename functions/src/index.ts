@@ -57,6 +57,9 @@ export { userJotToGithub, githubToUserJot, betaTesterSync } from './beta-testing
 // Lead magnet capture
 export { submitLeadMagnetV2 } from './leadMagnet';
 
+// Spec §14: Billing portal — Stripe Customer Portal session creation
+export { createBillingPortalSession } from './billingPortal';
+
 // Email queue delivery
 export { processEmailQueueV2, drainPendingEmailQueueV2 } from './email';
 

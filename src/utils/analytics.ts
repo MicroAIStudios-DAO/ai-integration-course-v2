@@ -581,6 +581,229 @@ export const trackError = (
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Spec §16: Remaining 9 events from the full 21-event schema
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Spec Event 13: lead_captured
+ * Trigger: CheckoutStartPage form submit (before Stripe redirect)
+ * Purpose: Measures pre-checkout lead capture rate; feeds retargeting audiences
+ */
+export const trackLeadCaptured = (
+  planKey: string,
+  leadSource: string,
+  offerType: string,
+  hasSmsConsent: boolean
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'lead_captured', {
+      plan_key: planKey,
+      lead_source: leadSource,
+      offer_type: offerType,
+      sms_consent: hasSmsConsent,
+    });
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'lead_captured',
+      plan_key: planKey,
+      offer_type: offerType,
+      retargeting_audience: 'pre_checkout_leads',
+    });
+    console.log('[Analytics] lead_captured:', { planKey, leadSource, offerType });
+  }
+};
+
+/**
+ * Spec Event 14: checkout_start_page_view
+ * Trigger: CheckoutStartPage component mount
+ * Purpose: Measures how many users reach the lead capture step
+ */
+export const trackCheckoutStartPageView = (
+  planKey: string,
+  offerType: string,
+  utmSource?: string
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'checkout_start_page_view', {
+      plan_key: planKey,
+      offer_type: offerType,
+      utm_source: utmSource || new URLSearchParams(window.location.search).get('utm_source') || '',
+    });
+    console.log('[Analytics] checkout_start_page_view:', { planKey, offerType });
+  }
+};
+
+/**
+ * Spec Event 15: checkout_resumed
+ * Trigger: User clicks "Resume Checkout" from recovery email or cancel page
+ * Purpose: Measures recovery email effectiveness; feeds attribution model
+ */
+export const trackCheckoutResumed = (
+  planKey: string,
+  resumeSource: 'recovery_email' | 'cancel_page' | 'stripe_recovery_link' | 'direct',
+  emailNumber?: number
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'checkout_resumed', {
+      plan_key: planKey,
+      resume_source: resumeSource,
+      email_number: emailNumber || 0,
+    });
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'checkout_resumed',
+      plan_key: planKey,
+      resume_source: resumeSource,
+    });
+    console.log('[Analytics] checkout_resumed:', { planKey, resumeSource });
+  }
+};
+
+/**
+ * Spec Event 16: trial_converted
+ * Trigger: PaymentSuccessPage when plan === 'pro_trial' AND trial_end has passed
+ *          OR customer.subscription.updated webhook fires with status: 'active' after 'trialing'
+ * Purpose: Measures trial-to-paid conversion rate (the most important SaaS metric)
+ */
+export const trackTrialConverted = (
+  transactionId: string,
+  value: number,
+  email: string,
+  currency: string = 'USD'
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    if (email) {
+      window.gtag('set', 'user_data', { email: email.trim().toLowerCase() });
+    }
+    window.gtag('event', 'trial_converted', {
+      transaction_id: transactionId,
+      value,
+      currency,
+      plan_id: 'pro_monthly',
+      plan_name: 'Pro AI Architect (converted from trial)',
+    });
+    // Also fire as a purchase event for GA4 ecommerce reporting
+    window.gtag('event', 'purchase', {
+      transaction_id: `trial_convert_${transactionId}`,
+      value,
+      currency,
+      items: [{ item_id: 'pro_monthly', item_name: 'Pro AI Architect', price: value, quantity: 1 }],
+    });
+    console.log('[Analytics] trial_converted:', { transactionId, value });
+  }
+};
+
+/**
+ * Spec Event 17: subscription_cancelled
+ * Trigger: customer.subscription.deleted webhook (server-side)
+ *          OR user clicks "Cancel" in billing portal (client-side, on portal return)
+ * Purpose: Measures churn rate; feeds win-back campaign audiences
+ */
+export const trackSubscriptionCancelled = (
+  planKey: string,
+  cancellationReason?: string,
+  monthsActive?: number
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'subscription_cancelled', {
+      plan_key: planKey,
+      cancellation_reason: cancellationReason || 'unknown',
+      months_active: monthsActive || 0,
+    });
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'subscription_cancelled',
+      plan_key: planKey,
+      retargeting_audience: 'churned_subscribers',
+    });
+    console.log('[Analytics] subscription_cancelled:', { planKey, cancellationReason });
+  }
+};
+
+/**
+ * Spec Event 18: dunning_email_clicked
+ * Trigger: User arrives at /billing with utm_campaign=payment_recovery
+ * Purpose: Measures dunning email effectiveness; tracks payment recovery rate
+ */
+export const trackDunningEmailClicked = (
+  attemptNumber: number,
+  planKey?: string
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'dunning_email_clicked', {
+      attempt_number: attemptNumber,
+      plan_key: planKey || 'unknown',
+      utm_campaign: new URLSearchParams(window.location.search).get('utm_campaign') || '',
+    });
+    console.log('[Analytics] dunning_email_clicked:', { attemptNumber, planKey });
+  }
+};
+
+/**
+ * Spec Event 19: billing_portal_opened
+ * Trigger: BillingPage successfully creates portal session and redirects
+ * Purpose: Tracks self-service billing actions; correlates with churn risk
+ */
+export const trackBillingPortalOpened = (
+  source: 'dunning_email' | 'profile_page' | 'direct' | string
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'billing_portal_opened', {
+      source,
+    });
+    console.log('[Analytics] billing_portal_opened:', { source });
+  }
+};
+
+/**
+ * Spec Event 20: exit_intent_shown
+ * Trigger: ExitIntentModal component — mouseleave event fires
+ * Purpose: Measures exit intent detection rate and modal impression rate
+ */
+export const trackExitIntentShown = (
+  planKey: string,
+  pageContext: string
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'exit_intent_shown', {
+      plan_key: planKey,
+      page_context: pageContext,
+    });
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'exit_intent_shown',
+      plan_key: planKey,
+      retargeting_audience: 'exit_intent_visitors',
+    });
+    console.log('[Analytics] exit_intent_shown:', { planKey, pageContext });
+  }
+};
+
+/**
+ * Spec Event 21: exit_intent_email_captured
+ * Trigger: ExitIntentModal form submit — user enters email and clicks "Send Me My Link"
+ * Purpose: Measures exit intent modal conversion rate; feeds recovery email sequence
+ */
+export const trackExitIntentEmailCaptured = (
+  planKey: string,
+  hasSmsConsent: boolean
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'exit_intent_email_captured', {
+      plan_key: planKey,
+      sms_consent: hasSmsConsent,
+    });
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'exit_intent_email_captured',
+      plan_key: planKey,
+      retargeting_audience: 'exit_intent_leads',
+    });
+    console.log('[Analytics] exit_intent_email_captured:', { planKey });
+  }
+};
+
 // Export all functions as named object for convenience
 const analytics = {
   initGA4,

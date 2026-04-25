@@ -31,6 +31,8 @@ import TermsOfServicePage from './pages/TermsOfServicePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import AdminAddLesson from './pages/AdminAddLesson';
 import PlanSelectorPage from './pages/PlanSelectorPage';
+import CheckoutStartPage from './pages/CheckoutStartPage';
+import BillingPage from './pages/BillingPage';
 import { initGA4, trackPageView } from './utils/analytics';
 
 // Component to track page views on route changes
@@ -70,6 +72,10 @@ const App: React.FC = () => {
         {/* Plan Selector: Section 3 — pre-checkout plan selector with source-aware copy */}
         <Route path="/start-trial" element={<PlanSelectorPage />} />
         <Route path="/get-access" element={<PlanSelectorPage />} />
+        {/* Spec §4: Pre-checkout lead capture — captures email before Stripe redirect */}
+        <Route path="/checkout/start" element={<CheckoutStartPage />} />
+        {/* Spec §14: Billing portal — redirects to Stripe Customer Portal */}
+        <Route path="/billing" element={<BillingPage />} />
         {/* Admin page for adding lessons - hidden route */}
         <Route path="/admin/add-lesson" element={<AdminAddLesson />} />
 

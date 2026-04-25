@@ -889,14 +889,56 @@ export const createCheckoutSessionV2 = onCall(
     const plan = getPlanConfig(planKey, { requireStripePrice: true });
     const isAuthenticatedUser = Boolean(request.auth?.uid && request.auth?.token?.email);
     const uid = isAuthenticatedUser ? request.auth!.uid : null;
-    const email = isAuthenticatedUser ? normalizeEmail(request.auth?.token?.email) : '';
 
-    const gclid = (request.data?.gclid as string | undefined) || '';
-    const utmSource = (request.data?.utm_source as string | undefined) || '';
-    const utmCampaign = (request.data?.utm_campaign as string | undefined) || '';
-    const utmMedium = (request.data?.utm_medium as string | undefined) || '';
-    const utmContent = (request.data?.utm_content as string | undefined) || '';
-    const utmTerm = (request.data?.utm_term as string | undefined) || '';
+    // Spec §4: Accept pre-captured lead email from CheckoutStartPage
+    // Prefer authenticated user email, then explicit payload email, then empty
+    const payloadEmail = normalizeEmail(request.data?.email);
+    const email = isAuthenticatedUser
+      ? normalizeEmail(request.auth?.token?.email)
+      : payloadEmail;
+
+    // Spec §4: Lead capture fields from CheckoutStartPage
+    const payloadPhone = (request.data?.phone as string | undefined) || '';
+    const smsConsent = Boolean(request.data?.smsConsent);
+    const marketingConsent = Boolean(request.data?.marketingConsent !== false); // default true
+    const offerType = (request.data?.offerType as string | undefined) || (planKey === 'pro_trial' ? 'trial_7d_usd1' : 'annual_usd239');
+    const leadSource = (request.data?.leadSource as string | undefined) || 'pricing_primary';
+    const referrer = (request.data?.referrer as string | undefined) || '';
+    const experimentBucket = (request.data?.experimentBucket as string | undefined) || '';
+
+    const gclid = (request.data?.gclid as string | undefined) || (request.data?.utm?.gclid as string | undefined) || '';
+    const utmSource = (request.data?.utm_source as string | undefined) || (request.data?.utm?.source as string | undefined) || '';
+    const utmCampaign = (request.data?.utm_campaign as string | undefined) || (request.data?.utm?.campaign as string | undefined) || '';
+    const utmMedium = (request.data?.utm_medium as string | undefined) || (request.data?.utm?.medium as string | undefined) || '';
+    const utmContent = (request.data?.utm_content as string | undefined) || (request.data?.utm?.content as string | undefined) || '';
+    const utmTerm = (request.data?.utm_term as string | undefined) || (request.data?.utm?.term as string | undefined) || '';
+
+    // Spec §4: Upsert lead record in Firestore before creating Stripe session
+    // This ensures we have the email even if the user abandons before Stripe captures it
+    let leadId: string | null = null;
+    if (email) {
+      const leadRef = db.collection('leads').doc(email);
+      const leadSnap = await leadRef.get();
+      leadId = leadSnap.exists ? leadSnap.id : email;
+      await leadRef.set(
+        {
+          email,
+          phone: payloadPhone || null,
+          smsConsent,
+          marketingConsent,
+          offerType,
+          leadSource,
+          referrer,
+          experimentBucket,
+          uid: uid || null,
+          utm: { source: utmSource, medium: utmMedium, campaign: utmCampaign, content: utmContent, term: utmTerm, gclid },
+          status: 'lead',
+          firstSeenAt: leadSnap.exists ? leadSnap.data()?.firstSeenAt : admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+    }
 
     const baseUrl = 'https://aiintegrationcourse.com';
     const successUrl = request.data?.successUrl || `${baseUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}&plan=${planKey}`;
@@ -927,6 +969,10 @@ export const createCheckoutSessionV2 = onCall(
       baseMetadata.firebaseUID = uid;
       baseMetadata.firebase_uid = uid;
     }
+    // Spec §4: Embed lead_id and offer_type in session metadata for attribution
+    if (leadId) baseMetadata.lead_id = leadId;
+    baseMetadata.offer_type = offerType;
+    if (leadSource) baseMetadata.lead_source = leadSource;
 
     const subscriptionData: Stripe.Checkout.SessionCreateParams['subscription_data'] = {
       metadata: { ...baseMetadata },
@@ -957,51 +1003,58 @@ export const createCheckoutSessionV2 = onCall(
     const session = await stripe.checkout.sessions.create({
       ...(customerId ? { customer: customerId } : {}),
       ...(uid ? { client_reference_id: uid } : {}),
+      // Spec §4: Pre-fill email from lead capture — reduces friction at checkout
+      // Only set customer_email when no customer object is provided (mutually exclusive)
+      ...(!customerId && email ? { customer_email: email } : {}),
       mode: 'subscription',
       payment_method_collection: 'always',
       // ── Payment Methods ──────────────────────────────────────────────────
-      // 'card' enables Apple Pay and Google Pay automatically via Stripe's
-      // wallet detection (no separate type needed — Stripe shows the wallet
-      // button when the browser/device supports it).
-      // 'link' = Stripe Link (one-click checkout with saved cards)
-      // 'us_bank_account' = ACH Direct Debit (closest Stripe equivalent to Zelle
-      //   for US bank-to-bank transfers; lower fees at 0.8% capped at $5)
-      // 'cashapp' = Cash App Pay
-      // 'amazon_pay' = Amazon Pay
-      // 'klarna' = Buy Now Pay Later
-      payment_method_types: [
-        'card',           // Includes Apple Pay + Google Pay via wallet detection
-        'link',           // Stripe Link one-click checkout
-        'us_bank_account', // ACH / bank transfer (Zelle equivalent)
-        'cashapp',        // Cash App Pay
-        'amazon_pay',     // Amazon Pay
-        'klarna',         // Buy Now Pay Later
-      ],
+      // Spec §2-D: Omit payment_method_types to enable Stripe's dynamic payment
+      // methods. Stripe automatically presents the most relevant methods
+      // (cards, Apple Pay, Google Pay, Link, Klarna, etc.) based on the
+      // customer's device, browser, and location. Hardcoding disables this.
+      // DO NOT add payment_method_types back without an explicit product decision.
       line_items: lineItems,
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: baseMetadata,
       subscription_data: subscriptionData,
-      allow_promotion_codes: true,
-      consent_collection: { promotions: 'auto' },
-      // Stripe-native recovery: keeps session URL alive 30 days post-expiration
-      // and enables Stripe's own abandonment recovery email as a secondary layer
+      // Spec §2-F: No visible coupon field on base sessions
+      allow_promotion_codes: false,
+      // Spec §2-E + §2-F: Consent collection
+      // terms_of_service: 'required' enforces ToS acceptance before payment
+      // promotions: 'auto' enables Stripe's promotional consent checkbox (US only)
+      consent_collection: {
+        terms_of_service: 'required',
+        promotions: 'auto',
+      },
+      // Spec §2-C: Recovery URL — generated by Stripe only after session expires.
+      // allow_promotion_codes: false on base sessions per spec §2-C.
+      // Recovery URL is valid for 30 days and included in checkout.session.expired payload.
       after_expiration: {
         recovery: {
           enabled: true,
-          allow_promotion_codes: true,
+          allow_promotion_codes: false,
         },
       },
-      // Trust copy displayed at the payment submit button and post-submit screen
+      // Spec §2-F: Trust copy at payment button, post-submit, and ToS acceptance
       custom_text: {
         submit: {
-          message: '14-Day Build Guarantee · Cancel anytime · Secure 256-bit SSL',
+          message: isTrialPlan
+            ? '14-Day Build Guarantee · Cancel anytime during trial · Secure 256-bit checkout'
+            : '14-Day Build Guarantee · Secure 256-bit checkout · Lowest effective price',
         },
         after_submit: {
           message: "You're in. Access unlocks immediately. If you don't ship your first AI workflow in 14 days, reply to any email for a full refund — no questions.",
         },
+        terms_of_service_acceptance: {
+          message: 'I agree to the [Terms of Service](https://aiintegrationcourse.com/terms) and [Privacy Policy](https://aiintegrationcourse.com/privacy).',
+        },
       },
-      // Extend session to 2 hours so mobile users switching to desktop don't lose their session
+      // Spec §6: 2-hour expiry is deliberate — shortens from Stripe's 24h default.
+      // checkout.session.expired fires at T+2h, Stripe recovery URL is generated,
+      // and Email 1 can be sent at T+2h+10min with the actual recovery URL inside.
+      // This hits Klaviyo's recommended 2–4h first abandoned-cart window.
       expires_at: Math.floor(Date.now() / 1000) + 60 * 60 * 2,
       // Auto-detect locale for international buyers
       locale: 'auto',
@@ -1191,6 +1244,22 @@ export const stripeWebhookV2 = onRequest(
       return;
     }
 
+    // Spec §8: Webhook idempotency — deduplicate on Stripe event.id
+    // Prevents double-processing retries from Stripe's retry policy
+    const eventRef = db.collection('stripe_events').doc(event.id);
+    const eventSnap = await eventRef.get();
+    if (eventSnap.exists) {
+      console.log(`[Webhook] Duplicate event ${event.id} (${event.type}) — skipping`);
+      res.json({ received: true, duplicate: true });
+      return;
+    }
+    // Mark event as processing immediately to prevent race conditions
+    await eventRef.set({
+      eventId: event.id,
+      eventType: event.type,
+      processedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
     try {
       switch (event.type) {
         case 'checkout.session.completed': {
@@ -1210,6 +1279,52 @@ export const stripeWebhookV2 = onRequest(
               { promotionalEmailConsent: true, promotionalEmailConsentAt: admin.firestore.FieldValue.serverTimestamp() },
               { merge: true }
             );
+          }
+
+          // Spec §8-A: Suppress all abandonment recovery flows on successful conversion
+          // This prevents Email 2-5 from firing after the user has already paid
+          if (consentEmail) {
+            try {
+              const pendingAbandonmentEmails = await db
+                .collection('email_queue')
+                .where('to', '==', consentEmail)
+                .where('type', '==', 'checkout_abandonment')
+                .where('status', '==', 'pending')
+                .get();
+              const suppressBatch = db.batch();
+              pendingAbandonmentEmails.docs.forEach((doc) => {
+                suppressBatch.update(doc.ref, {
+                  status: 'suppressed',
+                  suppressedReason: 'checkout_completed',
+                  suppressedAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+              });
+              if (!pendingAbandonmentEmails.empty) {
+                await suppressBatch.commit();
+                console.log(`[Webhook] Suppressed ${pendingAbandonmentEmails.size} abandonment emails for ${consentEmail}`);
+              }
+            } catch (suppressErr) {
+              console.error('[Webhook] Failed to suppress abandonment emails:', suppressErr);
+            }
+          }
+
+          // Spec §8-B: Mark lead as converted in the leads collection
+          const leadId = session.metadata?.lead_id;
+          const recoveredFrom = (session as any).after_expiration?.recovery?.url ? 'stripe_recovery_link' : null;
+          if (leadId) {
+            try {
+              await db.collection('leads').doc(leadId).set(
+                {
+                  status: 'converted',
+                  convertedAt: admin.firestore.FieldValue.serverTimestamp(),
+                  convertedSessionId: session.id,
+                  ...(recoveredFrom ? { recoveredFrom } : {}),
+                },
+                { merge: true }
+              );
+            } catch (leadErr) {
+              console.error('[Webhook] Failed to mark lead as converted:', leadErr);
+            }
           }
 
           if (snapshot.attachedUid) {
@@ -1302,9 +1417,108 @@ export const stripeWebhookV2 = onRequest(
 
         case 'invoice.payment_failed': {
           const invoice = event.data.object as Stripe.Invoice;
-          console.error(`[Stripe Webhook] Invoice payment failed for invoice ${invoice.id}, customer ${invoice.customer}`);
-          // Add logic to handle failed payments (e.g., notify user, update DB status)
-          // For now, we log it so it's captured and the webhook returns 200 OK
+          const failedCustomerId = getStripeCustomerId(invoice.customer as string | Stripe.Customer | null | undefined);
+          let failedUid = invoice.subscription_details?.metadata?.firebaseUID
+            || invoice.subscription_details?.metadata?.firebase_uid
+            || null;
+          if (!failedUid && failedCustomerId) {
+            failedUid = await findUidByStripeCustomerId(failedCustomerId);
+          }
+          const attemptCount = invoice.attempt_count || 1;
+          const nextPaymentAttempt = invoice.next_payment_attempt
+            ? new Date(invoice.next_payment_attempt * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+            : null;
+
+          // Update user subscription status to past_due
+          if (failedUid) {
+            await db.doc(`users/${failedUid}`).set(
+              {
+                subscriptionStatus: 'past_due',
+                lastPaymentFailedAt: admin.firestore.FieldValue.serverTimestamp(),
+                paymentFailureAttemptCount: attemptCount,
+              },
+              { merge: true }
+            );
+          }
+
+          // Spec §11: Queue dunning email based on attempt count
+          const failedEmail = normalizeEmail(invoice.customer_email);
+          if (failedEmail) {
+            const dunningTemplateMap: Record<number, string> = {
+              1: 'payment_failed_email',
+              2: 'payment_failed_day2_email',
+              3: 'payment_failed_day5_email',
+            };
+            const templateType = dunningTemplateMap[Math.min(attemptCount, 3)] || 'payment_failed_email';
+            const firstName = (invoice.customer_name || 'there').split(' ')[0];
+            const updateUrl = `https://aiintegrationcourse.com/billing?utm_source=dunning&utm_medium=email&utm_campaign=payment_recovery&attempt=${attemptCount}`;
+            await db.collection('email_queue').add({
+              to: failedEmail,
+              templateType,
+              context: {
+                firstName,
+                attemptCount,
+                nextPaymentAttempt: nextPaymentAttempt || 'soon',
+                updateUrl,
+                invoiceUrl: invoice.hosted_invoice_url || updateUrl,
+              },
+              status: 'pending',
+              type: 'dunning',
+              userId: failedUid || `customer_${failedCustomerId}`,
+              dedupeKey: `dunning:${invoice.id}:attempt_${attemptCount}`,
+              createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            console.log(`[Webhook] Queued dunning email (attempt ${attemptCount}) for ${failedEmail}`);
+          }
+          break;
+        }
+
+        case 'customer.subscription.trial_will_end': {
+          // Spec §10: Fires 3 days before trial ends — trigger Day 6 trial ending email
+          const subscription = event.data.object as Stripe.Subscription;
+          let trialUid = deriveMetadataUid(subscription.metadata || null);
+          const trialCustomerId = getStripeCustomerId(subscription.customer as string | Stripe.Customer | null | undefined);
+          if (!trialUid && trialCustomerId) {
+            trialUid = await findUidByStripeCustomerId(trialCustomerId);
+          }
+          const trialEndDate = subscription.trial_end
+            ? new Date(subscription.trial_end * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+            : 'soon';
+          const trialPlanKey = safePlanKey(subscription.metadata?.planKey);
+
+          // Fetch email from customer record
+          let trialEmail = '';
+          if (trialCustomerId) {
+            try {
+              const customer = await getExpandedCustomer(trialCustomerId);
+              trialEmail = normalizeEmail(customer?.email);
+            } catch (_) {}
+          }
+          if (!trialEmail && trialUid) {
+            const userSnap = await db.doc(`users/${trialUid}`).get();
+            trialEmail = normalizeEmail(userSnap.data()?.email);
+          }
+
+          if (trialEmail) {
+            const firstName = (subscription.metadata?.displayName || 'there').split(' ')[0];
+            const upgradeUrl = `https://aiintegrationcourse.com/pricing?plan=${trialPlanKey}&utm_source=stripe_webhook&utm_medium=email&utm_campaign=trial_ending`;
+            await db.collection('email_queue').add({
+              to: trialEmail,
+              templateType: 'trial_ending_soon_email',
+              context: {
+                firstName,
+                trialEndDate,
+                upgradeUrl,
+                planKey: trialPlanKey,
+              },
+              status: 'pending',
+              type: 'trial_lifecycle',
+              userId: trialUid || `customer_${trialCustomerId}`,
+              dedupeKey: `trial_ending:${subscription.id}`,
+              createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            console.log(`[Webhook] Queued trial_will_end email for ${trialEmail} (sub: ${subscription.id})`);
+          }
           break;
         }
 
