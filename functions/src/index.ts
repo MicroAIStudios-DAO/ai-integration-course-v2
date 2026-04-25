@@ -66,6 +66,14 @@ export { processEmailQueueV2, drainPendingEmailQueueV2 } from './email';
 // Lifecycle email queueing
 export { queueLifecycleEmailCadenceV2 } from './emailLifecycle';
 
+// HubSpot CRM sync — mirrors leads and subscription events to HubSpot contacts
+export {
+  onLeadCreated,
+  onLeadUpdated,
+  onUserSubscriptionUpdated,
+  syncLeadToHubSpot,
+} from './hubspotSync';
+
 // export const helloWorld = onRequest((request, response) => {
 //   logger.info("Hello logs!", {structuredData: true});
 //   response.send("Hello from Firebase!");

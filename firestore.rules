@@ -307,6 +307,58 @@ service cloud.firestore {
     }
     
     // ============================================
+    // LEADS (Pre-checkout lead capture)
+    // ============================================
+
+    match /leads/{leadId} {
+      // Anonymous users can create leads pre-auth (pre-checkout capture)
+      allow create: if true;
+      // Authenticated users can read/update their own lead by uid
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.uid == request.auth.uid
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'convertedAt', 'recovered_from']);
+      // Only admins can delete leads
+      allow delete: if isAdmin();
+      // Admins can read all leads
+      allow read: if isAdmin();
+    }
+
+    // ============================================
+    // STRIPE EVENTS (Idempotency deduplication log)
+    // ============================================
+
+    match /stripe_events/{eventId} {
+      // Only backend (admin SDK) can read/write stripe event logs
+      // Client-side access is never needed
+      allow read, write: if false;
+    }
+
+    // ============================================
+    // CANCEL REASONS (Micro-survey responses)
+    // ============================================
+
+    match /cancel_reasons/{docId} {
+      // Authenticated users can write their own cancel reason
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      // Users can read their own cancel reasons
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      // Only admins can read all cancel reasons (for product analytics)
+      allow read: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // EXIT INTENT CAPTURES
+    // ============================================
+
+    match /exit_intent_captures/{docId} {
+      // Anyone can create (anonymous exit intent capture)
+      allow create: if true;
+      // Only admins can read and manage
+      allow read, update, delete: if isAdmin();
+    }
+
+    // ============================================
     // DEFAULT DENY
     // ============================================
     
