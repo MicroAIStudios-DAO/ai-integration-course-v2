@@ -4,9 +4,8 @@ on:
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - main
+  # Push-to-main deploys are handled by deploy-production.yml.
+  # CI here validates PRs only to avoid duplicate runs.
 
 jobs:
   validate:

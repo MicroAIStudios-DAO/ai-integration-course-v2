@@ -1,0 +1,105 @@
+name: Deploy to Production
+
+# Trigger on every push to main (including merged PRs)
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Build & Deploy to Firebase (deploy:prod)
+    runs-on: ubuntu-latest
+
+    env:
+      # ── Firebase client-side config ──────────────────────────────────────
+      # These are build-time public keys baked into the React bundle.
+      # Set each one as a GitHub Actions Secret in the repository settings.
+      REACT_APP_FIREBASE_API_KEY:            ${{ secrets.REACT_APP_FIREBASE_API_KEY }}
+      REACT_APP_FIREBASE_AUTH_DOMAIN:        ${{ secrets.REACT_APP_FIREBASE_AUTH_DOMAIN }}
+      REACT_APP_FIREBASE_PROJECT_ID:         ${{ secrets.REACT_APP_FIREBASE_PROJECT_ID }}
+      REACT_APP_FIREBASE_STORAGE_BUCKET:     ${{ secrets.REACT_APP_FIREBASE_STORAGE_BUCKET }}
+      REACT_APP_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.REACT_APP_FIREBASE_MESSAGING_SENDER_ID }}
+      REACT_APP_FIREBASE_APP_ID:             ${{ secrets.REACT_APP_FIREBASE_APP_ID }}
+      REACT_APP_FIREBASE_MEASUREMENT_ID:     ${{ secrets.REACT_APP_FIREBASE_MEASUREMENT_ID }}
+
+      # ── Optional / App Check ─────────────────────────────────────────────
+      REACT_APP_RECAPTCHA_ENTERPRISE_KEY:    ${{ secrets.REACT_APP_RECAPTCHA_ENTERPRISE_KEY }}
+      REACT_APP_STRIPE_PUBLISHABLE_KEY:      ${{ secrets.REACT_APP_STRIPE_PUBLISHABLE_KEY }}
+
+      # ── Build flags ──────────────────────────────────────────────────────
+      CI: "true"
+      NODE_ENV: production
+
+    steps:
+      # ── 1. Source ────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Runtime ──────────────────────────────────────────────────────
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Pin npm to v11
+        run: npm install -g npm@11
+
+      # ── 3. Python (required by deploy:prod → setup:python) ───────────────
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: pip install -r python-requirements.txt
+
+      # ── 4. GCP / Firebase auth ───────────────────────────────────────────
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      # ── 5. Deploy ────────────────────────────────────────────────────────
+      # Runs the full canonical script:
+      #   clean → install:all → setup:python (already done above) → build:production → firebase deploy
+      # We skip the redundant setup:python inside the script by setting SKIP_PYTHON_SETUP.
+      - name: Run deploy:prod
+        run: npm run deploy:prod
+        env:
+          # Pass the service-account JSON so firebase-tools can authenticate
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcp-sa.json
+
+      # ── 6. Post-deploy health check ──────────────────────────────────────
+      - name: Verify live deployment
+        run: |
+          echo "Checking production URLs..."
+          for URL in \
+            "https://aiintegrationcourse.com" \
+            "https://ai-integra-course-v2.web.app"; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$URL" || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "✅  $URL → HTTP $STATUS"
+            else
+              echo "⚠️   $URL → HTTP $STATUS (may still be propagating)"
+            fi
+          done
+
+      # ── 7. Summary ───────────────────────────────────────────────────────
+      - name: Deployment summary
+        if: always()
+        run: |
+          echo "## 🚀 Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Project** | ai-integra-course-v2 |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch** | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Triggered by** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Firebase URL** | https://ai-integra-course-v2.web.app |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Production URL** | https://aiintegrationcourse.com |" >> $GITHUB_STEP_SUMMARY
