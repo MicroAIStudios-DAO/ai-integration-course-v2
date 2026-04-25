@@ -102,7 +102,7 @@ const CheckoutStartPage: React.FC = () => {
 
   useEffect(() => {
     emailRef.current?.focus();
-    trackPricingCtaClick({ offerType, source: utmSource || 'direct' });
+    trackPricingCtaClick('checkout_start_cta', utmSource || 'direct');
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -152,12 +152,10 @@ const CheckoutStartPage: React.FC = () => {
       const result = await createSession(payload);
       const { url, checkoutSessionId } = result.data;
 
-      trackCheckoutStarted({
-        sessionId: checkoutSessionId,
-        offerType,
-        email: normalizedEmail,
-        utm: payload.utm,
-      });
+      const checkoutPrice = offerType === 'annual_usd239' ? 239 : 1;
+      const checkoutPlanName = offerType === 'annual_usd239' ? 'Pro AI Architect Annual' : 'Pro AI Architect Trial';
+      const checkoutPlanId = offerType === 'annual_usd239' ? 'pro_annual' : 'pro_trial';
+      trackCheckoutStarted(checkoutPrice, 'USD', checkoutPlanName, checkoutPlanId);
 
       // Redirect to Stripe Checkout
       window.location.href = url;

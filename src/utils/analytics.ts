@@ -162,7 +162,7 @@ export const trackGoogleAdsSignupConversion = (
 export const trackGoogleAdsPurchaseConversion = (
   transactionId: string,
   value: number,
-  email: string,
+  email?: string,
   currency: string = 'USD'
 ): void => {
   if (typeof window !== 'undefined' && window.gtag) {
@@ -250,6 +250,7 @@ export const trackBeginCheckout = (
 };
 
 export const trackCheckoutInitiated = trackBeginCheckout;
+export const trackCheckoutStarted = trackBeginCheckout;
 
 /**
  * Track successful purchase (paid conversions only — NOT trials)
@@ -396,6 +397,7 @@ export const trackCTAClick = (
     console.log('[Analytics] cta_click:', { ctaName, ctaLocation });
   }
 };
+export const trackPricingCtaClick = trackCTAClick;
 
 /**
  * Track $1 trial start (separate from full purchase)
@@ -514,16 +516,18 @@ export const pushAbandonmentFunnelState = (
  * Trigger: "Switch to Annual" button click in upsell email landing or dashboard
  */
 export const trackAnnualUpsellClick = (
-  currentPlan: string,
-  source: 'email' | 'dashboard' | 'pricing'
+  paramsOrCurrentPlan: string | { source?: string; tier?: string; currentPlan?: string },
+  source?: 'email' | 'dashboard' | 'pricing' | string
 ): void => {
+  const currentPlan = typeof paramsOrCurrentPlan === 'object' ? (paramsOrCurrentPlan.currentPlan || paramsOrCurrentPlan.tier || 'monthly') : paramsOrCurrentPlan;
+  const resolvedSource = typeof paramsOrCurrentPlan === 'object' ? (paramsOrCurrentPlan.source || 'dashboard') : (source || 'dashboard');
   if (typeof window !== 'undefined' && window.gtag) {
     window.gtag('event', 'annual_upsell_click', {
       current_plan: currentPlan,
-      source,
+      source: resolvedSource,
       potential_value: 239,
     });
-    console.log('[Analytics] annual_upsell_click:', { currentPlan, source });
+    console.log('[Analytics] annual_upsell_click:', { currentPlan, source: resolvedSource });
   }
 };
 
@@ -591,26 +595,31 @@ export const trackError = (
  * Purpose: Measures pre-checkout lead capture rate; feeds retargeting audiences
  */
 export const trackLeadCaptured = (
-  planKey: string,
-  leadSource: string,
-  offerType: string,
-  hasSmsConsent: boolean
+  paramsOrPlanKey: string | { email?: string; planKey?: string; offerType?: string; leadSource?: string; utm?: Record<string, string>; hasSmsConsent?: boolean },
+  leadSource?: string,
+  offerType?: string,
+  hasSmsConsent?: boolean
 ): void => {
+  // Support both object-style and positional-arg style calls
+  const planKey = typeof paramsOrPlanKey === 'object' ? (paramsOrPlanKey.planKey || paramsOrPlanKey.offerType || 'unknown') : paramsOrPlanKey;
+  const resolvedLeadSource = typeof paramsOrPlanKey === 'object' ? (paramsOrPlanKey.leadSource || 'direct') : (leadSource || 'direct');
+  const resolvedOfferType = typeof paramsOrPlanKey === 'object' ? (paramsOrPlanKey.offerType || 'unknown') : (offerType || 'unknown');
+  const resolvedSmsConsent = typeof paramsOrPlanKey === 'object' ? (paramsOrPlanKey.hasSmsConsent || false) : (hasSmsConsent || false);
   if (typeof window !== 'undefined' && window.gtag) {
     window.gtag('event', 'lead_captured', {
       plan_key: planKey,
-      lead_source: leadSource,
-      offer_type: offerType,
-      sms_consent: hasSmsConsent,
+      lead_source: resolvedLeadSource,
+      offer_type: resolvedOfferType,
+      sms_consent: resolvedSmsConsent,
     });
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({
       event: 'lead_captured',
       plan_key: planKey,
-      offer_type: offerType,
+      offer_type: resolvedOfferType,
       retargeting_audience: 'pre_checkout_leads',
     });
-    console.log('[Analytics] lead_captured:', { planKey, leadSource, offerType });
+    console.log('[Analytics] lead_captured:', { planKey, resolvedLeadSource, resolvedOfferType });
   }
 };
 
