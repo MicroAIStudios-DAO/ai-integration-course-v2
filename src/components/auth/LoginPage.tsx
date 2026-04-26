@@ -91,11 +91,16 @@ const LoginPage: React.FC = () => {
     try {
       if (isLoaded) {
         const verification = await executeAndVerify("LOGIN");
-        if (verification && !verification.success) {
-          console.warn("reCAPTCHA verification returned low score, proceeding anyway");
+        if (verification !== null && !verification.success) {
+          // Score below 0.5 — likely bot or suspicious traffic. Block the attempt.
+          setError("Security check failed. If you are human, please try again or contact info@aiintegrationcourse.com.");
+          setLoading(false);
+          return;
         }
       }
     } catch (recaptchaError) {
+      // reCAPTCHA failed to load (e.g. ad blocker, network issue).
+      // Allow the attempt but log for monitoring — do not block legitimate users.
       console.warn("reCAPTCHA verification failed, proceeding with login:", recaptchaError);
     }
 

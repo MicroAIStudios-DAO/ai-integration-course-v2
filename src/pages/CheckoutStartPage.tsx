@@ -24,6 +24,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { useReCaptcha } from '../hooks/useReCaptcha';
 import {
   trackLeadCaptured,
   trackCheckoutStarted,
@@ -99,6 +100,7 @@ const CheckoutStartPage: React.FC = () => {
   const [marketingConsent, setMarketingConsent] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { executeAndVerify, isLoaded: recaptchaLoaded } = useReCaptcha();
 
   useEffect(() => {
     emailRef.current?.focus();
@@ -116,6 +118,21 @@ const CheckoutStartPage: React.FC = () => {
     }
 
     setLoading(true);
+
+    // reCAPTCHA Enterprise — protect checkout lead capture from bots
+    try {
+      if (recaptchaLoaded) {
+        const verification = await executeAndVerify('CHECKOUT');
+        if (verification !== null && !verification.success) {
+          setError('Security check failed. If you are human, please try again or contact info@aiintegrationcourse.com.');
+          setLoading(false);
+          return;
+        }
+      }
+    } catch (recaptchaError) {
+      // reCAPTCHA failed to load (e.g. ad blocker) — allow the attempt, log for monitoring.
+      console.warn('reCAPTCHA verification failed on checkout start, proceeding:', recaptchaError);
+    }
 
     try {
       const functions = getFunctions();

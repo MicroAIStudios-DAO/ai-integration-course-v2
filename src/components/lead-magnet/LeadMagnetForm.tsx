@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../config/firebase';
 import { topWorkflowsLeadMagnet } from '../../content/leadMagnets';
+import { useReCaptcha } from '../../hooks/useReCaptcha';
 
 type SubmissionStatus = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -20,6 +21,7 @@ const LeadMagnetForm: React.FC<LeadMagnetFormProps> = ({
   const [status, setStatus] = useState<SubmissionStatus>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [downloadPath, setDownloadPath] = useState(topWorkflowsLeadMagnet.downloadPath);
+  const { executeAndVerify, isLoaded: recaptchaLoaded } = useReCaptcha();
 
   const isDark = theme === 'dark';
   const isSubmitting = status === 'submitting';
@@ -41,6 +43,21 @@ const LeadMagnetForm: React.FC<LeadMagnetFormProps> = ({
     event.preventDefault();
     setStatus('submitting');
     setErrorMessage(null);
+
+    // reCAPTCHA Enterprise — protect lead magnet from bot submissions and fake email harvesting
+    try {
+      if (recaptchaLoaded) {
+        const verification = await executeAndVerify('LEAD_MAGNET');
+        if (verification !== null && !verification.success) {
+          setStatus('error');
+          setErrorMessage('Security check failed. Please try again.');
+          return;
+        }
+      }
+    } catch (recaptchaError) {
+      // reCAPTCHA failed to load (e.g. ad blocker) — allow the attempt, log for monitoring.
+      console.warn('reCAPTCHA verification failed on lead magnet, proceeding:', recaptchaError);
+    }
 
     try {
       const submitLeadMagnet = httpsCallable(functions, 'submitLeadMagnetV2');
