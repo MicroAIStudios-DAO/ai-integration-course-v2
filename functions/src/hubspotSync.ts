@@ -1,15 +1,15 @@
 /**
  * hubspotSync.ts
- * 
- * Firebase Functions that mirror the Firestore `leads` collection to HubSpot contacts.
+ *
+ * Firebase Functions (v2) that mirror the Firestore `leads` collection to HubSpot contacts.
  * This creates a precise marketing intelligence layer — every lead, abandonment event,
  * recovery email, and conversion is reflected in HubSpot for segmentation and automation.
- * 
+ *
  * Architecture:
  * - Firestore trigger on leads/{leadId} create/update → upsert HubSpot contact
  * - Firestore trigger on users/{userId} update → sync subscription status to HubSpot
  * - Stripe webhook events → update HubSpot lifecycle stage
- * 
+ *
  * HubSpot Custom Properties (created via MCP):
  * - lead_source_utm: Full UTM string
  * - offer_type: pro_trial | pro_monthly | pro_annual | explorer
@@ -22,9 +22,13 @@
  * - last_abandoned_stripe_session: Stripe session ID
  */
 
-import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import axios from 'axios';
+import {
+  onDocumentCreated,
+  onDocumentUpdated,
+} from 'firebase-functions/v2/firestore';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIG
@@ -33,7 +37,7 @@ import axios from 'axios';
 const HUBSPOT_API_BASE = 'https://api.hubapi.com';
 
 function getHubSpotToken(): string {
-  const token = process.env.HUBSPOT_ACCESS_TOKEN || functions.config().hubspot?.access_token;
+  const token = process.env.HUBSPOT_ACCESS_TOKEN;
   if (!token) {
     throw new Error('HUBSPOT_ACCESS_TOKEN not configured in Firebase Functions environment');
   }
@@ -80,9 +84,10 @@ async function upsertHubSpotContact(properties: HubSpotContactProperties): Promi
       }
     );
     console.log(`[HubSpot] Created contact: ${email} → ${createRes.data.id}`);
-    return createRes.data.id;
-  } catch (createErr: any) {
-    if (createErr.response?.status === 409) {
+    return createRes.data.id as string;
+  } catch (createErr: unknown) {
+    const err = createErr as { response?: { status?: number; data?: unknown }; message?: string };
+    if (err.response?.status === 409) {
       // Contact already exists — upsert by email
       try {
         const upsertRes = await axios.patch(
@@ -96,13 +101,14 @@ async function upsertHubSpotContact(properties: HubSpotContactProperties): Promi
           }
         );
         console.log(`[HubSpot] Updated contact: ${email} → ${upsertRes.data.id}`);
-        return upsertRes.data.id;
-      } catch (updateErr: any) {
-        console.error(`[HubSpot] Failed to update contact ${email}:`, updateErr.response?.data || updateErr.message);
+        return upsertRes.data.id as string;
+      } catch (updateErr: unknown) {
+        const ue = updateErr as { response?: { data?: unknown }; message?: string };
+        console.error(`[HubSpot] Failed to update contact ${email}:`, ue.response?.data || ue.message);
         return null;
       }
     }
-    console.error(`[HubSpot] Failed to create contact ${email}:`, createErr.response?.data || createErr.message);
+    console.error(`[HubSpot] Failed to create contact ${email}:`, err.response?.data || err.message);
     return null;
   }
 }
@@ -121,162 +127,158 @@ function planKeyToMrr(planKey: string): number {
   return mrrMap[planKey] ?? 0;
 }
 
-function planKeyToLifecycleStage(planKey: string, status: string): string {
-  if (status === 'converted' || status === 'active') return 'customer';
-  if (status === 'trialing') return 'opportunity';
-  if (status === 'checkout_abandoned') return 'salesqualifiedlead';
-  if (status === 'lead_captured') return 'lead';
-  return 'lead';
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // TRIGGER 1: Firestore leads/{leadId} onCreate → Create HubSpot contact
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const onLeadCreated = functions.firestore
-  .document('leads/{leadId}')
-  .onCreate(async (snap) => {
-    const lead = snap.data();
-    if (!lead?.email) {
-      console.warn('[HubSpot] Lead created without email — skipping sync');
-      return;
-    }
+export const onLeadCreated = onDocumentCreated('leads/{leadId}', async (event) => {
+  const snap = event.data;
+  if (!snap) return;
+  const lead = snap.data();
+  if (!lead?.email) {
+    console.warn('[HubSpot] Lead created without email — skipping sync');
+    return;
+  }
 
-    const utmString = [
-      lead.utmSource,
-      lead.utmMedium,
-      lead.utmCampaign,
-      lead.utmContent,
-      lead.utmTerm,
-    ]
-      .filter(Boolean)
-      .join('|');
+  const utmString = [
+    lead.utmSource,
+    lead.utmMedium,
+    lead.utmCampaign,
+    lead.utmContent,
+    lead.utmTerm,
+  ]
+    .filter(Boolean)
+    .join('|');
 
-    const contactId = await upsertHubSpotContact({
-      email: lead.email,
-      firstname: lead.displayName || undefined,
-      phone: lead.phone || undefined,
-      lead_source_utm: utmString || undefined,
-      offer_type: lead.planKey || undefined,
-      checkout_funnel_stage: 'lead_captured',
-      lifecyclestage: 'lead',
-      hs_lead_status: 'NEW',
-      hs_marketing_email_opt_in: lead.marketingConsent === true,
-      hs_sms_opt_in: lead.smsConsent === true,
-    });
-
-    if (contactId) {
-      await snap.ref.update({ hubspotContactId: contactId, hubspotSyncedAt: admin.firestore.FieldValue.serverTimestamp() });
-    }
+  const contactId = await upsertHubSpotContact({
+    email: lead.email as string,
+    firstname: (lead.displayName as string) || undefined,
+    phone: (lead.phone as string) || undefined,
+    lead_source_utm: utmString || undefined,
+    offer_type: (lead.planKey as string) || undefined,
+    checkout_funnel_stage: 'lead_captured',
+    lifecyclestage: 'lead',
+    hs_lead_status: 'NEW',
+    hs_marketing_email_opt_in: lead.marketingConsent === true,
+    hs_sms_opt_in: lead.smsConsent === true,
   });
+
+  if (contactId) {
+    await snap.ref.update({
+      hubspotContactId: contactId,
+      hubspotSyncedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TRIGGER 2: Firestore leads/{leadId} onUpdate → Sync status changes to HubSpot
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const onLeadUpdated = functions.firestore
-  .document('leads/{leadId}')
-  .onUpdate(async (change) => {
-    const before = change.before.data();
-    const after = change.after.data();
+export const onLeadUpdated = onDocumentUpdated('leads/{leadId}', async (event) => {
+  const change = event.data;
+  if (!change) return;
+  const before = change.before.data();
+  const after = change.after.data();
 
-    if (!after?.email) return;
-    if (before?.status === after?.status && before?.checkout_funnel_stage === after?.checkout_funnel_stage) {
-      return; // No relevant change
-    }
+  if (!after?.email) return;
+  if (before?.status === after?.status && before?.checkout_funnel_stage === after?.checkout_funnel_stage) {
+    return; // No relevant change
+  }
 
-    const properties: HubSpotContactProperties = {
-      email: after.email,
-    };
+  const properties: HubSpotContactProperties = {
+    email: after.email as string,
+  };
 
-    // Map status to HubSpot lifecycle stage
-    if (after.status === 'checkout_abandoned') {
-      properties.checkout_funnel_stage = 'checkout_abandoned';
-      properties.lifecyclestage = 'salesqualifiedlead';
-      properties.hs_lead_status = 'IN_PROGRESS';
-      properties.checkout_abandoned_at = after.abandonedAt?.toDate?.()?.toISOString() || new Date().toISOString();
-      properties.last_abandoned_plan_key = after.planKey;
-      properties.last_abandoned_stripe_session = after.stripeSessionId;
-      properties.offer_type = after.planKey;
-    } else if (after.status === 'converted') {
-      properties.checkout_funnel_stage = 'converted';
-      properties.lifecyclestage = 'customer';
-      properties.hs_lead_status = 'CONNECTED';
-      properties.recovery_attribution = after.recovered_from || undefined;
-      properties.stripe_customer_id = after.stripeCustomerId || undefined;
-      properties.subscription_mrr = planKeyToMrr(after.planKey || '');
-    } else if (after.status === 'checkout_started') {
-      properties.checkout_funnel_stage = 'checkout_started';
-      properties.lifecyclestage = 'opportunity';
-    }
+  // Map status to HubSpot lifecycle stage
+  if (after.status === 'checkout_abandoned') {
+    properties.checkout_funnel_stage = 'checkout_abandoned';
+    properties.lifecyclestage = 'salesqualifiedlead';
+    properties.hs_lead_status = 'IN_PROGRESS';
+    const abandonedAt = after.abandonedAt as { toDate?: () => Date } | null;
+    properties.checkout_abandoned_at = abandonedAt?.toDate?.()?.toISOString() || new Date().toISOString();
+    properties.last_abandoned_plan_key = after.planKey as string;
+    properties.last_abandoned_stripe_session = after.stripeSessionId as string;
+    properties.offer_type = after.planKey as string;
+  } else if (after.status === 'converted') {
+    properties.checkout_funnel_stage = 'converted';
+    properties.lifecyclestage = 'customer';
+    properties.hs_lead_status = 'CONNECTED';
+    properties.recovery_attribution = (after.recovered_from as string) || undefined;
+    properties.stripe_customer_id = (after.stripeCustomerId as string) || undefined;
+    properties.subscription_mrr = planKeyToMrr((after.planKey as string) || '');
+  } else if (after.status === 'checkout_started') {
+    properties.checkout_funnel_stage = 'checkout_started';
+    properties.lifecyclestage = 'opportunity';
+  }
 
-    await upsertHubSpotContact(properties);
-  });
+  await upsertHubSpotContact(properties);
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TRIGGER 3: Firestore users/{userId} onUpdate → Sync subscription status to HubSpot
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const onUserSubscriptionUpdated = functions.firestore
-  .document('users/{userId}')
-  .onUpdate(async (change) => {
-    const before = change.before.data();
-    const after = change.after.data();
+export const onUserSubscriptionUpdated = onDocumentUpdated('users/{userId}', async (event) => {
+  const change = event.data;
+  if (!change) return;
+  const before = change.before.data();
+  const after = change.after.data();
 
-    if (!after?.email) return;
+  if (!after?.email) return;
 
-    // Only sync on subscription status changes
-    const statusChanged = before?.subscriptionStatus !== after?.subscriptionStatus;
-    const tierChanged = before?.subscriptionTier !== after?.subscriptionTier;
-    const paymentFailedChanged = before?.paymentFailedAt !== after?.paymentFailedAt;
+  // Only sync on subscription status changes
+  const statusChanged = before?.subscriptionStatus !== after?.subscriptionStatus;
+  const tierChanged = before?.subscriptionTier !== after?.subscriptionTier;
+  const paymentFailedChanged = before?.paymentFailedAt !== after?.paymentFailedAt;
 
-    if (!statusChanged && !tierChanged && !paymentFailedChanged) return;
+  if (!statusChanged && !tierChanged && !paymentFailedChanged) return;
 
-    const properties: HubSpotContactProperties = {
-      email: after.email,
-    };
+  const properties: HubSpotContactProperties = {
+    email: after.email as string,
+  };
 
-    const status = after.subscriptionStatus;
-    const planKey = after.planKey || after.subscriptionTier;
+  const status = after.subscriptionStatus as string;
+  const planKey = (after.planKey || after.subscriptionTier) as string;
 
-    if (status === 'active') {
-      properties.checkout_funnel_stage = 'active_subscriber';
-      properties.lifecyclestage = 'customer';
-      properties.hs_lead_status = 'CONNECTED';
-      properties.subscription_mrr = planKeyToMrr(planKey || '');
-      properties.stripe_customer_id = after.stripeCustomerId || undefined;
-    } else if (status === 'trialing') {
-      properties.checkout_funnel_stage = 'trialing';
-      properties.lifecyclestage = 'opportunity';
-      properties.subscription_mrr = planKeyToMrr('pro_trial');
-    } else if (status === 'past_due') {
-      properties.checkout_funnel_stage = 'active_subscriber'; // Still a customer, just past due
-      properties.hs_lead_status = 'IN_PROGRESS';
-    } else if (status === 'cancelled' || status === 'canceled') {
-      properties.checkout_funnel_stage = 'churned';
-      properties.lifecyclestage = 'other';
-      properties.hs_lead_status = 'UNQUALIFIED';
-      properties.subscription_mrr = 0;
-    }
+  if (status === 'active') {
+    properties.checkout_funnel_stage = 'active_subscriber';
+    properties.lifecyclestage = 'customer';
+    properties.hs_lead_status = 'CONNECTED';
+    properties.subscription_mrr = planKeyToMrr(planKey || '');
+    properties.stripe_customer_id = (after.stripeCustomerId as string) || undefined;
+  } else if (status === 'trialing') {
+    properties.checkout_funnel_stage = 'trialing';
+    properties.lifecyclestage = 'opportunity';
+    properties.subscription_mrr = planKeyToMrr('pro_trial');
+  } else if (status === 'past_due') {
+    properties.checkout_funnel_stage = 'active_subscriber'; // Still a customer, just past due
+    properties.hs_lead_status = 'IN_PROGRESS';
+  } else if (status === 'cancelled' || status === 'canceled') {
+    properties.checkout_funnel_stage = 'churned';
+    properties.lifecyclestage = 'other';
+    properties.hs_lead_status = 'UNQUALIFIED';
+    properties.subscription_mrr = 0;
+  }
 
-    await upsertHubSpotContact(properties);
-  });
+  await upsertHubSpotContact(properties);
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // EXPORT: Callable function for manual HubSpot sync (admin use)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const syncLeadToHubSpot = functions.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Must be authenticated');
+export const syncLeadToHubSpot = onCall(async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'Must be authenticated');
 
   // Check admin role
-  const userDoc = await admin.firestore().collection('users').doc(context.auth.uid).get();
+  const userDoc = await admin.firestore().collection('users').doc(request.auth.uid).get();
   if (userDoc.data()?.role !== 'admin') {
-    throw new functions.https.HttpsError('permission-denied', 'Admin access required');
+    throw new HttpsError('permission-denied', 'Admin access required');
   }
 
-  const { email } = data;
-  if (!email) throw new functions.https.HttpsError('invalid-argument', 'Email required');
+  const email = request.data?.email as string | undefined;
+  if (!email) throw new HttpsError('invalid-argument', 'Email required');
 
   // Find lead by email
   const leadsSnap = await admin.firestore()
@@ -286,20 +288,20 @@ export const syncLeadToHubSpot = functions.https.onCall(async (data, context) =>
     .get();
 
   if (leadsSnap.empty) {
-    throw new functions.https.HttpsError('not-found', `No lead found for email: ${email}`);
+    throw new HttpsError('not-found', `No lead found for email: ${email}`);
   }
 
   const lead = leadsSnap.docs[0].data();
   const utmString = [lead.utmSource, lead.utmMedium, lead.utmCampaign].filter(Boolean).join('|');
 
   const contactId = await upsertHubSpotContact({
-    email: lead.email,
-    firstname: lead.displayName || undefined,
+    email: lead.email as string,
+    firstname: (lead.displayName as string) || undefined,
     lead_source_utm: utmString || undefined,
-    offer_type: lead.planKey || undefined,
-    checkout_funnel_stage: lead.status || 'lead_captured',
-    stripe_customer_id: lead.stripeCustomerId || undefined,
-    subscription_mrr: planKeyToMrr(lead.planKey || ''),
+    offer_type: (lead.planKey as string) || undefined,
+    checkout_funnel_stage: (lead.status as string) || 'lead_captured',
+    stripe_customer_id: (lead.stripeCustomerId as string) || undefined,
+    subscription_mrr: planKeyToMrr((lead.planKey as string) || ''),
   });
 
   return { success: true, hubspotContactId: contactId };
