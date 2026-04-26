@@ -28,7 +28,7 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
   showUpgradePrompt = true,
   lessonTitle,
 }) => {
-  const { canAccess, reason, loading, upgradeRequired } = useLessonAccess(tier);
+  const { canAccess, loading } = useLessonAccess(tier);
 
   // Show loading state
   if (loading) {

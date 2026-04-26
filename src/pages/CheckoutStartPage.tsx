@@ -106,8 +106,10 @@ const CheckoutStartPage: React.FC = () => {
 
   useEffect(() => {
     emailRef.current?.focus();
+    // Intentionally run once on mount — utmSource is a URL param that never changes
     trackPricingCtaClick('checkout_start_cta', utmSource || 'direct');
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // mount-only effect
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
