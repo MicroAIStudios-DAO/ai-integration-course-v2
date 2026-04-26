@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { getUserProfile, userHasPaidAccess } from "../firebaseService";
 import { UserProfile } from "../types/course";
 import { openBetaFeedback } from "../components/UserJotWidget";
+import AnnualUpsellBanner from "../components/AnnualUpsellBanner";
 
 const DISCORD_URL = process.env.REACT_APP_FOUNDING_DISCORD_URL || "";
 
@@ -121,6 +122,19 @@ const WelcomePage: React.FC = () => {
     <div className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.16),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.14),_transparent_24%),linear-gradient(180deg,_#020617_0%,_#0f172a_45%,_#020617_100%)] text-slate-100">
       <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[linear-gradient(90deg,transparent,rgba(34,211,238,0.08),transparent)] blur-3xl" />
+
+        {/* Annual upsell banner — shown to active monthly subscribers after 30 days */}
+        {hasPaidCohortAccess && (
+          <AnnualUpsellBanner
+            subscriptionTier={profile?.betaPlanKey || 'explorer'}
+            billingInterval="month"
+            subscriptionStartedAt={
+              currentUser?.metadata?.creationTime
+                ? new Date(currentUser.metadata.creationTime)
+                : null
+            }
+          />
+        )}
 
         {isPioneerTagged && !hasPaidCohortAccess && (
           <div className="mb-8 rounded-[1.75rem] border border-amber-300/20 bg-amber-300/10 p-6 text-amber-100">
