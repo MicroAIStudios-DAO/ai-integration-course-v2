@@ -34,6 +34,17 @@ import PlanSelectorPage from './pages/PlanSelectorPage';
 import CheckoutStartPage from './pages/CheckoutStartPage';
 import BillingPage from './pages/BillingPage';
 import { initGA4, trackPageView } from './utils/analytics';
+import ExitIntentModal from './components/ExitIntentModal';
+
+// Renders the exit-intent modal with the correct variant based on current route
+const ExitIntentWrapper: React.FC = () => {
+  const location = useLocation();
+  const isCheckout = location.pathname.startsWith('/checkout') || location.pathname.startsWith('/start-trial');
+  // Suppress on post-purchase and admin pages
+  const suppress = ['/payment-success', '/billing', '/admin'].some(p => location.pathname.startsWith(p));
+  if (suppress) return null;
+  return <ExitIntentModal variant={isCheckout ? 'checkout' : 'pricing'} />;
+};
 
 // Component to track page views on route changes
 const PageViewTracker: React.FC = () => {
@@ -58,6 +69,8 @@ const App: React.FC = () => {
       {/* UserJot feedback widget for beta testers */}
       <UserJotWidget />
       <PageViewTracker />
+      {/* Exit-intent modal — fires on mouse-leave, suppressed post-purchase */}
+      <ExitIntentWrapper />
       <Routes>
         {/* Root route is the primary onboarding funnel for direct visitors */}
         <Route path="/" element={<PaidTrafficLandingPage />} />
