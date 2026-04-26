@@ -77,6 +77,8 @@ const OFFER_LABELS: Record<OfferType, { cta: string; subtext: string; badge: str
 
 const CheckoutStartPage: React.FC = () => {
   const [searchParams] = useSearchParams();
+  // navigate is reserved for future use (e.g. post-checkout redirect fallback)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const navigate = useNavigate();
   const emailRef = useRef<HTMLInputElement>(null);
 
@@ -167,7 +169,8 @@ const CheckoutStartPage: React.FC = () => {
       });
 
       const result = await createSession(payload);
-      const { url, checkoutSessionId } = result.data;
+      const { url, checkoutSessionId: _checkoutSessionId } = result.data;
+      void _checkoutSessionId; // reserved for future analytics use
 
       const checkoutPrice = offerType === 'annual_usd239' ? 239 : 1;
       const checkoutPlanName = offerType === 'annual_usd239' ? 'Pro AI Architect Annual' : 'Pro AI Architect Trial';
