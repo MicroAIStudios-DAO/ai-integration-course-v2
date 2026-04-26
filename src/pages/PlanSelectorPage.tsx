@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { startCheckoutForPlan } from '../utils/checkout';
 import { trackCTAClick, pushAbandonmentFunnelState } from '../utils/analytics';
 
@@ -11,18 +11,14 @@ import { trackCTAClick, pushAbandonmentFunnelState } from '../utils/analytics';
  */
 
 const PlanSelectorPage: React.FC = () => {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const utmSource = searchParams.get('utm_source') || '';
   const utmMedium = searchParams.get('utm_medium') || '';
-  const utmCampaign = searchParams.get('utm_campaign') || '';
   const preselect = searchParams.get('plan') || ''; // 'trial' | 'annual'
 
   // Source-aware copy: Section 13D
   const isFromPaidSocial = utmMedium === 'paid_social' || utmMedium === 'cpc';
   const isFromEmail = utmMedium === 'email';
-  const isFromOrganic = !isFromPaidSocial && !isFromEmail;
 
   const getHeroSubcopy = () => {
     if (isFromPaidSocial) return 'Start full access for $1 today. Build something real this week. Cancel before renewal if it\'s not for you.';

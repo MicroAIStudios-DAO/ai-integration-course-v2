@@ -27,7 +27,6 @@ const CHECKOUT_ABANDONMENT_4_DELAY_MS = 48 * 60 * 60 * 1000;  // Email 4: 48 hou
 const CHECKOUT_ABANDONMENT_5_DELAY_MS = 6 * 24 * 60 * 60 * 1000; // Email 5: 6 days
 const PAYMENT_FAILED_2_DELAY_MS = 2 * 24 * 60 * 60 * 1000;       // Dunning 2: 2 days
 const PAYMENT_FAILED_3_DELAY_MS = 5 * 24 * 60 * 60 * 1000;       // Dunning 3: 5 days
-const TRIAL_ENDING_SOON_DELAY_DAYS = 6; // Day 6 of 7-day trial
 const ANNUAL_UPSELL_DELAY_DAYS = 30;    // Day 30 for monthly subscribers
 
 export type EmailQueueStatus = 'pending' | 'processing' | 'sent' | 'retry' | 'error' | 'superseded';

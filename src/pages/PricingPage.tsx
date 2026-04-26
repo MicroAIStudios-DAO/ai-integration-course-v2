@@ -10,23 +10,6 @@ import ExitIntentLeadMagnet from '../components/lead-magnet/ExitIntentLeadMagnet
 import { PlanKey, plans, formatPlanPrice } from '../config/pricing';
 import CopyableCodeBlock from '../components/common/CopyableCodeBlock';
 
-const FAQItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="bg-slate-800/50 rounded-lg border border-slate-700/50">
-      <button
-        className="w-full text-left px-6 py-5 flex justify-between items-center gap-4"
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-      >
-        <span className="text-white font-semibold">{q}</span>
-        <span className="text-emerald-400 text-xl flex-shrink-0">{open ? '−' : '+'}</span>
-      </button>
-      {open && <p className="px-6 pb-5 text-gray-400 leading-relaxed">{a}</p>}
-    </div>
-  );
-};
-
 const CheckIcon = () => (
   <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

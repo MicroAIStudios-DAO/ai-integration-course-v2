@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { getPlanKeyFromSearch, getStoredPlanKey, startCheckoutForPlan } from '../utils/checkout';
+import { getPlanKeyFromSearch, getStoredPlanKey } from '../utils/checkout';
 import { trackCancellationPageView, trackCancellationRecoveryClick, pushAbandonmentFunnelState } from '../utils/analytics';
 
 /**

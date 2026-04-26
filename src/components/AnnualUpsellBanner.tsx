@@ -47,7 +47,7 @@ const AnnualUpsellBanner: React.FC<AnnualUpsellBannerProps> = ({
   };
 
   const handleUpgrade = () => {
-    trackAnnualUpsellClick({ source: 'in_app_banner', tier: subscriptionTier });
+    trackAnnualUpsellClick(subscriptionTier || 'explorer', 'dashboard');
     window.location.href = `${PRICING_URL}${UTM}`;
   };
 

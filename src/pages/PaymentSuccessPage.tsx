@@ -83,7 +83,7 @@ const PaymentSuccessPage: React.FC = () => {
         }
         
         trackPurchase(checkoutSessionId, estimatedPlan.analyticsValue, "USD", 0, estimatedPlan.name, queryPlan || "explorer" as PlanKey);
-        trackGoogleAdsPurchaseConversion(checkoutSessionId, estimatedPlan.analyticsValue);
+        trackGoogleAdsPurchaseConversion(checkoutSessionId, estimatedPlan.analyticsValue, '');
         
         sessionStorage.setItem(fallbackKey, "true");
       }

@@ -26,7 +26,7 @@ const SignupPage: React.FC = () => {
   const location = useLocation();
   const { executeAndVerify, isLoaded } = useReCaptcha();
   const checkoutSessionId = getCheckoutSessionIdFromSearch(location.search);
-  const [planKey, setPlanKey] = useState<"explorer" | "pro" | "corporate" | null>(null);
+  const [planKey, setPlanKey] = useState<"explorer" | "pro" | "pro_trial" | "corporate" | null>(null);
   const [checkoutSummary, setCheckoutSummary] = useState<CheckoutSessionSummary | null>(null);
 
   const selectedPlan = useMemo(() => (planKey ? getPlan(planKey) : null), [planKey]);

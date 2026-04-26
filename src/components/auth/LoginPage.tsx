@@ -27,7 +27,7 @@ const LoginPage: React.FC = () => {
   const location = useLocation();
   const { executeAndVerify, isLoaded } = useReCaptcha();
   const checkoutSessionId = getCheckoutSessionIdFromSearch(location.search);
-  const [checkoutPlanKey, setCheckoutPlanKey] = useState<"explorer" | "pro" | "corporate" | null>(null);
+  const [checkoutPlanKey, setCheckoutPlanKey] = useState<"explorer" | "pro" | "pro_trial" | "corporate" | null>(null);
 
   useEffect(() => {
     const planFromUrl = new URLSearchParams(location.search).get("plan");
