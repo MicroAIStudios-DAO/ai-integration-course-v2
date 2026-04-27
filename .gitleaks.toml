@@ -1,0 +1,20 @@
+title = "AI Integration Course gitleaks config"
+
+# Inherit the full default rule set, then narrowly allowlist only the
+# specific public-by-design key values that ship in the client bundle.
+[extend]
+useDefault = true
+
+[allowlist]
+description = """
+Firebase web API key (project identifier, not a credential — paired with \
+Firestore rules + App Check) and reCAPTCHA Enterprise site keys are \
+designed to ship publicly in the browser bundle. Allowlisted by exact \
+value so any unrelated secret would still be flagged.
+See: https://firebase.google.com/docs/projects/api-keys
+"""
+regexes = [
+  '''AIzaSyDbkztazekIxE8KUB2MydZXLVW7p52CUOQ''',
+  '''6LfhDcosAAAAAP6nU36DVwxoGBmjqJW5VWGy-dCa''',
+  '''6LcUwlYsAAAAAGURbzyHKnxGXtFHLhCQYnGB3aPz''',
+]

@@ -6,7 +6,7 @@ import { UserProfile } from "../types/course";
 import { openBetaFeedback } from "../components/UserJotWidget";
 import AnnualUpsellBanner from "../components/AnnualUpsellBanner";
 
-const DISCORD_URL = process.env.REACT_APP_FOUNDING_DISCORD_URL || "";
+const DISCORD_URL = import.meta.env.VITE_FOUNDING_DISCORD_URL || "";
 
 const activeScripts = [
   {
