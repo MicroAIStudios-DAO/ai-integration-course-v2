@@ -22,7 +22,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useReCaptcha } from '../hooks/useReCaptcha';
 import {
@@ -77,9 +77,6 @@ const OFFER_LABELS: Record<OfferType, { cta: string; subtext: string; badge: str
 
 const CheckoutStartPage: React.FC = () => {
   const [searchParams] = useSearchParams();
-  // navigate is reserved for future use (e.g. post-checkout redirect fallback)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const navigate = useNavigate();
   const emailRef = useRef<HTMLInputElement>(null);
 
   const offerParam = searchParams.get('offer') as OfferType | null;
@@ -163,12 +160,7 @@ const CheckoutStartPage: React.FC = () => {
         experimentBucket,
       };
 
-      trackLeadCaptured({
-        email: normalizedEmail,
-        offerType,
-        leadSource: payload.leadSource,
-        utm: payload.utm,
-      });
+      trackLeadCaptured(offerType, payload.leadSource, offerType, smsConsent);
 
       const result = await createSession(payload);
       const { url, checkoutSessionId: _checkoutSessionId } = result.data;
