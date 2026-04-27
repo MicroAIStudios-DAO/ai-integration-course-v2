@@ -462,9 +462,21 @@ export async function tutorHandler(req: any, res: any) {
 // Export helpers for tests
 export const __internals = { cosine, chunkText, estTokensFromChars, streamOpenAIResponse };
 
+// SECURITY FIX (VULN-03): Replace cors:true (wildcard Access-Control-Allow-Origin: *)
+// with an explicit origin allowlist. Wildcard CORS on an authenticated AI endpoint
+// allows any malicious website to make cross-origin requests on behalf of a logged-in
+// user, enabling CSRF attacks and quota/cost abuse of the OpenAI backend.
+const ALLOWED_ORIGINS = [
+  'https://aiintegrationcourse.com',
+  'https://www.aiintegrationcourse.com',
+  // Local development origins
+  'http://localhost:3000',
+  'http://localhost:5000',
+];
+
 // Export the Firebase Function
 export const tutor = onRequest({
-  cors: true,
+  cors: ALLOWED_ORIGINS,
   region: 'us-central1',
   serviceAccount: 'firebase-app-hosting-compute@ai-integra-course-v2.iam.gserviceaccount.com',
   secrets: [OPENAI_API_KEY],

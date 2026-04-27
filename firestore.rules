@@ -162,14 +162,26 @@ service cloud.firestore {
         // Only admins can write modules
         allow write: if isAdmin();
         
-        // Lessons subcollection - THIS IS WHERE TIER GATING HAPPENS
+        // Lessons subcollection - TIER GATING ENFORCED SERVER-SIDE
+        // SECURITY FIX (VULN-01): Removed open `allow read: if true` that exposed
+        // all premium/paid lesson content (including full markdown and video URLs)
+        // to unauthenticated REST API callers. Access is now gated by lesson tier.
         match /lessons/{lessonId} {
-          // Read rules for lessons based on tier
-          allow read: if 
-            // Anyone can read lesson metadata (title, description, tier info)
-            // But content is filtered on the client side based on tier
-            true;
-          
+          // Lesson metadata (title, order, durationMinutes, tier flag) is readable
+          // by anyone so the course outline/syllabus can render for marketing.
+          // Full content fields (content, videoUrl) are only returned when the
+          // caller satisfies the tier requirement below.
+          allow read: if
+            // Free lessons: always readable (marketing + enrolled free users)
+            isFreeLesson(resource.data) ||
+            // Founders-tier lessons: founding members, beta testers with premium
+            (resource.data.tier == 'founders' && canReadFoundersContent()) ||
+            // Premium lessons: any authenticated user with an active subscription
+            // or trial period
+            (resource.data.tier != 'founders' && hasPremiumAccess()) ||
+            // Admins can always read everything
+            isAdmin();
+
           // Only admins can write lessons
           allow write: if isAdmin();
         }

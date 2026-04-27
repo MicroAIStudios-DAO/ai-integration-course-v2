@@ -17,6 +17,15 @@ if (!process.env.NODE_OPTIONS || !process.env.NODE_OPTIONS.includes(OPENSSL_FLAG
     .join(' ');
 }
 
+// SECURITY FIX (VULN-02): Disable source maps in all production builds.
+// Source maps expose the full original React source code to the public internet,
+// allowing attackers to reverse-engineer business logic, discover hidden routes,
+// and identify exploitable patterns. Setting this here ensures it applies
+// regardless of environment variable files (.env.production is gitignored).
+if (!process.env.GENERATE_SOURCEMAP) {
+  process.env.GENERATE_SOURCEMAP = 'false';
+}
+
 // Only strip the type-checking plugin in CI environments.
 if (process.env.CI === 'true') {
   const originalRequire = Module.prototype.require;
