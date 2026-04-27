@@ -120,8 +120,8 @@ jobs:
             --only ${{ steps.targets.outputs.targets }} \
             --project ai-integra-course-v2 \
             --non-interactive
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcp-sa.json
+        # GOOGLE_APPLICATION_CREDENTIALS is already set by google-github-actions/auth@v2
+        # Do NOT override it here — the gcp-sa.json path does not exist at runtime
 
       # ── 8. Post-deploy health check ──────────────────────────────────────
       - name: Verify live deployment
