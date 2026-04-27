@@ -61,7 +61,7 @@ export function UserJotWidget() {
   }, []);
 
   const feedbackUrl = useMemo(() => {
-    const base = process.env.REACT_APP_USERJOT_FEEDBACK_URL;
+    const base = import.meta.env.VITE_USERJOT_FEEDBACK_URL;
     if (!base || !currentUser) {
       return null;
     }
@@ -79,7 +79,7 @@ export function UserJotWidget() {
       }
       return url.toString();
     } catch (error) {
-      console.error('Invalid REACT_APP_USERJOT_FEEDBACK_URL:', error);
+      console.error('Invalid VITE_USERJOT_FEEDBACK_URL:', error);
       return null;
     }
   }, [currentUser, betaCohort]);

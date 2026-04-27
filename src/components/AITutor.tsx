@@ -20,7 +20,7 @@ export default function AITutor({ lessonId, premium, hasAccess, supportEmail }: 
   const [error, setError] = useState<string | null>(null);
   // Remove unused error state as it's set but never displayed
   const scrollRef = useRef<HTMLDivElement>(null);
-  const tutorUrl = process.env.REACT_APP_TUTOR_URL || "/api/tutor";
+  const tutorUrl = import.meta.env.VITE_TUTOR_URL || "/api/tutor";
 
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 

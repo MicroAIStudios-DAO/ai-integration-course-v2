@@ -29,19 +29,20 @@ jobs:
     env:
       # ── Firebase client-side config ──────────────────────────────────────
       # These are build-time public keys baked into the React bundle.
-      # Set each one as a GitHub Actions Secret in the repository settings.
-      REACT_APP_FIREBASE_API_KEY:            ${{ secrets.REACT_APP_FIREBASE_API_KEY }}
-      REACT_APP_FIREBASE_AUTH_DOMAIN:        ${{ secrets.REACT_APP_FIREBASE_AUTH_DOMAIN }}
-      REACT_APP_FIREBASE_PROJECT_ID:         ${{ secrets.REACT_APP_FIREBASE_PROJECT_ID }}
-      REACT_APP_FIREBASE_STORAGE_BUCKET:     ${{ secrets.REACT_APP_FIREBASE_STORAGE_BUCKET }}
-      REACT_APP_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.REACT_APP_FIREBASE_MESSAGING_SENDER_ID }}
-      REACT_APP_FIREBASE_APP_ID:             ${{ secrets.REACT_APP_FIREBASE_APP_ID }}
-      REACT_APP_FIREBASE_MEASUREMENT_ID:     ${{ secrets.REACT_APP_FIREBASE_MEASUREMENT_ID }}
+      # Vite reads VITE_* prefixed env vars; GitHub secret names retained as
+      # REACT_APP_* so the secrets in repo settings do not need to be rotated.
+      VITE_FIREBASE_API_KEY:            ${{ secrets.REACT_APP_FIREBASE_API_KEY }}
+      VITE_FIREBASE_AUTH_DOMAIN:        ${{ secrets.REACT_APP_FIREBASE_AUTH_DOMAIN }}
+      VITE_FIREBASE_PROJECT_ID:         ${{ secrets.REACT_APP_FIREBASE_PROJECT_ID }}
+      VITE_FIREBASE_STORAGE_BUCKET:     ${{ secrets.REACT_APP_FIREBASE_STORAGE_BUCKET }}
+      VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.REACT_APP_FIREBASE_MESSAGING_SENDER_ID }}
+      VITE_FIREBASE_APP_ID:             ${{ secrets.REACT_APP_FIREBASE_APP_ID }}
+      VITE_FIREBASE_MEASUREMENT_ID:     ${{ secrets.REACT_APP_FIREBASE_MEASUREMENT_ID }}
 
       # ── App Check / reCAPTCHA ────────────────────────────────────────────
-      REACT_APP_RECAPTCHA_ENTERPRISE_KEY:     ${{ secrets.REACT_APP_RECAPTCHA_ENTERPRISE_KEY }}
+      VITE_RECAPTCHA_ENTERPRISE_KEY:     ${{ secrets.REACT_APP_RECAPTCHA_ENTERPRISE_KEY }}
       # ── Stripe (publishable key only — secret key is a Firebase secret) ──
-      REACT_APP_STRIPE_PUBLISHABLE_KEY:       ${{ secrets.REACT_APP_STRIPE_PUBLISHABLE_KEY }}
+      VITE_STRIPE_PUBLISHABLE_KEY:       ${{ secrets.REACT_APP_STRIPE_PUBLISHABLE_KEY }}
 
       # ── Build flags ──────────────────────────────────────────────────────
       CI: "true"

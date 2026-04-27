@@ -3,7 +3,7 @@
 
 // Master password is stored in Google Cloud Secret Manager
 const getMasterPassword = async (): Promise<string> => {
-  if (process.env.NODE_ENV === 'production') {
+  if (import.meta.env.PROD) {
     const {SecretManagerServiceClient} = require('@google-cloud/secret-manager');
     const client = new SecretManagerServiceClient();
     const [version] = await client.accessSecretVersion({
@@ -11,7 +11,7 @@ const getMasterPassword = async (): Promise<string> => {
     });
     return version.payload.data.toString();
   } else {
-    return process.env.MASTER_PASSWORD || 'development-password';
+    return import.meta.env.VITE_MASTER_PASSWORD || 'development-password';
   }
 };
 
