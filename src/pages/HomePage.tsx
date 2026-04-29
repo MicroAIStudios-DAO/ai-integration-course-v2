@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import AnimatedAvatar from '../components/layout/AnimatedAvatar';
+import { useAuth } from '../context/AuthContext';
 import { appConfig } from '../config/environment';
 import SEO from '../components/SEO';
 import CourseSchema from '../components/seo/CourseSchema';
@@ -27,6 +28,7 @@ const buildExternalUrl = (baseUrl: string, path: string): string => {
 };
 
 const HomePage: React.FC = () => {
+  const { currentUser } = useAuth();
   const handleFreeStarterOptIn = (source: string) => () => {
     trackFreeStarterOptIn(source, '/courses');
   };
@@ -85,17 +87,32 @@ const HomePage: React.FC = () => {
           </a>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide text-slate-300">
             <a href={nav.lab} className="hover:text-cyan-300 transition-colors">The Lab</a>
-            <a href={nav.courses} className="hover:text-cyan-300 transition-colors">Curriculum</a>
+            <a href={nav.courses} className="hover:text-cyan-300 transition-colors">
+              {currentUser ? 'My Curriculum' : 'Curriculum'}
+            </a>
             <a href={nav.blogs} className="hover:text-cyan-300 transition-colors">Blog</a>
             <a href={nav.local} className="hover:text-cyan-300 transition-colors">San Diego Workshops</a>
-            <a href={nav.login} className="hover:text-cyan-300 transition-colors">Login</a>
+            {currentUser ? (
+              <a href={buildExternalUrl(baseUrl, '/billing')} className="hover:text-cyan-300 transition-colors">Account</a>
+            ) : (
+              <a href={nav.login} className="hover:text-cyan-300 transition-colors">Login</a>
+            )}
           </div>
-          <a
-            href={nav.pricing}
-            className="hidden md:inline-flex rounded-xl bg-cyan-500 px-5 py-2.5 text-sm font-bold uppercase tracking-[0.1em] text-slate-950 shadow-lg shadow-cyan-500/25 hover:bg-cyan-400 transition-colors"
-          >
-            Get Started
-          </a>
+          {currentUser ? (
+            <a
+              href={nav.courses}
+              className="hidden md:inline-flex rounded-xl border border-cyan-400/40 bg-cyan-400/10 px-5 py-2.5 text-sm font-bold uppercase tracking-[0.1em] text-cyan-300 hover:bg-cyan-400/20 transition-colors"
+            >
+              My Curriculum &rarr;
+            </a>
+          ) : (
+            <a
+              href={nav.pricing}
+              className="hidden md:inline-flex rounded-xl bg-cyan-500 px-5 py-2.5 text-sm font-bold uppercase tracking-[0.1em] text-slate-950 shadow-lg shadow-cyan-500/25 hover:bg-cyan-400 transition-colors"
+            >
+              Get Started
+            </a>
+          )}
           <button className="md:hidden text-white" aria-label="Menu">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
@@ -128,15 +145,21 @@ const HomePage: React.FC = () => {
               href={nav.pricing}
               className="inline-flex flex-col items-center rounded-2xl bg-cyan-500 px-8 py-4 text-slate-950 shadow-xl shadow-cyan-500/20 transition-all hover:bg-cyan-400 hover:shadow-cyan-400/30 hover:scale-[1.02]"
             >
-              <span className="text-base font-bold uppercase tracking-[0.1em]">Stop Scrolling Start Building</span>
-              <span className="text-xs font-semibold mt-1 opacity-80">Click Here</span>
+              <span className="text-base font-bold uppercase tracking-[0.1em]">Ship Your First Agent This Week</span>
+              <span className="text-xs font-semibold mt-1 opacity-80">$29.99/mo &mdash; 14-day money-back guarantee</span>
             </a>
             <a
               href="#demo"
               className="inline-flex items-center rounded-2xl border border-white/15 bg-white/5 px-8 py-4 text-base font-semibold uppercase tracking-[0.1em] text-white backdrop-blur transition-all hover:border-white/25 hover:bg-white/10"
             >
-              Watch the Day 1 Script Demo
+              Watch the Day 1 Demo
             </a>
+          </div>
+          {/* TRUST BAR */}
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <span className="flex items-center gap-2"><span className="text-cyan-400">&#10003;</span> No prior ML experience required</span>
+            <span className="flex items-center gap-2"><span className="text-cyan-400">&#10003;</span> Works on Windows &amp; Mac</span>
+            <span className="flex items-center gap-2"><span className="text-cyan-400">&#10003;</span> Cancel anytime</span>
           </div>
 
         </section>
@@ -289,6 +312,53 @@ const HomePage: React.FC = () => {
               className="text-sm font-semibold text-slate-400 hover:text-cyan-300 transition-colors"
             >
               Or go straight to pricing &rarr;
+            </a>
+          </div>
+        </section>
+
+        {/* 3-STEP QUICK START */}
+        <section className="relative z-10 mx-auto max-w-4xl px-6 pb-24">
+          <div className="text-center mb-10">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">How It Works</p>
+            <h2 className="mt-3 text-3xl font-black uppercase tracking-tight text-white md:text-4xl">
+              From Zero to Running Agent in 3 Steps
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-slate-400">
+              No PhD required. No cloud infrastructure to configure. Just a laptop, a terminal, and this course.
+            </p>
+          </div>
+          <div className="grid gap-6 md:grid-cols-3">
+            <div className="relative rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.04] p-7">
+              <span className="absolute -top-4 left-6 flex h-8 w-8 items-center justify-center rounded-full bg-cyan-500 text-sm font-black text-slate-950">1</span>
+              <h3 className="mt-2 text-lg font-bold text-white">Set Up Your Environment</h3>
+              <p className="mt-3 text-sm leading-relaxed text-slate-400">
+                Follow the Day 1 walkthrough to install Python, configure your API keys, and run your first agent script locally &mdash; on Windows or Mac.
+              </p>
+              <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-400">~45 minutes</p>
+            </div>
+            <div className="relative rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.04] p-7">
+              <span className="absolute -top-4 left-6 flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-sm font-black text-slate-950">2</span>
+              <h3 className="mt-2 text-lg font-bold text-white">Build the Content Architect</h3>
+              <p className="mt-3 text-sm leading-relaxed text-slate-400">
+                Turn a raw transcript into a 30-day content distribution engine. Your first real agentic workflow &mdash; end-to-end, no hand-holding.
+              </p>
+              <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">Module 01 &mdash; Live Now</p>
+            </div>
+            <div className="relative rounded-2xl border border-white/10 bg-white/[0.03] p-7">
+              <span className="absolute -top-4 left-6 flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 text-sm font-black text-white">3</span>
+              <h3 className="mt-2 text-lg font-bold text-white">Connect Live Data &amp; Ship</h3>
+              <p className="mt-3 text-sm leading-relaxed text-slate-400">
+                Integrate Serper.dev for real-time web awareness. Ground every agent output in current facts, then deploy to your actual business workflow.
+              </p>
+              <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Module 02 &mdash; Live Now</p>
+            </div>
+          </div>
+          <div className="mt-10 text-center">
+            <a
+              href={nav.pricing}
+              className="inline-flex items-center rounded-2xl bg-cyan-500 px-8 py-4 text-base font-bold uppercase tracking-[0.1em] text-slate-950 shadow-xl shadow-cyan-500/20 transition-all hover:bg-cyan-400 hover:scale-[1.02]"
+            >
+              Start Step 1 Today
             </a>
           </div>
         </section>
