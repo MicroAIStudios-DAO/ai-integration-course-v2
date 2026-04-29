@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { trackCTAClick } from '../utils/analytics';
+import { useAuth } from '../context/AuthContext';
+import { usePremiumAccess } from '../hooks/usePremiumAccess';
 
 /**
  * Section 6: Exit-Intent / Onsite Rescue
@@ -9,7 +11,14 @@ import { trackCTAClick } from '../utils/analytics';
  *   - Pricing page: "Wait — want the lowest-risk way to start?"
  *   - Checkout page: "Still deciding?"
  * "Send me my secure link" captures email and fires an immediate rescue email.
- * Suppressed if user has already purchased (localStorage flag).
+ *
+ * Suppressed when:
+ *   - the user is signed in and has paid access (premium / trialing / active sub
+ *     / founding) — the canonical signal, lives in usePremiumAccess
+ *   - the user has the legacy localStorage purchase flag (kept for CRO funnel
+ *     attribution and to handle rare cases where the modal mounts before the
+ *     subscription listener resolves)
+ *   - the user dismissed it earlier in this session
  */
 
 interface ExitIntentModalProps {
@@ -27,8 +36,19 @@ const ExitIntentModal: React.FC<ExitIntentModalProps> = ({
   const [sending, setSending] = useState(false);
   const hasShown = useRef(false);
 
+  const { currentUser, loading: authLoading } = useAuth();
+  const { hasAccess, loading: accessLoading } = usePremiumAccess();
+  const isAuthedPaid = !!currentUser && hasAccess;
+
   useEffect(() => {
-    // Do not show if user already purchased
+    // Wait until auth + entitlement state has resolved so we don't briefly
+    // attach the listener for a paid user whose subscription is still loading.
+    if (authLoading || accessLoading) return;
+
+    // Do not show for signed-in paid users — they don't need the trial CTA.
+    if (isAuthedPaid) return;
+
+    // Do not show if user already purchased (legacy CRO flag).
     if (localStorage.getItem('aic_purchased') === 'true') return;
     // Do not show if already dismissed in this session
     if (sessionStorage.getItem('exit_modal_dismissed') === 'true') return;
@@ -46,7 +66,13 @@ const ExitIntentModal: React.FC<ExitIntentModalProps> = ({
 
     document.addEventListener('mouseleave', handleMouseLeave);
     return () => document.removeEventListener('mouseleave', handleMouseLeave);
-  }, [variant]);
+  }, [variant, authLoading, accessLoading, isAuthedPaid]);
+
+  // If a signed-in paid user happens to already have the modal open (e.g. they
+  // signed in inside the same tab after the listener fired), close it.
+  useEffect(() => {
+    if (visible && isAuthedPaid) setVisible(false);
+  }, [visible, isAuthedPaid]);
 
   const handleClose = () => {
     setVisible(false);
