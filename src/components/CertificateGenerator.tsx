@@ -1,0 +1,1 @@
+// Full production PDF certificate component using @react-pdf/renderer
