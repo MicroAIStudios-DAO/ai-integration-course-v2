@@ -301,8 +301,8 @@ export interface CertRecord {
 
 /**
  * Persist a generated certificate to the user's Firestore document.
- * Uses setDoc with merge:true so it works even if the user doc is missing,
- * and arrayUnion ensures the cert is deduplicated by Firestore object equality.
+ * Uses setDoc with merge:true so it works even if the user doc is missing.
+ * Each certificate has a unique certId, so multiple calls create distinct entries.
  */
 export const saveCertificate = async (
   userId: string,

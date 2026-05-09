@@ -8,11 +8,10 @@ import { trackCertificateGenerated } from '../utils/analytics';
 // Tiers that are allowed to generate certificates
 const CERTIFICATE_TIERS = new Set(['pro', 'corporate', 'founding']);
 
-/** Deterministic-but-unique cert ID derived from user UID + timestamp */
-const generateCertId = (uid: string): string => {
-  const ts = Date.now().toString(36).toUpperCase();
-  const fragment = uid.slice(-6).toUpperCase();
-  return `AIC-${ts}-${fragment}`;
+/** Generate a cryptographically secure certificate ID */
+const generateCertId = (): string => {
+  const uuid = crypto.randomUUID().toUpperCase().replace(/-/g, '');
+  return `AIC-${uuid.slice(0, 8)}-${uuid.slice(8, 16)}`;
 };
 
 const COURSE_NAME = 'AI Integration Mastery';
@@ -52,7 +51,7 @@ const CertificationPage: React.FC = () => {
     setError(null);
     setGenerating(true);
     try {
-      const newCertId = generateCertId(currentUser.uid);
+      const newCertId = generateCertId();
       const cert: CertRecord = {
         certId: newCertId,
         courseName: COURSE_NAME,
@@ -90,7 +89,7 @@ const CertificationPage: React.FC = () => {
           issueYear: String(new Date().getFullYear()),
           issueMonth: String(new Date().getMonth() + 1),
           certId: savedCert.certId,
-          certUrl: `https://aiintegrationcourse.com/certification`,
+          certUrl: `https://aiintegrationcourse.com/certification?id=${encodeURIComponent(savedCert.certId)}`,
         });
         return `https://www.linkedin.com/profile/add?${params.toString()}`;
       })()
@@ -235,7 +234,7 @@ const CertificationPage: React.FC = () => {
             <div className="text-right">
               <p className="text-xs text-slate-400">Certificate ID</p>
               <p className="font-mono text-xs font-semibold text-slate-600">
-                {certId}
+                {certId || '——————————————'}
               </p>
             </div>
           </div>
