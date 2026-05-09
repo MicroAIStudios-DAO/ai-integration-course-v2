@@ -1,0 +1,1 @@
+// New community hub page with Discord integration and AI moderator
