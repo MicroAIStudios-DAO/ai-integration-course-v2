@@ -25,9 +25,7 @@ const CertificationPage: React.FC = () => {
     subscriptionTier,
   } = usePremiumAccess();
 
-  const [certId] = useState<string>(() =>
-    currentUser ? generateCertId(currentUser.uid) : ''
-  );
+  const [certId, setCertId] = useState<string>('');
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,18 +48,20 @@ const CertificationPage: React.FC = () => {
   }, [loading, currentUser, navigate]);
 
   const handleGenerate = useCallback(async () => {
-    if (!currentUser || !canGenerate) return;
+    if (!currentUser || !canGenerate || generating || generated) return;
     setError(null);
     setGenerating(true);
     try {
+      const newCertId = generateCertId(currentUser.uid);
       const cert: CertRecord = {
-        certId,
+        certId: newCertId,
         courseName: COURSE_NAME,
         issuedAt: new Date().toISOString(),
         tier: subscriptionTier,
       };
       await saveCertificate(currentUser.uid, cert);
-      trackCertificateGenerated(certId, currentUser.uid, subscriptionTier);
+      trackCertificateGenerated(newCertId, currentUser.uid, subscriptionTier);
+      setCertId(newCertId);
       setSavedCert(cert);
       setGenerated(true);
     } catch (err) {
@@ -74,7 +74,7 @@ const CertificationPage: React.FC = () => {
     } finally {
       setGenerating(false);
     }
-  }, [currentUser, canGenerate, certId, subscriptionTier]);
+  }, [currentUser, canGenerate, generating, generated, subscriptionTier]);
 
   const handlePrint = useCallback(() => {
     window.print();
@@ -90,7 +90,7 @@ const CertificationPage: React.FC = () => {
           issueYear: String(new Date().getFullYear()),
           issueMonth: String(new Date().getMonth() + 1),
           certId: savedCert.certId,
-          certUrl: `https://aiintegrationcourse.com/verify?cert=${savedCert.certId}`,
+          certUrl: `https://aiintegrationcourse.com/certification`,
         });
         return `https://www.linkedin.com/profile/add?${params.toString()}`;
       })()

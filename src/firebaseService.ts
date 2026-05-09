@@ -301,16 +301,15 @@ export interface CertRecord {
 
 /**
  * Persist a generated certificate to the user's Firestore document.
- * Appends to the `certs` array using arrayUnion semantics via a merge write.
+ * Uses setDoc with merge:true so it works even if the user doc is missing,
+ * and arrayUnion ensures the cert is deduplicated by Firestore object equality.
  */
 export const saveCertificate = async (
   userId: string,
   cert: CertRecord
 ): Promise<void> => {
   const userRef = doc(db, 'users', userId);
-  await updateDoc(userRef, {
-    certs: arrayUnion(cert),
-  });
+  await setDoc(userRef, { certs: arrayUnion(cert) }, { merge: true });
 };
 
 export { db, storage }; // Export db and storage if needed directly elsewhere
