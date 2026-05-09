@@ -813,6 +813,25 @@ export const trackExitIntentEmailCaptured = (
   }
 };
 
+/**
+ * Track certificate generation event
+ * Trigger: User clicks "Generate Certificate" on the Certification page
+ */
+export const trackCertificateGenerated = (
+  certId: string,
+  userId: string,
+  tier: string
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'certificate_generated', {
+      cert_id: certId,
+      user_id: userId,
+      subscription_tier: tier,
+    });
+    console.log('[Analytics] certificate_generated:', { certId, userId, tier });
+  }
+};
+
 // Export all functions as named object for convenience
 const analytics = {
   initGA4,
@@ -839,6 +858,7 @@ const analytics = {
   setUserProperties,
   trackAudienceEvent,
   trackError,
+  trackCertificateGenerated,
 };
 
 export default analytics;
