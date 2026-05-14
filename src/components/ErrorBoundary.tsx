@@ -35,18 +35,23 @@ class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column' as const,
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '100vh',
-          backgroundColor: '#0f172a',
-          color: '#e2e8f0',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          padding: '2rem',
-          textAlign: 'center' as const,
-        }}>
+        <div
+          role="alert"
+          aria-live="assertive"
+          aria-atomic={true}
+          style={{
+            display: 'flex',
+            flexDirection: 'column' as const,
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '100vh',
+            backgroundColor: '#0f172a',
+            color: '#e2e8f0',
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            padding: '2rem',
+            textAlign: 'center' as const,
+          }}
+        >
           <h1 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#f8fafc' }}>
             Something went wrong
           </h1>
@@ -54,6 +59,7 @@ class ErrorBoundary extends Component<Props, State> {
             The application encountered an unexpected error. Please try reloading the page.
           </p>
           <button
+            type="button"
             onClick={this.handleReload}
             style={{
               backgroundColor: '#6366f1',
