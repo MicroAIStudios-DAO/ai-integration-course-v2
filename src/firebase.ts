@@ -17,7 +17,7 @@ const functions = getFunctions(app, "us-central1");
 let analytics: ReturnType<typeof getAnalytics> | null = null;
 
 if (typeof window !== "undefined") {
-  if (process.env.REACT_APP_APPCHECK_DEBUG === "true") {
+  if (import.meta.env.VITE_APPCHECK_DEBUG === "true") {
     (globalThis as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
   }
 
@@ -31,7 +31,7 @@ if (typeof window !== "undefined") {
       console.warn("App Check initialization skipped:", error);
     }
   } else {
-    console.warn("App Check disabled: REACT_APP_RECAPTCHA_ENTERPRISE_KEY is not configured.");
+    console.warn("App Check disabled: VITE_RECAPTCHA_ENTERPRISE_KEY is not configured.");
   }
 
   isSupported()

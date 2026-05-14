@@ -1,16 +1,30 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import ReactPlayer from "react-player";
-import { getCourseById, getLessonMarkdownUrl, markLessonAsComplete, getUserProfile, getUserCourseProgress, userHasPaidAccess } from "../firebaseService"; // Import Firestore service
+import remarkGfm from "remark-gfm";
+import {
+  getCourseById,
+  getLessonMarkdownUrl,
+  getSecureLessonContent,
+  getUserCourseProgress,
+  getUserProfile,
+  isFoundersLesson,
+  isFreeLesson,
+  isPublicPreviewLesson,
+  markLessonAsComplete,
+  userCanAccessLesson
+} from "../firebaseService"; // Import Firestore service
 import { Course, Lesson as LessonType, UserCourseProgress } from "../types/course"; // Import types
 import { useAuth } from "../context/AuthContext"; // For gating logic
 // Master access removed for production
 import AnimatedAvatar from "../components/layout/AnimatedAvatar"; // Import AnimatedAvatar
 import AITutor from "../components/AITutor";
 import CourseSchema from "../components/seo/CourseSchema";
+import SEO from "../components/SEO";
 import "../styles/lesson-content.css"; // Import textbook-style CSS
-import { trackLessonStart, trackLessonComplete } from "../utils/analytics";
+import { trackLessonStart, trackLessonComplete, trackLesson1Completed } from "../utils/analytics";
+import { MarkdownPre } from "../components/common/CopyableCodeBlock";
 
 const LessonPage: React.FC = () => {
   const { courseId, moduleId, lessonId } = useParams<{ courseId: string; moduleId: string; lessonId: string }>();
@@ -28,6 +42,19 @@ const LessonPage: React.FC = () => {
   const [userProgress, setUserProgress] = useState<UserCourseProgress | null>(null);
   const [videoUrlToPlay, setVideoUrlToPlay] = useState<string | undefined>(undefined);
   // no master access state
+
+  const isFirstCourseLesson = useMemo(() => {
+    if (!course || !lesson || !moduleId) return false;
+
+    const sortedModules = [...course.modules].sort((a, b) => a.order - b.order);
+    const firstModule = sortedModules[0];
+    if (!firstModule || firstModule.id !== moduleId) {
+      return false;
+    }
+
+    const firstLesson = [...firstModule.lessons].sort((a, b) => a.order - b.order)[0];
+    return firstLesson?.id === lesson.id;
+  }, [course, lesson, moduleId]);
 
   // master access removed
 
@@ -66,18 +93,12 @@ const LessonPage: React.FC = () => {
         }
         setLesson(currentLesson);
 
-        // Check access: free lesson, subscription, or admin role
-        const isFreeLesson = currentLesson.tier === 'free' || currentLesson.isFree === true;
-        let canAccess = isFreeLesson;
+        // Check access against the lesson tier and current user profile.
+        let profile = null;
+        let canAccess = isFreeLesson(currentLesson);
         if (currentUser) {
-          // Check subscription status for logged-in users without master access
-          const profile = await getUserProfile(currentUser.uid);
-          const isAdmin = profile?.role === 'admin' || profile?.isAdmin;
-          canAccess = !!(
-            isFreeLesson ||
-            isAdmin ||
-            userHasPaidAccess(profile)
-          );
+          profile = await getUserProfile(currentUser.uid);
+          canAccess = userCanAccessLesson(currentLesson, profile);
           
           const progress = await getUserCourseProgress(currentUser.uid, courseId);
           setUserProgress(progress);
@@ -88,13 +109,23 @@ const LessonPage: React.FC = () => {
         if (canAccess) {
           // Try to get lesson content from multiple sources
           let contentToDisplay = "";
+          const shouldReadLessonContent =
+            isPublicPreviewLesson(currentLesson) || !isFreeLesson(currentLesson);
           
-          // Priority 1: Direct content field in Firestore
-          if (currentLesson.content) {
+          // Public preview lessons still live in lessonContent, so load them here too.
+          if (shouldReadLessonContent) {
+            try {
+              contentToDisplay = await getSecureLessonContent(courseId, moduleId, lessonId) || "";
+            } catch (secureContentError) {
+              console.warn("Could not fetch gated lesson content:", secureContentError);
+            }
+          }
+          // Priority 2: Direct content field in Firestore
+          if (!contentToDisplay && currentLesson.content) {
             contentToDisplay = currentLesson.content;
           }
-          // Priority 2: Content from Firebase Storage
-          else if (currentLesson.storagePath) {
+          // Priority 3: Content from Firebase Storage
+          else if (!contentToDisplay && currentLesson.storagePath) {
             try {
               const mdUrl = await getLessonMarkdownUrl(currentLesson.storagePath);
               const response = await fetch(mdUrl);
@@ -106,7 +137,7 @@ const LessonPage: React.FC = () => {
             }
           }
           
-          // Priority 3: Fallback content if no content is available
+          // Priority 4: Fallback content if no content is available
           if (!contentToDisplay) {
             contentToDisplay = `# ${currentLesson.title}
 
@@ -142,7 +173,11 @@ The detailed content for this lesson is being prepared. Please check back soon o
             courseId
           );
         } else {
-          setError("You do not have access to this premium lesson.");
+          setError(
+            isFoundersLesson(currentLesson)
+              ? "This founders lesson is reserved for active Pioneer cohort members and founding members."
+              : "You do not have access to this premium lesson."
+          );
         }
 
       } catch (err: any) {
@@ -168,6 +203,14 @@ The detailed content for this lesson is being prepared. Please check back soon o
           moduleId || '',
           'button_click'
         );
+        if (isFirstCourseLesson) {
+          trackLesson1Completed(
+            lessonId,
+            lesson?.title || '',
+            moduleId || '',
+            'button_click'
+          );
+        }
         alert("Lesson marked as complete!");
         const progress = await getUserCourseProgress(currentUser.uid, courseId);
         setUserProgress(progress);
@@ -200,7 +243,7 @@ The detailed content for this lesson is being prepared. Please check back soon o
      return (
       <div className="container mx-auto px-4 py-8 text-center bg-gray-100 p-10 rounded-lg shadow-md">
         <h2 className="text-2xl font-headings font-semibold mb-4 text-yellow-600">Access Denied</h2>
-        <p className="text-gray-700 font-sans mb-6">{error} Please <Link to="/signup" className="text-blue-600 hover:underline">sign up</Link> or <Link to="/login" className="text-blue-600 hover:underline">log in</Link> to access, or check your subscription.</p>
+        <p className="text-gray-700 font-sans mb-6">{error} Please <Link to="/pricing" className="text-blue-600 hover:underline">choose a plan</Link> or <Link to="/login" className="text-blue-600 hover:underline">log in</Link> to access, or check your subscription.</p>
         <div className="space-y-4">
           <button 
             onClick={() => navigate(-1)} 
@@ -219,17 +262,59 @@ The detailed content for this lesson is being prepared. Please check back soon o
     );
   }
 
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://aiintegrationcourse.com";
+  const pagePath =
+    typeof window !== "undefined"
+      ? window.location.pathname
+      : `/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`;
+  const coursePageUrl = `${origin}/courses`;
+  const lessonPageUrl = `${origin}${pagePath}`;
+  const lessonDescription = lesson?.description || course?.description || "Lesson content inside the AI Integration Course.";
+
   return (
     <div className="textbook-page">
+      <SEO
+        title={lesson ? `${lesson.title} Lesson` : "Course Lesson"}
+        description={lessonDescription}
+        url={pagePath}
+        type="course"
+        keywords={[
+          'AI course lesson',
+          'AI automation tutorial',
+          'AI integration lesson',
+          'AI workflow training',
+          lesson?.title || 'AI lesson'
+        ]}
+        author="Blaine Casey"
+        course={{
+          name: course?.title || 'AI Integration Course',
+          description: course?.description || lessonDescription,
+          provider: 'MicroAI Studios',
+          duration: 'P4W',
+          price: '49',
+          currency: 'USD'
+        }}
+      />
       {course && (
         <CourseSchema
           courseName={course.title}
           courseDescription={course.description}
-          courseUrl={typeof window !== "undefined" ? `${window.location.origin}/courses/${courseId}` : undefined}
-          providerUrl={typeof window !== "undefined" ? window.location.origin : undefined}
+          courseUrl={coursePageUrl}
+          pageUrl={lessonPageUrl}
+          pageTitle={lesson?.title || course.title}
+          pageDescription={lessonDescription}
+          providerUrl={origin}
+          price={49}
+          isAccessibleForFree={lesson ? isFreeLesson(lesson) : false}
+          breadcrumbItems={[
+            { name: 'Home', item: origin },
+            { name: 'Courses', item: coursePageUrl },
+            { name: lesson?.title || 'Lesson', item: lessonPageUrl }
+          ]}
           modules={course.modules.map((module) => ({
             name: module.title,
-            description: module.description
+            description: module.description,
+            url: `${coursePageUrl}#module-${module.id}`
           }))}
         />
       )}
@@ -242,10 +327,13 @@ The detailed content for this lesson is being prepared. Please check back soon o
           <h1>{lesson?.title}</h1>
           <div className="textbook-meta">
             <span>Duration: {lesson?.durationMinutes} minutes</span>
-            {((lesson as any)?.isFree || (lesson as any)?.tier === 'free') && (
+            {isFreeLesson(lesson) && (
               <span className="bg-green-500 bg-opacity-20 px-2 py-1 rounded-full text-xs">FREE</span>
             )}
-            {((lesson as any) && !((lesson as any)?.isFree || (lesson as any)?.tier === 'free')) && (
+            {isFoundersLesson(lesson) && (
+              <span className="bg-amber-500 bg-opacity-20 px-2 py-1 rounded-full text-xs">FOUNDERS</span>
+            )}
+            {(lesson && !isFreeLesson(lesson) && !isFoundersLesson(lesson)) && (
               <span className="bg-yellow-600 bg-opacity-20 px-2 py-1 rounded-full text-xs">PREMIUM</span>
             )}
             {isLessonCompleted() && <span className="bg-blue-500 bg-opacity-20 px-2 py-1 rounded-full text-xs">COMPLETED</span>}
@@ -293,7 +381,7 @@ The detailed content for this lesson is being prepared. Please check back soon o
               {/* Lesson Content with Textbook Styling */}
               {markdownContent && (
                 <div className="lesson-content">
-                  <ReactMarkdown>{markdownContent}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ pre: MarkdownPre }}>{markdownContent}</ReactMarkdown>
                 </div>
               )}
 
@@ -327,11 +415,54 @@ The detailed content for this lesson is being prepared. Please check back soon o
               </p>
               <AITutor
                 lessonId={`courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`}
-                premium={!lesson?.isFree}
+                premium={!isFreeLesson(lesson)}
                 hasAccess={isAllowed}
               />
             </div>
           </div>
+
+          {/* CROSS-SELL: What's Next — shown after lesson completion */}
+          {isLessonCompleted() && (
+            <div className="mt-8 rounded-2xl border border-indigo-500/20 bg-gradient-to-r from-slate-800/80 via-indigo-900/30 to-slate-800/80 p-6">
+              <h3 className="text-lg font-bold text-white mb-1">What's Next?</h3>
+              <p className="text-sm text-slate-400 mb-4">You've completed this lesson. Take the next step in your AI journey.</p>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <a
+                  href="https://buy.stripe.com/8wMeYG9Yz0Vb2Oc7sH"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 hover:border-amber-500/40 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Founder Autopilot</p>
+                    <p className="text-xs text-slate-400">Deploy 17 AI agents for your business</p>
+                  </div>
+                </a>
+                <a
+                  href="https://buy.stripe.com/5kA4k2caN1Zf6asfZd"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-3 hover:border-cyan-500/40 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">ProofGuard AI</p>
+                    <p className="text-xs text-slate-400">AI compliance &amp; governance</p>
+                  </div>
+                </a>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
     </div>

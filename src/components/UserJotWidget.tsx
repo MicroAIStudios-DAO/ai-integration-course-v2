@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from '../context/AuthContext';
+import { userHasPaidAccess } from '../firebaseService';
+
+const OPEN_BETA_FEEDBACK_EVENT = 'beta-feedback:open';
 
 /**
  * CSP-safe beta feedback entrypoint.
@@ -11,13 +14,15 @@ import { useAuth } from '../context/AuthContext';
  */
 export function UserJotWidget() {
   const { currentUser } = useAuth();
-  const [isBetaTester, setIsBetaTester] = useState(false);
+  const [isCohortMember, setIsCohortMember] = useState(false);
+  const [hasPaidCohortAccess, setHasPaidCohortAccess] = useState(false);
   const [betaCohort, setBetaCohort] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     if (!currentUser) {
-      setIsBetaTester(false);
+      setIsCohortMember(false);
+      setHasPaidCohortAccess(false);
       setBetaCohort(null);
       return;
     }
@@ -27,24 +32,36 @@ export function UserJotWidget() {
       (snapshot) => {
         if (snapshot.exists()) {
           const userData = snapshot.data();
-          setIsBetaTester(userData.isBetaTester === true);
+          setIsCohortMember(userData.isBetaTester === true || userData.foundingMember === true);
+          setHasPaidCohortAccess(userHasPaidAccess(userData));
           setBetaCohort(userData.betaCohort || null);
         } else {
-          setIsBetaTester(false);
+          setIsCohortMember(false);
+          setHasPaidCohortAccess(false);
           setBetaCohort(null);
         }
       },
       (error) => {
         console.error('Error fetching beta tester status:', error);
-        setIsBetaTester(false);
+        setIsCohortMember(false);
+        setHasPaidCohortAccess(false);
       }
     );
 
     return () => unsubscribe();
   }, [currentUser]);
 
+  useEffect(() => {
+    const handleOpen = () => {
+      setIsOpen(true);
+    };
+
+    window.addEventListener(OPEN_BETA_FEEDBACK_EVENT, handleOpen);
+    return () => window.removeEventListener(OPEN_BETA_FEEDBACK_EVENT, handleOpen);
+  }, []);
+
   const feedbackUrl = useMemo(() => {
-    const base = process.env.REACT_APP_USERJOT_FEEDBACK_URL;
+    const base = import.meta.env.VITE_USERJOT_FEEDBACK_URL;
     if (!base || !currentUser) {
       return null;
     }
@@ -62,12 +79,12 @@ export function UserJotWidget() {
       }
       return url.toString();
     } catch (error) {
-      console.error('Invalid REACT_APP_USERJOT_FEEDBACK_URL:', error);
+      console.error('Invalid VITE_USERJOT_FEEDBACK_URL:', error);
       return null;
     }
   }, [currentUser, betaCohort]);
 
-  if (!isBetaTester || !currentUser || !feedbackUrl) {
+  if (!isCohortMember || !hasPaidCohortAccess || !currentUser || !feedbackUrl) {
     return null;
   }
 
@@ -109,3 +126,7 @@ export function UserJotWidget() {
     </>
   );
 }
+
+export const openBetaFeedback = () => {
+  window.dispatchEvent(new Event(OPEN_BETA_FEEDBACK_EVENT));
+};

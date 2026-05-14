@@ -1,304 +1,261 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { httpsCallable } from "firebase/functions";
-import { useAuth } from "../../context/AuthContext"; // Corrected path
-import { functions } from "../../config/firebase";
+import { useAuth } from "../../context/AuthContext";
 import { useReCaptcha } from "../../hooks/useReCaptcha";
-import { trackSignUp, trackBeginCheckout } from "../../utils/analytics";
-import ReactPlayer from "react-player";
-import FoundingAccessFloatingButton from "../founding/FoundingAccessFloatingButton";
-import FoundingAccessModal from "../founding/FoundingAccessModal";
+import { trackGoogleAdsSignupConversion, trackSignUp } from "../../utils/analytics";
 import SEO from "../SEO";
+import { getPlan } from "../../config/pricing";
+import {
+  type CheckoutSessionSummary,
+  attachCheckoutSessionToCurrentUser,
+  clearStoredPlanKey,
+  fetchCheckoutSessionSummary,
+  getCheckoutSessionIdFromSearch,
+} from "../../utils/checkout";
+import { syncUserIdentityProfile } from "../../firebaseService";
 
 const SignupPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [offerCode, setOfferCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showFoundingModal, setShowFoundingModal] = useState(false);
-  const [autoCheckoutOnFoundingClose, setAutoCheckoutOnFoundingClose] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { signup } = useAuth(); // Use AuthContext
+  const [loadingSession, setLoadingSession] = useState(true);
+  const { signup, currentUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { executeAndVerify, isLoaded } = useReCaptcha();
-  const priceId = process.env.REACT_APP_STRIPE_PRICE_ID || "price_1SmgMKKnsQ10RdBLEWL2w8e4";
-  const queryParams = new URLSearchParams(location.search);
-  const checkoutCancelled = queryParams.get("checkout") === "cancelled";
-  const introVideoUrl = "https://youtu.be/sG9_phBnm40";
+  const checkoutSessionId = getCheckoutSessionIdFromSearch(location.search);
+  const [planKey, setPlanKey] = useState<"explorer" | "pro" | "pro_trial" | "corporate" | null>(null);
+  const [checkoutSummary, setCheckoutSummary] = useState<CheckoutSessionSummary | null>(null);
 
-  const startStandardCheckout = async () => {
-    const origin = window.location.origin;
-    const createCheckoutSession = httpsCallable(functions, "createCheckoutSessionV2");
-    const result = await createCheckoutSession({
-      priceId,
-      successUrl: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancelUrl: `${origin}/payment-cancel`
-    });
-    const data = result.data as { url?: string };
-    if (data?.url) {
-      trackBeginCheckout(49, 'USD', 'Pro Plan', 'pro_monthly');
-      window.location.href = data.url;
+  const selectedPlan = useMemo(() => (planKey ? getPlan(planKey) : null), [planKey]);
+
+  useEffect(() => {
+    if (!checkoutSessionId) {
+      navigate("/pricing", { replace: true });
       return;
     }
-    navigate("/welcome");
-  };
+
+    let active = true;
+
+    const loadCheckoutSummary = async () => {
+      setLoadingSession(true);
+      try {
+        const summary = await fetchCheckoutSessionSummary(checkoutSessionId);
+        if (!active) return;
+
+        if (summary.isAttachedToCurrentUser || (currentUser && summary.attachedUid === currentUser.uid)) {
+          clearStoredPlanKey();
+          navigate("/welcome", { replace: true });
+          return;
+        }
+
+        if (summary.existingAccount || summary.requiresLogin) {
+          navigate(`/login?checkout_session_id=${checkoutSessionId}`, { replace: true });
+          return;
+        }
+
+        setCheckoutSummary(summary);
+        setPlanKey(summary.planKey);
+        setEmail(summary.email);
+        setError(null);
+      } catch (sessionError: any) {
+        if (!active) return;
+        setError(sessionError?.message || "We could not verify your checkout. Please try again.");
+      } finally {
+        if (active) {
+          setLoadingSession(false);
+        }
+      }
+    };
+
+    void loadCheckoutSummary();
+
+    return () => {
+      active = false;
+    };
+  }, [checkoutSessionId, currentUser, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setLoading(true);
-    const normalizedOfferCode = offerCode.trim().toUpperCase();
-
-    if (normalizedOfferCode && normalizedOfferCode !== "PIONEER") {
-      setError("Invalid offer code. Use PIONEER or leave blank.");
-      setLoading(false);
+    if (!checkoutSessionId || !email) {
+      setError("Your checkout session is missing. Please return to pricing and try again.");
       return;
     }
 
-    // Try reCAPTCHA verification but don't block signup if it fails
+    setError(null);
+    setLoading(true);
+
     try {
       if (isLoaded) {
-        const verification = await executeAndVerify('SIGNUP');
-        if (verification && !verification.success) {
-          console.warn("reCAPTCHA verification returned low score, proceeding anyway");
+        const verification = await executeAndVerify("SIGNUP");
+        if (verification !== null && !verification.success) {
+          // Score below 0.5 — likely bot or suspicious traffic. Block the attempt.
+          setError("Security check failed. If you are human, please try again or contact info@aiintegrationcourse.com.");
+          setLoading(false);
+          return;
         }
       }
     } catch (recaptchaError) {
-      console.warn("reCAPTCHA verification failed, proceeding with signup:", recaptchaError);
+      // reCAPTCHA failed to load (e.g. ad blocker, network issue).
+      // Allow the attempt but log for monitoring — do not block legitimate users.
+      console.warn("reCAPTCHA failed, proceeding:", recaptchaError);
     }
 
     try {
-      await signup(email, password);
+      const userCredential = await signup(email, password);
 
-      // Offer-code based beta enrollment (best practice: separate from password).
-      if (normalizedOfferCode === "PIONEER") {
-        try {
-          const claimBetaTester = httpsCallable(functions, "claimBetaTesterV2");
-          await claimBetaTester({ code: normalizedOfferCode, cohort: "Pioneer" });
-          setAutoCheckoutOnFoundingClose(true);
-          setShowFoundingModal(true);
-          setLoading(false);
-          trackSignUp('Email');
-          return;
-        } catch (betaErr) {
-          console.error("Beta enrollment failed after signup:", betaErr);
-          setAutoCheckoutOnFoundingClose(false);
-          setShowFoundingModal(true);
-          setError(
-            "Your account was created, but beta activation did not complete. You can still redeem a founding code now, or contact support before starting checkout."
-          );
-          setLoading(false);
-          trackSignUp('Email');
-          return;
-        }
+      await syncUserIdentityProfile(userCredential.user);
+      await attachCheckoutSessionToCurrentUser(checkoutSessionId);
+      trackSignUp("Email");
+
+      // SECONDARY conversion — account creation after checkout.
+      // The PRIMARY purchase conversion fires earlier on PaymentSuccessPage.
+      // Mark this action as SECONDARY in Google Ads so Smart Bidding ignores it.
+      const signupConversionValue = checkoutSummary?.analyticsValue || selectedPlan?.analyticsValue || 0;
+      if (signupConversionValue > 0) {
+        trackGoogleAdsSignupConversion(signupConversionValue, "USD");
       }
 
-      // Track sign_up event
-      trackSignUp('Email');
-      await startStandardCheckout();
-    } catch (err: any) {
-      setError(err.message || "Failed to create an account. Please try again.");
+      clearStoredPlanKey();
+      navigate("/welcome", { replace: true });
+      return;
+    } catch (signupError: any) {
+      if (signupError?.code === "auth/email-already-in-use") {
+        navigate(`/login?checkout_session_id=${checkoutSessionId}`, { replace: true });
+        return;
+      } else {
+        setError(signupError?.message || "Failed to secure your account. Please try again.");
+      }
     }
+
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50 py-12 px-4 sm:px-6 lg:px-8 font-body">
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50 py-8 px-4 sm:px-6 lg:px-8 font-body">
       <SEO
-        title="Sign Up"
-        description="Create your AI Integration Course account. Beta invitees can use PIONEER during signup, and founding members can redeem access after account creation."
+        title="Create Account"
+        description="Finish account creation after checkout so your access, lessons, and billing stay attached to one permanent login."
         url="/signup"
         keywords={[
-          'AI Integration Course signup',
-          'PIONEER beta signup',
-          'founding member access',
-          'AI course account creation'
+          "AI Integration Course account setup",
+          "post checkout account creation",
+          "secure account activation",
+          "AI automation course enrollment",
         ]}
         author="Blaine Casey"
       />
       <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
       <div className="absolute -bottom-32 -left-24 h-80 w-80 rounded-full bg-indigo-200/40 blur-3xl" />
-      <div className="max-w-2xl w-full space-y-8 bg-white/90 backdrop-blur p-10 rounded-3xl shadow-xl border border-white/60 form-container">
-        <div className="w-full aspect-video rounded-3xl overflow-hidden shadow-2xl bg-slate-900">
-          <ReactPlayer
-            url={introVideoUrl}
-            width="100%"
-            height="100%"
-            playing
-            controls
-            playsinline
-          />
+
+      <div className="max-w-md w-full bg-white/90 backdrop-blur p-8 sm:p-10 rounded-3xl shadow-xl border border-white/60">
+        <div className="mb-6 flex items-center justify-between">
+          <Link to="/" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">
+            &larr; Home
+          </Link>
+          {checkoutSessionId && (
+            <Link
+              to={`/login?checkout_session_id=${checkoutSessionId}`}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+            >
+              Already have an account?
+            </Link>
+          )}
         </div>
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-headings font-extrabold text-gray-900">
-            Create your account
+
+        <div className="text-center">
+          <h2 className="text-2xl sm:text-3xl font-headings font-extrabold text-gray-900">
+            Create your login
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 font-body">
-            `PIONEER` is for beta invite onboarding. Founding access codes are redeemed after the account is created.
+          <p className="mt-2 text-sm text-gray-600 font-body">
+            {selectedPlan
+              ? `Checkout is complete for ${selectedPlan.name}. Create your password now so your access, progress, and billing stay on one account.`
+              : "Checkout is complete. Create your password now so your access, progress, and billing stay on one account."}
           </p>
         </div>
-        <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5 text-sm text-blue-900">
-          <p className="font-semibold">Choose the right path:</p>
-          <ul className="mt-3 space-y-2">
-            <li>1. Standard signup: create your account, then continue to checkout.</li>
-            <li>2. Beta invite: enter `PIONEER` during signup to trigger beta onboarding.</li>
-            <li>3. Founding member: create your account first, then redeem the founding code in the next step.</li>
-          </ul>
-        </div>
-        {checkoutCancelled && (
-          <div className="rounded-md bg-yellow-50 p-4 mt-4">
-            <p className="text-sm text-yellow-800 font-body">
-              Checkout was cancelled. You can try again or continue without starting your trial.
-            </p>
+
+        {loadingSession ? (
+          <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-600">
+            Verifying your Stripe checkout...
           </div>
-        )}
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px max-w-md mx-auto">
-            <div>
-              <label htmlFor="email-address" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="email-address"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm font-body form-input"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="relative">
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
+        ) : (
+          <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="email-address" className="sr-only">Email address</label>
+                <input
+                  id="email-address"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  readOnly
+                  className="appearance-none relative block w-full px-3 py-3 border border-gray-200 bg-gray-50 text-gray-700 rounded-md focus:outline-none sm:text-sm font-body"
+                  placeholder="Email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <p className="mt-2 text-xs text-gray-500">Sign-in will always use this Stripe checkout email. You can add a display name later.</p>
+              </div>
+              <div className="relative">
+                <label htmlFor="password" className="sr-only">Password</label>
                 <input
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   required
-                  className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm font-body pr-12"
-                  placeholder="Password (min. 6 characters)"
+                  minLength={6}
+                  className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm font-body pr-12"
+                  placeholder="Create a password (min. 6 characters)"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? (
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M3 3l18 18" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M10.5 10.5a2 2 0 0 0 3 3" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M7.1 7.1C5 8.5 3.6 10.6 3 12c1.6 3.6 5.2 6 9 6 1.2 0 2.3-.2 3.3-.6" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M14.9 14.9c2-1.4 3.5-3.5 4.1-4.9-1.6-3.6-5.2-6-9-6-1.2 0-2.3.2-3.3.6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" strokeLinecap="round" strokeLinejoin="round" />
-                    <circle cx="12" cy="12" r="3.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </button>
-            </div>
-            <div>
-              <label htmlFor="offer-code" className="sr-only">
-                Offer Code
-              </label>
-              <input
-                id="offer-code"
-                name="offerCode"
-                type="text"
-                autoComplete="off"
-                className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm font-body"
-                placeholder="Offer code (optional) - e.g. PIONEER"
-                value={offerCode}
-                onChange={(e) => setOfferCode(e.target.value.toUpperCase())}
-              />
-              <p className="mt-2 text-xs text-gray-500">
-                Only use `PIONEER` if you were explicitly invited to the beta. Founding codes are redeemed after signup.
-              </p>
-            </div>
-          </div>
-
-          {error && (
-            <div className="rounded-md bg-red-50 p-4 mt-4">
-              <div className="flex">
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-red-700 font-body">{error}</p>
-                </div>
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                      <path d="M3 3l18 18" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M10.5 10.5a2 2 0 0 0 3 3" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M7.1 7.1C5 8.5 3.6 10.6 3 12c1.6 3.6 5.2 6 9 6 1.2 0 2.3-.2 3.3-.6" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M14.9 14.9c2-1.4 3.5-3.5 4.1-4.9-1.6-3.6-5.2-6-9-6-1.2 0-2.3.2-3.3.6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="12" cy="12" r="3.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
               </div>
             </div>
-          )}
 
-          <div className="mt-6">
+            {error && (
+              <div className="rounded-md bg-red-50 p-4">
+                <p className="text-sm font-medium text-red-700 font-body">{error}</p>
+              </div>
+            )}
+
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || loadingSession}
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-headings font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 form-button"
             >
-              {loading ? "Creating account..." : "Create account"}
+              {loading ? "Creating your login..." : "Create Login & Open Dashboard"}
             </button>
-            <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-500 font-body">
-              <span className="inline-flex items-center gap-1">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-4 w-4 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <rect x="3" y="11" width="18" height="10" rx="2" />
-                  <path d="M7 11V8a5 5 0 0 1 10 0v3" />
-                </svg>
-                Secure checkout
-              </span>
-              <span className="h-3 w-px bg-gray-200" />
-              <span>Powered by Stripe</span>
-            </div>
-            <div className="mt-4 flex flex-col items-center gap-2 text-sm">
-              <Link to="/pricing" className="font-medium text-blue-600 hover:text-blue-500">
-                Compare plans first
-              </Link>
-              <Link to="/courses" className="font-medium text-slate-600 hover:text-slate-900">
-                Preview the free curriculum
-              </Link>
-            </div>
-          </div>
-        </form>
-        <div className="mt-6">
-          <p className="text-center text-sm text-gray-600 font-body">
-            Already have an account?{" "}
-            <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 font-body">
-              Sign in
-            </Link>
-          </p>
+          </form>
+        )}
+
+        <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          Your payment step is already complete. This final step only creates the permanent login tied to that checkout email.
         </div>
       </div>
-      <FoundingAccessModal
-        isOpen={showFoundingModal}
-        onClose={() => {
-          setShowFoundingModal(false);
-          if (autoCheckoutOnFoundingClose) {
-            void startStandardCheckout();
-          }
-        }}
-        onSuccess={() => {
-          setShowFoundingModal(false);
-          navigate("/courses");
-        }}
-      />
-      <FoundingAccessFloatingButton />
     </div>
   );
 };

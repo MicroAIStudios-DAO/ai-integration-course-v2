@@ -3,6 +3,7 @@ import Editor from 'react-simple-code-editor';
 import { highlight, languages } from 'prismjs/components/prism-core';
 import 'prismjs/components/prism-python'; // Or other languages you want to support
 import 'prismjs/themes/prism-tomorrow.css'; // Or your preferred theme
+import { copyTextToClipboard } from './CopyableCodeBlock';
 // Removed unused axios import
 
 interface CodeSandboxProps {
@@ -20,6 +21,7 @@ const CodeSandbox: React.FC<CodeSandboxProps> = ({
   const [output, setOutput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     // Ensure Prism language component is loaded if not already
@@ -31,8 +33,23 @@ const CodeSandbox: React.FC<CodeSandboxProps> = ({
     }
   }, [language]);
 
+  useEffect(() => {
+    if (!copied) return undefined;
+    const timeoutId = window.setTimeout(() => setCopied(false), 1800);
+    return () => window.clearTimeout(timeoutId);
+  }, [copied]);
+
   const handleCodeChange = (newCode: string) => {
     setCode(newCode);
+  };
+
+  const handleCopyCode = async () => {
+    try {
+      await copyTextToClipboard(code);
+      setCopied(true);
+    } catch (error) {
+      console.error('Failed to copy sandbox code:', error);
+    }
   };
 
   const handleSubmitCode = async () => {
@@ -65,7 +82,15 @@ const CodeSandbox: React.FC<CodeSandboxProps> = ({
   return (
     <div className="my-6 p-4 border rounded-md shadow-sm bg-white">
       <h4 className="font-semibold mb-3 text-gray-700">Interactive Code Sandbox ({language})</h4>
-      <div className="editor-container bg-gray-800 rounded-md overflow-hidden mb-4" style={{ minHeight: '150px' }}>
+      <div className="editor-container relative bg-gray-800 rounded-md overflow-hidden mb-4" style={{ minHeight: '150px' }}>
+        <button
+          type="button"
+          onClick={handleCopyCode}
+          className="absolute right-3 top-3 z-10 rounded-md border border-white/15 bg-gray-900/90 px-2.5 py-1 text-xs font-semibold text-white hover:bg-gray-800"
+          aria-label="Copy sandbox code"
+        >
+          {copied ? 'Copied' : 'Copy'}
+        </button>
         <Editor
           value={code}
           onValueChange={handleCodeChange}

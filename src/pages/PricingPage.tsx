@@ -1,47 +1,79 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SubscribeButton from '../components/payment/SubscribeButton';
 import { trackViewPricing } from '../utils/analytics';
 import useFoundingAccess from '../hooks/useFoundingAccess';
-import FoundingAccessFloatingButton from '../components/founding/FoundingAccessFloatingButton';
 import SEO from '../components/SEO';
+import RoiGuaranteeBadge from '../components/conversion/RoiGuaranteeBadge';
+import ExitIntentLeadMagnet from '../components/lead-magnet/ExitIntentLeadMagnet';
+import { PlanKey, plans, formatPlanPrice } from '../config/pricing';
+import CopyableCodeBlock from '../components/common/CopyableCodeBlock';
 
-/**
- * PricingPage Component
- * 
- * AUDIT REQUIREMENT: Pricing Page Anchoring
- * Place a $999 "Corporate" tier (Contact Sales) next to the $49/mo Pro plan.
- * Makes Pro plan look like a "no-brainer" bargain.
- * 
- * AUDIT REQUIREMENT: Risk Reversal
- * Add "14-Day Build-Your-First-Bot Guarantee".
- * If they don't build a bot, they get a refund. Specificity builds trust.
- * 
- * AUDIT REQUIREMENT: CTA Hierarchy
- * Primary: "Start Building Now" (Paid). Secondary: "View Curriculum".
- * Resolve competing CTAs to focus on the outcome.
- */
+const CheckIcon = () => (
+  <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+  </svg>
+);
+
+const XIcon = () => (
+  <svg className="w-5 h-5 text-gray-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+  </svg>
+);
+
 const PricingPage: React.FC = () => {
   const { currentUser } = useAuth();
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
-
-  const proMonthlyPrice = 49;
-  const foundingPrice = 20;
   const { isFounding } = useFoundingAccess();
+  const isRegisteredUser = !!currentUser && !currentUser.isAnonymous;
 
-  // Track view_item event when pricing page loads
+  const trial = plans.pro_trial;
+  const explorer = plans.explorer;
+  const pro = plans.pro;
+  const corporate = plans.corporate;
+  const [enterpriseSeats, setEnterpriseSeats] = useState(5);
+  const enterpriseMonthlyTotal = useMemo(() => Number((14.99 * enterpriseSeats).toFixed(2)), [enterpriseSeats]);
+
   useEffect(() => {
-    trackViewPricing('USD', proMonthlyPrice, 'Pro Plan');
-  }, []);
-  const proAnnualPrice = 39; // $39/mo billed annually ($468/year)
-  const corporatePrice = 999;
+    // Track primary offer (trial) for analytics
+    trackViewPricing('USD', trial.analyticsValue, trial.name);
+  }, [trial.analyticsValue, trial.name]);
+
+  const renderCTA = (planKey: PlanKey) => {
+    const plan = plans[planKey];
+
+    if (isFounding) {
+      return (
+        <Link
+          to="/welcome"
+          className="block w-full text-center py-3 px-6 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold transition-colors"
+        >
+          Open Founding Dashboard
+        </Link>
+      );
+    }
+
+    return (
+      <SubscribeButton
+        planKey={planKey}
+        seatCount={planKey === 'corporate' ? enterpriseSeats : undefined}
+        buttonText={planKey === 'corporate' ? `Choose Enterprise · ${enterpriseSeats} Seats` : plan.ctaText}
+        className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
+          plan.featured
+            ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
+            : planKey === 'corporate'
+              ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
+              : 'bg-slate-700 hover:bg-slate-600 text-white'
+        }`}
+      />
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
       <SEO
         title="Pricing"
-        description="Compare the Explorer, Pro, and Corporate plans for AI Integration Course. Start free, upgrade to the guided build path, or bring the training to your team."
+        description="Compare the Monthly, Annual, and Enterprise billing options for AI Integration Course. Free lessons stay open, and premium builds unlock immediately after purchase."
         url="/pricing"
         keywords={[
           'AI Integration Course pricing',
@@ -51,6 +83,7 @@ const PricingPage: React.FC = () => {
         ]}
         author="Blaine Casey"
       />
+
       {/* Header */}
       <header className="border-b border-slate-700/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -59,17 +92,11 @@ const PricingPage: React.FC = () => {
               AI Integration<span className="text-indigo-400">Course</span>
             </Link>
             <nav className="flex items-center gap-6">
-              <Link to="/courses" className="text-gray-300 hover:text-white transition-colors">
-                Curriculum
-              </Link>
-              {currentUser ? (
-                <Link to="/profile" className="text-gray-300 hover:text-white transition-colors">
-                  Dashboard
-                </Link>
+              <Link to="/courses" className="text-gray-300 hover:text-white transition-colors">Curriculum</Link>
+              {isRegisteredUser ? (
+                <Link to="/profile" className="text-gray-300 hover:text-white transition-colors">Dashboard</Link>
               ) : (
-                <Link to="/login" className="text-gray-300 hover:text-white transition-colors">
-                  Login
-                </Link>
+                <Link to="/login" className="text-gray-300 hover:text-white transition-colors">Login</Link>
               )}
             </nav>
           </div>
@@ -77,327 +104,307 @@ const PricingPage: React.FC = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        {/* Hero Section */}
+        {/* Hero */}
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Start Building with AI Today
+            Stop watching AI happen.<br />
+            <span className="text-emerald-400">Start using it this week.</span>
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
-            Choose the path that matches your stage: free lessons for orientation, Pro for a guided deployment sprint, or Corporate for team rollout and support.
+            Build your first real AI workflow in under 10 minutes — even if you're not technical.
           </p>
-
-          {/* AUDIT: Risk Reversal - 14-Day Build Guarantee */}
-          <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-6 py-3 text-emerald-400">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-            <span className="font-semibold">14-Day Build Guarantee</span>
+          {/* Primary + Secondary CTA row */}
+          {!isFounding && (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+              <SubscribeButton
+                planKey="pro_trial"
+                buttonText="Start 7-Day Trial for $1"
+                className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-lg shadow-lg shadow-emerald-500/20 transition-all"
+              />
+              <SubscribeButton
+                planKey="pro"
+                buttonText="Get Annual Access — Save $120"
+                className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 font-bold text-lg transition-all"
+              />
+            </div>
+          )}
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-slate-400 mb-6">
+            <span className="flex items-center gap-1.5"><CheckIcon /> Instant access after checkout</span>
+            <span className="flex items-center gap-1.5"><CheckIcon /> 14-Day Build Guarantee</span>
+            <span className="flex items-center gap-1.5"><CheckIcon /> Cancel trial anytime before day 8</span>
           </div>
-
-          <div className="mt-10 grid gap-4 md:grid-cols-3 max-w-5xl mx-auto text-left">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Outcome</p>
-              <h2 className="mt-2 text-lg font-semibold text-white">Ship one real workflow</h2>
-              <p className="mt-2 text-sm text-gray-300">The course is designed around getting from lesson to implementation, not endless theory.</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Support</p>
-              <h2 className="mt-2 text-lg font-semibold text-white">AI tutor plus guided project</h2>
-              <p className="mt-2 text-sm text-gray-300">Use the tutor, the build path, and the curriculum together so you can move faster with fewer stalls.</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-cyan-300">Risk</p>
-              <h2 className="mt-2 text-lg font-semibold text-white">Guarantee stays specific</h2>
-              <p className="mt-2 text-sm text-gray-300">If you do not build your first working AI agent in 14 days, the course gets refunded.</p>
-            </div>
-          </div>
+          <RoiGuaranteeBadge className="px-6 py-3 text-sm" />
         </div>
 
-        {/* Billing Toggle */}
-        <div className="flex justify-center mb-12">
-          <div className="bg-slate-800 rounded-lg p-1 inline-flex">
-            <button
-              onClick={() => setBillingCycle('monthly')}
-              className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
-                billingCycle === 'monthly'
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBillingCycle('annual')}
-              className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
-                billingCycle === 'annual'
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Annual <span className="text-emerald-400 ml-1">Save 20%</span>
-            </button>
+        {isFounding && (
+          <div className="mb-10 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-6 text-center">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300">Founding Access Active</p>
+            <h2 className="mt-3 text-2xl font-semibold text-white">Your founding benefits are already attached to this account.</h2>
+            <p className="mt-3 max-w-3xl mx-auto text-sm leading-7 text-emerald-100">
+              Pricing is now framed as three billing options for the same core system, but you do not need any of them. Your account already holds the permanent-access and priority-feedback benefits.
+            </p>
           </div>
-        </div>
+        )}
 
-        <p className="text-center text-sm text-gray-400 mb-12">
-          Annual saves ${proMonthlyPrice * 12 - proAnnualPrice * 12} versus monthly billing.
-        </p>
-
-        <div className="mb-10 text-center">
-          <p className="text-sm text-cyan-300">
-            Already have a founding code or beta invite? Create your account first, then redeem the code during onboarding.
-          </p>
-        </div>
+        {/* ── TRIAL CARD — Primary Offer ── */}
+        {!isFounding && (
+          <div className="mb-12 max-w-lg mx-auto">
+            <div className="relative rounded-2xl border-2 border-emerald-500 bg-gradient-to-b from-emerald-950/40 to-slate-800/50 p-8">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                <span className="bg-emerald-500 text-slate-950 text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wide">
+                  Lowest Risk — Start Here
+                </span>
+              </div>
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-bold text-white mb-1">{trial.name}</h3>
+                <div className="flex items-baseline justify-center gap-1 mb-2">
+                  <span className="text-6xl font-bold text-emerald-400">$1</span>
+                  <span className="text-slate-400 text-xl">today</span>
+                </div>
+                <p className="text-slate-400 text-sm">7 days of full access, then $29.99/month unless cancelled before renewal.</p>
+              </div>
+              <ul className="space-y-3 mb-8">
+                {trial.features.map((f) => (
+                  <li key={f.text} className="flex items-start gap-3">
+                    <CheckIcon />
+                    <span className={`text-slate-300 text-sm ${f.bold ? 'font-semibold text-white' : ''}`}>{f.text}</span>
+                  </li>
+                ))}
+              </ul>
+              <SubscribeButton
+                planKey="pro_trial"
+                buttonText="Start My $1 Trial — Instant Access"
+                className="w-full py-4 px-6 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-lg shadow-lg shadow-emerald-500/20 transition-all"
+              />
+              <p className="text-center text-slate-500 text-xs mt-3">Cancel before day 8 in 2 clicks. No games.</p>
+            </div>
+          </div>
+        )}
 
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {isFounding && (
-            <div className="bg-gradient-to-b from-emerald-900/50 to-slate-800/50 border-2 border-emerald-400 rounded-2xl p-8 relative">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <span className="bg-emerald-500 text-white text-sm font-semibold px-4 py-1 rounded-full">
-                  Founding Member
-                </span>
-              </div>
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold text-white mb-2">Lifetime Access</h3>
-                <p className="text-gray-300">Limited to 15 seats</p>
-              </div>
-              <p className="mb-6 text-sm text-emerald-200">Best for invited founding members who want permanent access and priority feedback.</p>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-white">${foundingPrice}</span>
-                <span className="text-gray-300"> one-time</span>
-              </div>
-              <ul className="space-y-4 mb-8">
-                <li className="flex items-start gap-3 text-gray-200">
-                  <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Full course access forever</span>
-                </li>
-                <li className="flex items-start gap-3 text-gray-200">
-                  <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>Priority feedback channel</span>
-                </li>
-              </ul>
-              <button
-                className="w-full py-3 px-6 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-semibold transition-colors"
-              >
-                Founding Access Unlocked
-              </button>
-            </div>
-          )}
-          
-          {/* Free Tier - View Curriculum */}
+
+          {/* Explorer */}
           <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-8">
             <div className="mb-6">
-              <h3 className="text-xl font-semibold text-white mb-2">Explorer</h3>
-              <p className="text-gray-400">Get started with free lessons</p>
+              <h3 className="text-xl font-semibold text-white mb-2">{explorer.name}</h3>
+              <p className="text-gray-400">{explorer.tagline}</p>
             </div>
-            <p className="mb-6 text-sm text-gray-400">Best for evaluating the teaching style, lesson quality, and your first workflow idea before upgrading.</p>
-            
+            <p className="mb-6 text-sm text-gray-400">
+              The full-price option. Best if you want maximum flexibility and the smallest commitment beyond the first payment.
+            </p>
+
             <div className="mb-6">
-              <span className="text-4xl font-bold text-white">$0</span>
-              <span className="text-gray-400">/forever</span>
+              <span className="text-4xl font-bold text-white">${formatPlanPrice(explorer.displayPrice)}</span>
+              <span className="text-gray-400">{explorer.intervalLabel}</span>
+              <p className="text-sm text-emerald-400 mt-1">Premium builds unlock immediately after purchase</p>
+              <p className="text-xs text-slate-400 mt-2">No account wall before checkout. You will create your login after payment.</p>
+              <p className="text-xs text-cyan-300 mt-1">Full monthly price for buyers who want flexibility first.</p>
+              <p className="text-xs text-gray-500 mt-1">Free lessons and the first two founder builds stay open. Premium curriculum unlocks as soon as you subscribe.</p>
             </div>
 
             <ul className="space-y-4 mb-8">
-              <li className="flex items-start gap-3 text-gray-300">
-                <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>5 Free Introductory Lessons</span>
-              </li>
-              <li className="flex items-start gap-3 text-gray-300">
-                <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Community Access</span>
-              </li>
-              <li className="flex items-start gap-3 text-gray-300">
-                <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Basic AI Tools Overview</span>
-              </li>
-              <li className="flex items-start gap-3 text-gray-500">
-                <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                <span>Premium Lessons</span>
-              </li>
-              <li className="flex items-start gap-3 text-gray-500">
-                <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                <span>AI Tutor Access</span>
-              </li>
+              {explorer.features.map((f, i) => (
+                <li key={i} className={`flex items-start gap-3 ${f.included ? 'text-gray-300' : 'text-gray-500'}`}>
+                  {f.included ? <CheckIcon /> : <XIcon />}
+                  <span className={f.bold ? 'font-semibold' : ''}>{f.text}</span>
+                </li>
+              ))}
             </ul>
 
-            {/* AUDIT: Secondary CTA - "View Curriculum" */}
-            <Link
-              to="/courses"
-              className="block w-full text-center py-3 px-6 rounded-lg border border-slate-600 text-gray-300 hover:border-slate-500 hover:text-white font-medium transition-colors"
-            >
-              Start Free Curriculum
-            </Link>
-          </div>
-
-          {/* Pro Tier - FEATURED */}
-          <div className="bg-gradient-to-b from-indigo-900/50 to-slate-800/50 border-2 border-indigo-500 rounded-2xl p-8 relative">
-            {/* Popular Badge */}
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-              <span className="bg-indigo-600 text-white text-sm font-semibold px-4 py-1 rounded-full">
-                Most Popular
-              </span>
-            </div>
-
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-white mb-2">Pro</h3>
-              <p className="text-gray-400">Everything you need to build with AI</p>
-            </div>
-            <p className="mb-6 text-sm text-indigo-100">Best for solo builders, operators, and founders who want one production-ready workflow this month.</p>
-            
-            <div className="mb-6">
-              <span className="text-4xl font-bold text-white">
-                ${billingCycle === 'monthly' ? proMonthlyPrice : proAnnualPrice}
-              </span>
-              <span className="text-gray-400">/month</span>
-              {billingCycle === 'annual' && (
-                <p className="text-sm text-emerald-400 mt-1">Billed annually (${proAnnualPrice * 12}/year)</p>
-              )}
-            </div>
-
-            <ul className="space-y-4 mb-8">
-              <li className="flex items-start gap-3 text-gray-300">
-                <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span><strong>All Premium Lessons</strong> (50+ hours)</span>
-              </li>
-              <li className="flex items-start gap-3 text-gray-300">
-                <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span><strong>AI Tutor</strong> - 24/7 Personalized Help</span>
-              </li>
-              <li className="flex items-start gap-3 text-gray-300">
-                <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span><strong>Build Your First Bot</strong> - Guided Project</span>
-              </li>
-              <li className="flex items-start gap-3 text-gray-300">
-                <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Certificate of Completion</span>
-              </li>
-              <li className="flex items-start gap-3 text-gray-300">
-                <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Private Community Access</span>
-              </li>
-              <li className="flex items-start gap-3 text-gray-300">
-                <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Monthly Live Q&A Sessions</span>
-              </li>
-            </ul>
-
-            {/* AUDIT: Primary CTA - "Start Building Now" */}
-            {currentUser ? (
-              <SubscribeButton 
-                priceId={billingCycle === 'monthly' ? 'price_pro_monthly' : 'price_pro_annual'}
-                buttonText="Start Building Now"
-                className="w-full py-3 px-6 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors"
-              />
-            ) : (
-              <Link
-                to="/signup"
-                className="block w-full text-center py-3 px-6 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors"
-              >
-                Start Building Now
-              </Link>
-            )}
-
+            {renderCTA('explorer')}
             <p className="text-center text-sm text-gray-400 mt-4">
-              7-day free trial • Cancel anytime
+              Cancel anytime. Access stays live through the end of your billing period.
             </p>
           </div>
 
-          {/* AUDIT: Corporate Tier - $999 Anchoring */}
-          <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-8">
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-white mb-2">Corporate</h3>
-              <p className="text-gray-400">For teams and enterprises</p>
+          {/* Pro AI Architect — FEATURED */}
+          <div className="bg-gradient-to-b from-indigo-900/50 to-slate-800/50 border-2 border-indigo-500 rounded-2xl p-8 relative">
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+              <span className="bg-indigo-600 text-white text-sm font-semibold px-4 py-1 rounded-full">
+                Save $120/yr
+              </span>
             </div>
-            <p className="mb-6 text-sm text-gray-400">Best for organizations that need team rollout, private workshops, and direct implementation support.</p>
-            
+
             <div className="mb-6">
-              <span className="text-4xl font-bold text-white">${corporatePrice}</span>
-              <span className="text-gray-400">/month</span>
-              <p className="text-sm text-gray-500 mt-1">Per team (up to 25 seats)</p>
+              <h3 className="text-xl font-semibold text-white mb-2">{pro.name}</h3>
+              <p className="text-gray-400">{pro.tagline}</p>
+            </div>
+            <p className="mb-6 text-sm text-indigo-100">
+              The launch rate. Save $120/year compared to monthly billing and lock in $19.99/mo for 12 months.
+            </p>
+
+            <div className="mb-6">
+              <div className="flex items-baseline gap-2">
+                {pro.anchorMonthlyPrice && (
+                  <span className="text-lg text-gray-500 line-through">${formatPlanPrice(pro.anchorMonthlyPrice)}/mo</span>
+                )}
+              </div>
+              <span className="text-4xl font-bold text-white">
+                ${formatPlanPrice(pro.monthlyEquivalent || pro.displayPrice)}
+              </span>
+              <span className="text-gray-400">/mo</span>
+              <p className="text-sm text-emerald-400 mt-1">
+                ${formatPlanPrice(pro.displayPrice)}/year &mdash; billed annually
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
+                Launch comparison: $359.88/year at the monthly rate vs $239.88/year on annual.
+              </p>
+              <p className="text-xs text-emerald-400 mt-1">Premium builds unlock immediately after purchase</p>
+              <p className="text-xs text-slate-400 mt-2">Go straight from this page to secure checkout, then create your login after payment.</p>
+              <p className="text-xs text-gray-500 mt-1">Free lessons and the first two founder builds stay open. Premium curriculum unlocks immediately on the annual subscription.</p>
+              <p className="text-xs text-indigo-300 mt-1">Save $10/mo vs monthly billing — $120 back in your pocket each year</p>
+              <p className="text-xs text-slate-300 mt-1">Want more flexibility? Start monthly and switch to annual once the system is embedded.</p>
             </div>
 
             <ul className="space-y-4 mb-8">
-              <li className="flex items-start gap-3 text-gray-300">
-                <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span><strong>Everything in Pro</strong></span>
-              </li>
-              <li className="flex items-start gap-3 text-gray-300">
-                <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span><strong>Up to 25 Team Members</strong></span>
-              </li>
-              <li className="flex items-start gap-3 text-gray-300">
-                <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span><strong>Dedicated Account Manager</strong></span>
-              </li>
-              <li className="flex items-start gap-3 text-gray-300">
-                <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Custom AI Integration Consulting</span>
-              </li>
-              <li className="flex items-start gap-3 text-gray-300">
-                <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Private Team Workshops</span>
-              </li>
-              <li className="flex items-start gap-3 text-gray-300">
-                <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Priority Support & SLA</span>
-              </li>
-              <li className="flex items-start gap-3 text-gray-300">
-                <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>SSO & Admin Dashboard</span>
-              </li>
+              {pro.features.map((f, i) => (
+                <li key={i} className={`flex items-start gap-3 ${f.included ? 'text-gray-300' : 'text-gray-500'}`}>
+                  {f.included ? <CheckIcon /> : <XIcon />}
+                  <span className={f.bold ? 'font-semibold' : ''}>{f.text}</span>
+                </li>
+              ))}
             </ul>
 
-            <a
-              href="mailto:enterprise@aiintegrationcourse.com?subject=Corporate%20Plan%20Inquiry"
-              className="block w-full text-center py-3 px-6 rounded-lg border border-slate-600 text-gray-300 hover:border-slate-500 hover:text-white font-medium transition-colors"
-            >
-              Contact Sales
-            </a>
+            {renderCTA('pro')}
+            <p className="text-center text-sm text-gray-400 mt-4">
+              14-day build guarantee &middot; Cancel anytime
+            </p>
+            {!isFounding && (
+              <div className="mt-3 flex justify-center">
+                <RoiGuaranteeBadge />
+              </div>
+            )}
+          </div>
+
+          {/* Corporate / Team AI Standard */}
+          <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-8">
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold text-white mb-2">{corporate.name}</h3>
+              <p className="text-gray-400">{corporate.tagline}</p>
+            </div>
+            <p className="mb-6 text-sm text-gray-400">
+              The team rate. Best for B2B clients who need multiple seats, shared standards, and a lower per-seat cost than individual billing.
+            </p>
+
+            <div className="mb-6">
+              <span className="text-4xl font-bold text-white">${formatPlanPrice(enterpriseMonthlyTotal)}</span>
+              <span className="text-gray-400">/month</span>
+              <p className="text-sm text-gray-500 mt-1">$14.99 per seat · 5-seat minimum · 50% lower per seat than monthly</p>
+              <div className="mt-4">
+                <label htmlFor="enterprise-seats" className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Seats</label>
+                <input
+                  id="enterprise-seats"
+                  type="number"
+                  min={5}
+                  step={1}
+                  value={enterpriseSeats}
+                  onChange={(e) => setEnterpriseSeats(Math.max(5, Number.parseInt(e.target.value || '5', 10) || 5))}
+                  className="mt-2 w-full rounded-lg border border-white/10 bg-slate-900/80 px-4 py-3 text-white focus:border-emerald-400 focus:outline-none"
+                />
+                <p className="mt-2 text-xs text-slate-400">Buy 5, 10, or more seats. Total updates instantly.</p>
+              </div>
+            </div>
+
+            <ul className="space-y-4 mb-8">
+              {corporate.features.map((f, i) => (
+                <li key={i} className={`flex items-start gap-3 ${f.included ? 'text-gray-300' : 'text-gray-500'}`}>
+                  {f.included ? <CheckIcon /> : <XIcon />}
+                  <span className={f.bold ? 'font-semibold' : ''}>{f.text}</span>
+                </li>
+              ))}
+            </ul>
+
+            {renderCTA('corporate')}
+
+            <div className="mt-4 p-3 bg-slate-700/30 rounded-lg">
+              <p className="text-xs text-gray-400 text-center">
+                If this saves a 5-person team one hour each per week, it pays for itself almost immediately.
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* AUDIT: Risk Reversal - 14-Day Guarantee Section */}
+        {/* Trust Badges */}
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-slate-300 text-sm">
+            <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+            256-bit SSL Secure Checkout
+          </div>
+          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-slate-300 text-sm">
+            <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+            1,200+ Builders Enrolled
+          </div>
+          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-slate-300 text-sm">
+            <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+            14-Day Money-Back Guarantee
+          </div>
+          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-slate-300 text-sm">
+            <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            Updated Monthly for 2026
+          </div>
+        </div>
+
+        {/* No Blank-Screen Coding */}
+        <section className="mt-20 grid gap-8 lg:grid-cols-[1.05fr,0.95fr]">
+          <div className="rounded-3xl border border-cyan-400/20 bg-slate-800/40 p-8 text-left">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">No Blank-Screen Coding</p>
+            <h2 className="mt-3 text-3xl font-bold text-white">Copy. Paste. Customize. Ship.</h2>
+            <p className="mt-4 text-base leading-7 text-slate-300">
+              The hardest part for cold traffic is believing they can actually do this. So the first lessons are designed to prove it fast: open the guided environment, paste the starter script, swap in your business context, and run a real workflow.
+            </p>
+            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">Step 1</p>
+                <p className="mt-2 text-sm font-semibold text-white">Copy the starter script</p>
+                <p className="mt-2 text-sm leading-6 text-slate-400">No blank file. No architecture guesswork. The lesson starts with working code.</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">Step 2</p>
+                <p className="mt-2 text-sm font-semibold text-white">Swap in your prompt and API key</p>
+                <p className="mt-2 text-sm leading-6 text-slate-400">You are customizing a real template, not learning syntax from scratch.</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">Step 3</p>
+                <p className="mt-2 text-sm font-semibold text-white">Run the workflow and keep it</p>
+                <p className="mt-2 text-sm leading-6 text-slate-400">The goal is a deployed business asset, not finishing another theory lesson.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-slate-950/80 p-6 shadow-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Day 1 Workflow Preview</p>
+            <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-slate-950">
+              <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
+                <span className="h-3 w-3 rounded-full bg-rose-400/80" />
+                <span className="h-3 w-3 rounded-full bg-amber-300/80" />
+                <span className="h-3 w-3 rounded-full bg-emerald-400/80" />
+                <span className="ml-3 text-xs uppercase tracking-[0.16em] text-slate-500">copy-paste python workflow</span>
+              </div>
+              <CopyableCodeBlock
+                code={`from tutorkit import run_workflow
+
+client_name = "Acme Home Services"
+transcript = load_transcript("sales-call.txt")
+
+result = run_workflow(
+    workflow="follow_up_email",
+    business_context=client_name,
+    source_text=transcript,
+)
+
+print(result.subject)
+print(result.body)`}
+                preClassName="overflow-x-auto px-4 pb-5 text-sm leading-7 text-slate-200"
+              />
+            </div>
+            <p className="mt-4 text-sm leading-6 text-slate-400">
+              This is the point: you are not staring at a blank editor wondering what Python experts know that you do not. You are starting from a guided, working pattern and learning by shipping.
+            </p>
+          </div>
+        </section>
+
+        {/* 14-Day Guarantee Section */}
         <div className="mt-20 max-w-4xl mx-auto">
           <div className="bg-gradient-to-r from-emerald-900/30 to-teal-900/30 border border-emerald-500/30 rounded-2xl p-8 md:p-12">
             <div className="flex flex-col md:flex-row items-center gap-8">
@@ -409,9 +416,7 @@ const PricingPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-white mb-4">
-                  14-Day Build Guarantee
-                </h3>
+                <h3 className="text-2xl font-bold text-white mb-4">14-Day Build Guarantee</h3>
                 <p className="text-gray-300 mb-4">
                   Build your first working AI Agent in 14 days, or we refund every penny. You keep the source code.
                 </p>
@@ -423,94 +428,108 @@ const PricingPage: React.FC = () => {
           </div>
         </div>
 
-        {/* FAQ Section */}
+        {/* FAQ */}
         <div className="mt-20 max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-white text-center mb-12">
-            Frequently Asked Questions
-          </h2>
-          
+          <h2 className="text-3xl font-bold text-white text-center mb-12">Frequently Asked Questions</h2>
           <div className="space-y-6">
             <div className="bg-slate-800/50 rounded-lg p-6">
-              <h4 className="text-lg font-semibold text-white mb-2">
-                What is the 14-day guarantee?
-              </h4>
-              <p className="text-gray-400">
-                Build your first working AI Agent in 14 days, or we refund every penny. You keep the source code.
-              </p>
+              <h4 className="text-lg font-semibold text-white mb-2">What is the 14-day guarantee?</h4>
+              <p className="text-gray-400">Build your first working AI Agent in 14 days, or we refund every penny. You keep the source code.</p>
             </div>
-
             <div className="bg-slate-800/50 rounded-lg p-6">
-              <h4 className="text-lg font-semibold text-white mb-2">
-                Can I cancel anytime?
-              </h4>
-              <p className="text-gray-400">
-                Yes! You can cancel your subscription at any time. You'll continue to have access 
-                until the end of your billing period.
-              </p>
+              <h4 className="text-lg font-semibold text-white mb-2">What is actually free?</h4>
+              <p className="text-gray-400">Anyone can browse the free lessons, and the first two founder builds remain open. The useful premium build path, AI tutor, and full curriculum unlock when you subscribe.</p>
             </div>
-
             <div className="bg-slate-800/50 rounded-lg p-6">
-              <h4 className="text-lg font-semibold text-white mb-2">
-                What's included in the AI Tutor?
-              </h4>
-              <p className="text-gray-400">
-                Our AI Tutor is available 24/7 to answer your questions, help debug your code, 
-                explain concepts, and guide you through projects. It's like having a personal 
-                AI instructor always available.
-              </p>
+              <h4 className="text-lg font-semibold text-white mb-2">How does the annual discount work?</h4>
+              <p className="text-gray-400">Monthly is $29.99. Annual drops to $19.99/month billed as one $239.88 payment — that saves you $120 per year compared to paying monthly.</p>
             </div>
-
             <div className="bg-slate-800/50 rounded-lg p-6">
-              <h4 className="text-lg font-semibold text-white mb-2">
-                Is the Corporate plan worth it?
-              </h4>
-              <p className="text-gray-400">
-                The Corporate plan is designed for teams who want dedicated support, custom 
-                workshops, and enterprise features like SSO. For individual learners, the Pro 
-                plan offers everything you need at a fraction of the cost.
-              </p>
+              <h4 className="text-lg font-semibold text-white mb-2">Can I cancel anytime?</h4>
+              <p className="text-gray-400">Yes! You can cancel your subscription at any time. You will continue to have access until the end of your billing period.</p>
             </div>
+            <div className="bg-slate-800/50 rounded-lg p-6">
+              <h4 className="text-lg font-semibold text-white mb-2">How does Enterprise pricing work?</h4>
+              <p className="text-gray-400">Enterprise uses the lowest per-seat rate: $14.99 per seat with a 5-seat minimum, so the starting price is $74.95/month. It includes the full curriculum plus shared workflow libraries, team progress visibility, priority support, and implementation help.</p>
+            </div>
+            <div className="bg-slate-800/50 rounded-lg p-6 border border-cyan-500/20">
+              <h4 className="text-lg font-semibold text-white mb-2">Will this course be outdated in 2 months?</h4>
+              <p className="text-gray-400">The curriculum is built around implementation patterns, not specific model versions. We push monthly content updates to reflect the latest APIs and tools. All plan members get every update at no extra cost.</p>
+            </div>
+            <div className="bg-slate-800/50 rounded-lg p-6">
+              <h4 className="text-lg font-semibold text-white mb-2">Why not just watch free YouTube tutorials?</h4>
+              <p className="text-gray-400">YouTube gives you fragments. This course gives you a complete, sequenced build path from your first API call to a production-deployed automation — with an AI tutor to unblock you in real time.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Objection Handling */}
+        <div className="mt-20 max-w-3xl mx-auto">
+          <h2 className="text-2xl font-bold text-white text-center mb-8">What usually stops people from starting</h2>
+          <div className="space-y-4">
+            {[
+              { q: '"I\'m not technical."', a: 'You do not need to be technical to start. The path is built to get you moving with guided, practical steps — not coding or heavy theory.' },
+              { q: '"I don\'t have time."', a: 'Your first useful win should take minutes, not days. Most lessons are intentionally short and built for real schedules.' },
+              { q: '"What if it\'s not worth it?"', a: "That's exactly why the guarantee exists. If you don't build something useful in 14 days, you get your money back." },
+            ].map(({ q, a }) => (
+              <div key={q} className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
+                <p className="text-emerald-400 font-semibold mb-2">{q}</p>
+                <p className="text-slate-300 leading-relaxed">{a}</p>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Final CTA */}
         <div className="mt-20 text-center">
-          <h2 className="text-3xl font-bold text-white mb-6">
-            Ready to Build Your First AI Solution?
-          </h2>
-          <p className="text-xl text-gray-300 mb-8">
-            If you are still evaluating, start free. If you are ready to ship, take the Pro path and move into checkout.
+          <h2 className="text-3xl font-bold text-white mb-4">You're already doing the hard part.</h2>
+          <p className="text-xl text-gray-300 mb-10">
+            The only real difference now is whether you keep circling the idea — or start using it.
           </p>
-          <Link
-            to={currentUser ? "/courses" : "/signup"}
-            className="inline-flex items-center justify-center px-8 py-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg transition-colors"
-          >
-            Start Building Now
-            <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </Link>
+          {isFounding ? (
+            <Link
+              to="/welcome"
+              className="inline-flex items-center justify-center px-8 py-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-lg transition-colors"
+            >
+              Open Founding Dashboard
+              <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </Link>
+          ) : (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <SubscribeButton
+                planKey="pro_trial"
+                buttonText="Start 7-Day Trial for $1"
+                className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-lg shadow-lg shadow-emerald-500/20 transition-all"
+              />
+              <SubscribeButton
+                planKey="pro"
+                buttonText="Get Annual Access"
+                className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 font-bold text-lg transition-all"
+              />
+            </div>
+          )}
+          <p className="text-slate-500 text-sm mt-6">Instant access · 14-Day Build Guarantee · Cancel anytime</p>
+          {!isFounding && !isRegisteredUser && (
+            <div className="mt-4 flex flex-col items-center gap-3">
+              <RoiGuaranteeBadge />
+              <p className="text-sm text-slate-400">Free lessons stay open. Plan selection leads straight into secure Stripe checkout, and premium builds unlock immediately after payment.</p>
+            </div>
+          )}
         </div>
       </main>
-      <FoundingAccessFloatingButton />
 
-      {/* Footer */}
+      <ExitIntentLeadMagnet source="pricing_exit_intent" />
+
       <footer className="border-t border-slate-700/50 mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="text-gray-400 text-sm">
-              © 2025 AI Integration Course. All rights reserved.
-            </div>
+            <div className="text-gray-400 text-sm">&copy; 2025 AI Integration Course. All rights reserved.</div>
             <div className="flex gap-6">
-              <Link to="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Terms of Service
-              </Link>
-              <Link to="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Privacy Policy
-              </Link>
-              <a href="mailto:support@aiintegrationcourse.com" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Contact
-              </a>
+              <Link to="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">Terms of Service</Link>
+              <Link to="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</Link>
+              <a href="mailto:support@aiintegrationcourse.com" className="text-gray-400 hover:text-white text-sm transition-colors">Contact</a>
             </div>
           </div>
         </div>

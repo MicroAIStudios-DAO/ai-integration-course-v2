@@ -22,6 +22,18 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.premium == true;
     }
+
+    function isFoundingMember() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.foundingMember == true;
+    }
+
+    function isBetaTester() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isBetaTester == true;
+    }
     
     // Check if user has active subscription
     function hasActiveSubscription() {
@@ -39,7 +51,16 @@ service cloud.firestore {
     
     // Check if user has any form of access (premium, active subscription, or trial)
     function hasPremiumAccess() {
-      return isPremium() || hasActiveSubscription() || isInTrial();
+      return isPremium() || isFoundingMember() || hasActiveSubscription() || isInTrial();
+    }
+
+    function canReadFoundersContent() {
+      return isFoundingMember() || (isBetaTester() && hasPremiumAccess()) || isAdmin();
+    }
+
+    function isPublicPreviewLessonContent(contentId) {
+      return contentId == 'course_01_id__module_01_id__lesson_founders_01_content_architect' ||
+        contentId == 'course_01_id__module_02_id__lesson_founders_02_informed_architect';
     }
     
     // Check if lesson is free tier
@@ -59,6 +80,34 @@ service cloud.firestore {
       return email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
     }
     
+    function protectedAccessFields() {
+      return [
+        'premium',
+        'role',
+        'isAdmin',
+        'subscriptionStatus',
+        'subscriptionEndsAt',
+        'subscriptionUpdatedAt',
+        'subscriptionCancelledAt',
+        'trialEndsAt',
+        'trialEndDate',
+        'foundingMember',
+        'foundingCode',
+        'foundingActivatedAt',
+        'isBetaTester',
+        'betaCohort',
+        'betaAccessCode',
+        'betaAccessSource',
+        'betaSignupDate',
+        'betaScholarshipCode',
+        'betaScholarshipGrantedAt',
+        'isSubscribed',
+        'activeTrial',
+        'checkoutStartedAt',
+        'checkoutAttempts'
+      ];
+    }
+
     // ============================================
     // USER DOCUMENTS
     // ============================================
@@ -70,11 +119,12 @@ service cloud.firestore {
       // Users can create their own profile
       allow create: if isOwner(userId) && 
         request.resource.data.keys().hasAll(['email']) &&
-        isValidEmail(request.resource.data.email);
+        isValidEmail(request.resource.data.email) &&
+        !request.resource.data.keys().hasAny(protectedAccessFields());
       
       // Users can update their own profile (but not premium status or role)
       allow update: if isOwner(userId) && 
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['premium', 'role', 'subscriptionStatus']);
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(protectedAccessFields());
       
       // Only admins can delete users
       allow delete: if isAdmin();
@@ -112,14 +162,26 @@ service cloud.firestore {
         // Only admins can write modules
         allow write: if isAdmin();
         
-        // Lessons subcollection - THIS IS WHERE TIER GATING HAPPENS
+        // Lessons subcollection - TIER GATING ENFORCED SERVER-SIDE
+        // SECURITY FIX (VULN-01): Removed open `allow read: if true` that exposed
+        // all premium/paid lesson content (including full markdown and video URLs)
+        // to unauthenticated REST API callers. Access is now gated by lesson tier.
         match /lessons/{lessonId} {
-          // Read rules for lessons based on tier
-          allow read: if 
-            // Anyone can read lesson metadata (title, description, tier info)
-            // But content is filtered on the client side based on tier
-            true;
-          
+          // Lesson metadata (title, order, durationMinutes, tier flag) is readable
+          // by anyone so the course outline/syllabus can render for marketing.
+          // Full content fields (content, videoUrl) are only returned when the
+          // caller satisfies the tier requirement below.
+          allow read: if
+            // Free lessons: always readable (marketing + enrolled free users)
+            isFreeLesson(resource.data) ||
+            // Founders-tier lessons: founding members, beta testers with premium
+            (resource.data.tier == 'founders' && canReadFoundersContent()) ||
+            // Premium lessons: any authenticated user with an active subscription
+            // or trial period
+            (resource.data.tier != 'founders' && hasPremiumAccess()) ||
+            // Admins can always read everything
+            isAdmin();
+
           // Only admins can write lessons
           allow write: if isAdmin();
         }
@@ -132,12 +194,14 @@ service cloud.firestore {
     
     match /lessonContent/{contentId} {
       // Gated read access based on tier
-      allow read: if isAuthenticated() && (
+      allow read: if isPublicPreviewLessonContent(contentId) || (isAuthenticated() && (
         // Free content accessible to all authenticated users
         resource.data.tier == 'free' ||
+        // Founders content requires founding access or paid Pioneer beta access
+        (resource.data.tier == 'founders' && canReadFoundersContent()) ||
         // Premium content requires premium access
-        hasPremiumAccess()
-      );
+        (resource.data.tier != 'founders' && hasPremiumAccess())
+      ));
       
       // Only admins can write content
       allow write: if isAdmin();
@@ -254,6 +318,58 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
     
+    // ============================================
+    // LEADS (Pre-checkout lead capture)
+    // ============================================
+
+    match /leads/{leadId} {
+      // Anonymous users can create leads pre-auth (pre-checkout capture)
+      allow create: if true;
+      // Authenticated users can read/update their own lead by uid
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.uid == request.auth.uid
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'convertedAt', 'recovered_from']);
+      // Only admins can delete leads
+      allow delete: if isAdmin();
+      // Admins can read all leads
+      allow read: if isAdmin();
+    }
+
+    // ============================================
+    // STRIPE EVENTS (Idempotency deduplication log)
+    // ============================================
+
+    match /stripe_events/{eventId} {
+      // Only backend (admin SDK) can read/write stripe event logs
+      // Client-side access is never needed
+      allow read, write: if false;
+    }
+
+    // ============================================
+    // CANCEL REASONS (Micro-survey responses)
+    // ============================================
+
+    match /cancel_reasons/{docId} {
+      // Authenticated users can write their own cancel reason
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      // Users can read their own cancel reasons
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      // Only admins can read all cancel reasons (for product analytics)
+      allow read: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // EXIT INTENT CAPTURES
+    // ============================================
+
+    match /exit_intent_captures/{docId} {
+      // Anyone can create (anonymous exit intent capture)
+      allow create: if true;
+      // Only admins can read and manage
+      allow read, update, delete: if isAdmin();
+    }
+
     // ============================================
     // DEFAULT DENY
     // ============================================

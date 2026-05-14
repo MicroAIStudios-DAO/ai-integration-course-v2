@@ -30,7 +30,27 @@ async function* openaiStream(messages:any[], key:string, modelCandidates:string[
   throw lastErr||new Error('All model candidates failed');
 }
 
+// SECURITY FIX (VULN-03): Restrict CORS to the production domain only.
+// Previously the Google Frontend / Firebase Hosting layer was reflecting any
+// Origin back as Access-Control-Allow-Origin, allowing arbitrary cross-origin
+// requests from any website.
+const ALLOWED_ORIGINS = [
+  'https://aiintegrationcourse.com',
+  'https://www.aiintegrationcourse.com',
+  'http://localhost:3000',
+  'http://localhost:5000',
+];
+
 export default async function handler(req: Request, res: Response) {
+  // Handle CORS preflight
+  const origin = req.headers['origin'] as string | undefined;
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') { res.status(204).end(); return; }
   if (req.method !== 'POST') { res.setHeader('Allow',['POST']); res.status(405).end('Method Not Allowed'); return; }
   try{
     const { lessonId, question } = req.body || {};

@@ -14,6 +14,7 @@ admin.initializeApp({
 });
 
 const db = admin.firestore();
+const buildLessonContentId = (courseId, moduleId, lessonId) => `${courseId}__${moduleId}__${lessonId}`;
 
 async function listCoursesAndModules() {
   console.log('=== Listing Courses and Modules ===\n');
@@ -106,13 +107,14 @@ async function addBotLesson() {
   console.log(`Order: ${lessonOrder}`);
   
   const lessonRef = db.collection('courses').doc(courseId).collection('modules').doc(moduleId).collection('lessons').doc(lessonId);
-  
-  await lessonRef.set({
+  const contentRef = db.collection('lessonContent').doc(buildLessonContentId(courseId, moduleId, lessonId));
+  const batch = db.batch();
+
+  batch.set(lessonRef, {
     title: 'MOD 1 PROJECT: Build Your First Bot',
     order: lessonOrder,
     isFree: false,
     tier: 'premium',
-    content: content,
     videoUrl: null,
     durationMinutes: 180, // 3 hours total
     description: 'Build a Customer Service Email Bot in 14 days - complete this project or get a full refund!',
@@ -121,6 +123,16 @@ async function addBotLesson() {
     isProject: true,
     guaranteeDays: 14,
   });
+  batch.set(contentRef, {
+    courseId,
+    moduleId,
+    lessonId,
+    tier: 'premium',
+    content,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  }, { merge: true });
+
+  await batch.commit();
   
   console.log(`\n✅ Lesson added successfully!`);
   console.log(`Path: courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`);

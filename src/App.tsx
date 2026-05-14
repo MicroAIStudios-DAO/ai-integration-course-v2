@@ -3,11 +3,14 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import Layout from './components/layout/Layout'; // Import the Layout component
 import HomePage from './pages/HomePage';
 import NewLandingPage from './pages/NewLandingPage';
+import PaidTrafficLandingPage from './pages/PaidTrafficLandingPage';
 import PricingPage from './pages/PricingPage';
 import CourseOverviewPage from './pages/CourseOverviewPage';
 import LessonPage from './pages/LessonPage';
 import ResourceLibraryPage from './pages/ResourceLibraryPage';
 import ResourceDetailPage from './pages/ResourceDetailPage';
+import BlogIndexPage from './pages/BlogIndexPage';
+import BlogPostPage from './pages/BlogPostPage';
 import IndustrySolutionsPage from './pages/IndustrySolutionsPage';
 import IndustrySolutionPage from './pages/IndustrySolutionPage';
 import AboutPage from './pages/AboutPage';
@@ -27,7 +30,22 @@ import { UserJotWidget } from './components/UserJotWidget';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import AdminAddLesson from './pages/AdminAddLesson';
+import PlanSelectorPage from './pages/PlanSelectorPage';
+import CheckoutStartPage from './pages/CheckoutStartPage';
+import BillingPage from './pages/BillingPage';
+import CertificationPage from './pages/CertificationPage';
 import { initGA4, trackPageView } from './utils/analytics';
+import ExitIntentModal from './components/ExitIntentModal';
+
+// Renders the exit-intent modal with the correct variant based on current route
+const ExitIntentWrapper: React.FC = () => {
+  const location = useLocation();
+  const isCheckout = location.pathname.startsWith('/checkout') || location.pathname.startsWith('/start-trial');
+  // Suppress on post-purchase and admin pages
+  const suppress = ['/payment-success', '/billing', '/admin'].some(p => location.pathname.startsWith(p));
+  if (suppress) return null;
+  return <ExitIntentModal variant={isCheckout ? 'checkout' : 'pricing'} />;
+};
 
 // Component to track page views on route changes
 const PageViewTracker: React.FC = () => {
@@ -52,13 +70,26 @@ const App: React.FC = () => {
       {/* UserJot feedback widget for beta testers */}
       <UserJotWidget />
       <PageViewTracker />
+      {/* Exit-intent modal — fires on mouse-leave, suppressed post-purchase */}
+      <ExitIntentWrapper />
       <Routes>
-        {/* HomePage renders without Layout for full-screen landing page */}
-        <Route path="/" element={<HomePage />} />
+        {/* Root route is the primary onboarding funnel for direct visitors */}
+        <Route path="/" element={<PaidTrafficLandingPage />} />
+        {/* Preserve the legacy homepage for editorial traffic and internal links */}
+        <Route path="/home" element={<HomePage />} />
         {/* NewLandingPage renders without Layout for full-screen landing page */}
         <Route path="/new-landing" element={<NewLandingPage />} />
+        {/* Paid traffic landing page — same onboarding experience available at /start */}
+        <Route path="/start" element={<PaidTrafficLandingPage />} />
         {/* PricingPage renders without Layout for full-screen pricing page */}
         <Route path="/pricing" element={<PricingPage />} />
+        {/* Plan Selector: Section 3 — pre-checkout plan selector with source-aware copy */}
+        <Route path="/start-trial" element={<PlanSelectorPage />} />
+        <Route path="/get-access" element={<PlanSelectorPage />} />
+        {/* Spec §4: Pre-checkout lead capture — captures email before Stripe redirect */}
+        <Route path="/checkout/start" element={<CheckoutStartPage />} />
+        {/* Spec §14: Billing portal — redirects to Stripe Customer Portal */}
+        <Route path="/billing" element={<BillingPage />} />
         {/* Admin page for adding lessons - hidden route */}
         <Route path="/admin/add-lesson" element={<AdminAddLesson />} />
 
@@ -67,6 +98,8 @@ const App: React.FC = () => {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/faq" element={<FAQPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/blogs" element={<BlogIndexPage />} />
+          <Route path="/blogs/:slug" element={<BlogPostPage />} />
           <Route path="/library" element={<ResourceLibraryPage />} />
           <Route path="/library/:slug" element={<ResourceDetailPage />} />
           <Route path="/solutions" element={<IndustrySolutionsPage />} />
@@ -81,6 +114,7 @@ const App: React.FC = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/certification" element={<CertificationPage />} />
           <Route path="/payment-success" element={<PaymentSuccessPage />} />
           <Route path="/payment-cancel" element={<PaymentCancelPage />} />
           <Route path="/terms" element={<TermsOfServicePage />} />

@@ -1,3 +1,5 @@
+# Legacy manual preview workflow kept disabled.
+# firebase-hosting-pull-request.yml owns automatic PR previews.
 name: Deploy to Preview Channel
 
 on:

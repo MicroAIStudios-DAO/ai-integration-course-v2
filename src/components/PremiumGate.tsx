@@ -28,7 +28,7 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
   showUpgradePrompt = true,
   lessonTitle,
 }) => {
-  const { canAccess, reason, loading, upgradeRequired } = useLessonAccess(tier);
+  const { canAccess, loading } = useLessonAccess(tier);
 
   // Show loading state
   if (loading) {
@@ -122,7 +122,7 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
             to="/pricing"
             className="inline-flex items-center justify-center px-8 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors"
           >
-            Start Free Trial
+Subscribe Now
             <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
@@ -137,7 +137,7 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
 
         {/* Trial info */}
         <p className="text-sm text-gray-500 mt-6">
-          7-day free trial • Cancel anytime • No credit card required to start
+Free lessons are open. Premium builds unlock with a paid subscription.
         </p>
       </div>
     </div>
@@ -170,8 +170,8 @@ export const TrialBanner: React.FC<{ daysRemaining: number }> = ({ daysRemaining
     <div className={`${urgency} text-white text-center py-2 px-4 text-sm`}>
       <span className="font-medium">
         {daysRemaining === 1 
-          ? '⏰ Last day of your free trial!' 
-          : `📅 ${daysRemaining} days left in your free trial`}
+          ? '⏰ Subscription period ending soon!' 
+          : `📅 ${daysRemaining} days left in your current billing period`}
       </span>
       <Link to="/pricing" className="ml-2 underline hover:no-underline">
         Upgrade now

@@ -32,6 +32,9 @@ const RESOURCE_PAGE_SLUGS = [
   'function-calling-with-gemini-1-5-pro',
   'openai-vs-anthropic-for-automation'
 ];
+const BLOG_POST_SLUGS = [
+  'workflow-complete-guide'
+];
 const INDUSTRY_PAGE_SLUGS = [
   'real-estate',
   'e-commerce',
@@ -53,6 +56,7 @@ async function generateSitemap() {
     { path: '/courses', priority: '0.9', changefreq: 'weekly' },
     { path: '/pricing', priority: '0.8', changefreq: 'monthly' },
     { path: '/about', priority: '0.7', changefreq: 'monthly' },
+    { path: '/blogs', priority: '0.8', changefreq: 'weekly' },
     { path: '/library', priority: '0.8', changefreq: 'weekly' },
     { path: '/solutions', priority: '0.8', changefreq: 'weekly' },
     { path: '/ai-workshops-san-diego', priority: '0.7', changefreq: 'monthly' },
@@ -76,6 +80,14 @@ async function generateSitemap() {
   RESOURCE_PAGE_SLUGS.forEach((slug) => {
     urls.push({
       loc: `${BASE_URL}/library/${slug}`,
+      priority: '0.7',
+      changefreq: 'monthly'
+    });
+  });
+
+  BLOG_POST_SLUGS.forEach((slug) => {
+    urls.push({
+      loc: `${BASE_URL}/blogs/${slug}`,
       priority: '0.7',
       changefreq: 'monthly'
     });

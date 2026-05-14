@@ -75,8 +75,8 @@ const IndustrySolutionPage: React.FC = () => {
               The course is designed to help teams move from idea to pilot without skipping retrieval, tool validation, review ownership, or rollout metrics.
             </p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <Link to="/signup" className="inline-flex items-center justify-center rounded-xl bg-cyan-400 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-300">
-                Start building now
+              <Link to="/pricing" className="inline-flex items-center justify-center rounded-xl bg-cyan-400 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-300">
+                See pricing
               </Link>
               <Link to="/pricing" className="inline-flex items-center justify-center rounded-xl border border-white/20 px-5 py-3 font-semibold text-white hover:bg-white/5">
                 Compare plans

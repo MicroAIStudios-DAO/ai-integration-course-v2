@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCourses, getUserCourseProgress } from '../firebaseService';
+import { getCourses, getUserCourseProgress, isFoundersLesson, isFreeLesson } from '../firebaseService';
 import { Course, Module, Lesson, UserCourseProgress } from '../types/course';
 import { useAuth } from '../context/AuthContext';
 import CourseSchema from '../components/seo/CourseSchema';
+import SEO from '../components/SEO';
 
 const UNTITLED_TITLE_PATTERN = /^untitled lesson$/i;
 const LESSON_PREFIX_PATTERN = /^lesson\s+\d+(\.\d+)?\s*:\s*/i;
@@ -38,6 +39,9 @@ const toDisplayTitle = (lesson: Lesson, lessonNumber: string): string => {
   const titleWithoutPrefix = stripLessonPrefix(rawTitle);
   const isUntitled = !titleWithoutPrefix || UNTITLED_TITLE_PATTERN.test(titleWithoutPrefix);
   const normalizedTitle = isUntitled ? 'Title Coming Soon' : titleWithoutPrefix;
+  if (isFoundersLesson(lesson)) {
+    return normalizedTitle;
+  }
   return `Lesson ${lessonNumber}: ${normalizedTitle}`;
 };
 
@@ -52,6 +56,19 @@ const CourseOverviewPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [userProgress, setUserProgress] = useState<UserCourseProgress | null>(null);
+  // Accordion: track which modules are expanded (all open by default)
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
+  const toggleModule = (moduleId: string) => {
+    setExpandedModules((prev) => {
+      const next = new Set(prev);
+      if (next.has(moduleId)) {
+        next.delete(moduleId);
+      } else {
+        next.add(moduleId);
+      }
+      return next;
+    });
+  };
 
   const modulesWithDisplayLessons = useMemo<DisplayModule[]>(() => {
     if (!course) return [];
@@ -64,9 +81,12 @@ const CourseOverviewPage: React.FC = () => {
         const sortedLessons = [...module.lessons].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
         const displayLessons = sortedLessons
           .filter((lesson) => !isPlaceholderOnlyLesson(lesson))
+          .filter((lesson) => !isFoundersLesson(lesson) || isFreeLesson(lesson))
           .map((lesson) => {
             const lessonNumber = resolveLessonNumber(lesson, fallbackNumber);
-            fallbackNumber += 1;
+            if (!isFoundersLesson(lesson)) {
+              fallbackNumber += 1;
+            }
             return {
               ...lesson,
               displayTitle: toDisplayTitle(lesson, lessonNumber)
@@ -90,9 +110,11 @@ const CourseOverviewPage: React.FC = () => {
         if (courses && courses.length > 0) {
           const fetchedCourse = courses[0];
           setCourse(fetchedCourse);
-          // Fetch user progress with the actual course ID
           if (currentUser && fetchedCourse.id) {
-            fetchUserProgress(fetchedCourse.id);
+            const progress = await fetchUserProgress(fetchedCourse.id);
+            setUserProgress(progress);
+          } else {
+            setUserProgress(null);
           }
         } else {
           setError('No courses available. Please try again later.');
@@ -106,24 +128,29 @@ const CourseOverviewPage: React.FC = () => {
     };
 
     // Function to fetch user progress
-    const fetchUserProgress = async (courseId: string) => {
+    const fetchUserProgress = async (courseId: string): Promise<UserCourseProgress | null> => {
       if (currentUser && courseId) {
         try {
           // Using the actual courseId from the fetched course
           const progress = await getUserCourseProgress(currentUser.uid, courseId);
-          setUserProgress(progress);
-          
-          // Also fetch the user profile for premium status checks
-          // const profile = await getUserProfile(currentUser.uid);
-          // setUserProfile(profile);
+          return progress;
         } catch (error) {
           console.error('Error fetching user progress:', error);
+          return null;
         }
       }
+      return null;
     };
 
     fetchCourseData();
   }, [currentUser]);
+
+  // When modules load, expand all by default
+  React.useEffect(() => {
+    if (modulesWithDisplayLessons.length > 0) {
+      setExpandedModules(new Set(modulesWithDisplayLessons.map((m) => m.id)));
+    }
+  }, [modulesWithDisplayLessons.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Function to check if a lesson is completed
   const isLessonCompleted = (lessonId: string): boolean => {
@@ -134,8 +161,8 @@ const CourseOverviewPage: React.FC = () => {
   // Function to navigate to the lesson page
   const handleLessonClick = (lesson: Lesson, moduleId: string) => {
     // If the lesson is premium and user is not logged in, navigate to login
-    const isFreeLesson = lesson.tier === 'free' || lesson.isFree === true;
-    if (!isFreeLesson && !currentUser) {
+    const lessonIsFree = isFreeLesson(lesson);
+    if (!lessonIsFree && !currentUser) {
       navigate('/login', { state: { from: `/courses/${course?.id}/modules/${moduleId}/lessons/${lesson.id}` } });
       return;
     }
@@ -160,17 +187,51 @@ const CourseOverviewPage: React.FC = () => {
     );
   }
 
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://aiintegrationcourse.com';
+  const coursePageUrl = `${origin}/courses`;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100">
+      <SEO
+        title={course.title}
+        description={course.description}
+        url="/courses"
+        type="course"
+        keywords={[
+          'AI course curriculum',
+          'AI automation lessons',
+          'AI integration training',
+          'AI workflow course',
+          'online AI course'
+        ]}
+        author="Blaine Casey"
+        course={{
+          name: course.title,
+          description: course.description,
+          provider: 'MicroAI Studios',
+          duration: 'P4W',
+          price: '49',
+          currency: 'USD'
+        }}
+      />
       {course && (
         <CourseSchema
           courseName={course.title}
           courseDescription={course.description}
-          courseUrl={typeof window !== 'undefined' ? `${window.location.origin}/courses/${course.id}` : undefined}
-          providerUrl={typeof window !== 'undefined' ? window.location.origin : undefined}
+          courseUrl={coursePageUrl}
+          pageUrl={coursePageUrl}
+          pageTitle={course.title}
+          pageDescription={course.description}
+          providerUrl={origin}
+          price={49}
+          breadcrumbItems={[
+            { name: 'Home', item: origin },
+            { name: 'Courses', item: coursePageUrl },
+          ]}
           modules={course.modules.map((module) => ({
             name: module.title,
-            description: module.description
+            description: module.description,
+            url: `${coursePageUrl}#module-${module.id}`
           }))}
         />
       )}
@@ -179,7 +240,29 @@ const CourseOverviewPage: React.FC = () => {
           <div className="absolute -top-32 left-10 h-80 w-80 rounded-full bg-cyan-500/20 blur-3xl" />
           <div className="absolute top-20 right-0 h-96 w-96 rounded-full bg-indigo-500/20 blur-3xl" />
         </div>
-        <div className="relative max-w-6xl mx-auto px-4 py-14">
+        <div className="relative max-w-7xl mx-auto px-4 py-14 flex gap-8">
+
+          {/* Sticky Table of Contents sidebar */}
+          {modulesWithDisplayLessons.length > 0 && (
+            <aside className="hidden lg:block w-64 flex-shrink-0">
+              <div className="sticky top-6 rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300 mb-4">Table of Contents</p>
+                <nav className="space-y-1">
+                  {modulesWithDisplayLessons.map((module) => (
+                    <a
+                      key={module.id}
+                      href={`#module-${module.id}`}
+                      className="block text-sm text-slate-300 hover:text-cyan-300 transition-colors py-1 pl-2 border-l-2 border-transparent hover:border-cyan-400 truncate"
+                    >
+                      {module.title}
+                    </a>
+                  ))}
+                </nav>
+              </div>
+            </aside>
+          )}
+
+          <div className="flex-1 min-w-0">
           <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 md:p-12 shadow-2xl">
             <div className="mb-10">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/10 text-cyan-200 px-4 py-1 text-xs font-headings font-semibold uppercase tracking-[0.2em]">
@@ -218,38 +301,65 @@ const CourseOverviewPage: React.FC = () => {
                     <option
                       key={`${module.id}|${lesson.id}`}
                       value={`${module.id}|${lesson.id}`}
-                      disabled={lesson.tier !== 'free' && !lesson.isFree && !currentUser}
+                      disabled={!isFreeLesson(lesson) && !currentUser}
                       className="text-slate-100"
                     >
-                      {module.title} - {lesson.displayTitle} {(lesson.tier === 'free' || lesson.isFree) ? '(Free)' : ''}
+                      {module.title} - {lesson.displayTitle} {isFreeLesson(lesson) ? '(Free)' : isFoundersLesson(lesson) ? '(Founders)' : ''}
                     </option>
                   ))
                 )}
               </select>
             </div>
 
-            {modulesWithDisplayLessons.map((module: DisplayModule) => (
-              <div key={module.id} className="mb-10 w-[98%] mx-auto p-6 md:p-8 border border-white/10 rounded-2xl bg-white/5 shadow-xl">
-                <div className="flex items-center justify-between gap-4 mb-5">
-                  <h2 className="text-2xl font-headings font-semibold text-white">{module.title}</h2>
-                  <span className="text-xs uppercase tracking-[0.2em] text-slate-300 font-headings">
-                    Module {module.order}
-                  </span>
-                </div>
-                <p className="text-slate-200 mb-6 text-sm font-sans">{module.description}</p>
+            {modulesWithDisplayLessons.map((module: DisplayModule) => {
+              const isExpanded = expandedModules.has(module.id);
+              return (
+              <div key={module.id} id={`module-${module.id}`} className="mb-6 w-[98%] mx-auto border border-white/10 rounded-2xl bg-white/5 shadow-xl overflow-hidden">
+                {/* Accordion Header */}
+                <button
+                  type="button"
+                  onClick={() => toggleModule(module.id)}
+                  className="w-full flex items-center justify-between gap-4 p-6 md:p-8 text-left hover:bg-white/5 transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <h2 className="text-xl font-headings font-semibold text-white">{module.title}</h2>
+                      <span className="text-xs uppercase tracking-[0.2em] text-slate-400 font-headings flex-shrink-0">
+                        Module {module.order}
+                      </span>
+                      <span className="text-xs text-slate-400 flex-shrink-0">
+                        {module.displayLessons.length} lesson{module.displayLessons.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    {module.description && (
+                      <p className="text-slate-400 text-sm mt-1 font-sans truncate">{module.description}</p>
+                    )}
+                  </div>
+                  <svg
+                    className={`w-5 h-5 text-slate-400 flex-shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Accordion Body */}
+                {isExpanded && (
+                <div className="px-6 md:px-8 pb-6 md:pb-8">
                 <ul className="space-y-3">
                   {module.displayLessons.map((lesson) => {
-                    const isFreeLesson = lesson.tier === 'free' || lesson.isFree === true;
+                    const lessonIsFree = isFreeLesson(lesson);
+                    const foundersLesson = isFoundersLesson(lesson);
                     
                     return (
                     <li 
                       key={lesson.id} 
                       onClick={() => handleLessonClick(lesson, module.id)}
                       className={`w-[98%] mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-4 rounded-xl transition-all duration-200 ease-in-out cursor-pointer 
-                                  ${(!isFreeLesson && (!currentUser)) 
+                                  ${(!lessonIsFree && (!currentUser)) 
                                     ? 'bg-white/5 text-slate-300 hover:bg-white/10'
                                     : 'bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 hover:from-cyan-500/20 hover:to-indigo-500/20 text-white'}
-                                  ${isFreeLesson ? 'border border-emerald-400/30' : 'border border-white/10'}
+                                  ${lessonIsFree ? 'border border-emerald-400/30' : foundersLesson ? 'border border-amber-400/30' : 'border border-white/10'}
                                   ${isLessonCompleted(lesson.id) ? 'opacity-70' : ''}
                                 `}
                     >
@@ -270,14 +380,17 @@ const CourseOverviewPage: React.FC = () => {
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
-                        {isFreeLesson && (
+                        {lessonIsFree && (
                           <span className="text-xs bg-emerald-400/20 text-emerald-200 px-2 py-1 rounded-full font-sans">Free</span>
                         )}
-                        {(!isFreeLesson && (!currentUser)) && (
+                        {foundersLesson && !lessonIsFree && (
+                          <span className="text-xs bg-amber-400/20 text-amber-100 px-2 py-1 rounded-full font-sans">Founders</span>
+                        )}
+                        {(!lessonIsFree && !foundersLesson && (!currentUser)) && (
                           <span className="text-xs bg-amber-400/20 text-amber-200 px-2 py-1 rounded-full font-sans">Premium</span>
                         )}
                         <span className="text-slate-300 text-sm font-sans">
-                          {(!isFreeLesson && (!currentUser)) ? 'Login to access' : 'View Lesson'}
+                          {(!lessonIsFree && (!currentUser)) ? 'Login to access' : foundersLesson && !lessonIsFree ? 'Open founders lesson' : 'View Lesson'}
                         </span>
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
@@ -287,15 +400,61 @@ const CourseOverviewPage: React.FC = () => {
                   );
                   })}
                 </ul>
+                </div>
+                )}{/* end accordion body */}
               </div>
-            ))}
+              );
+            })}
           </div>
           {error && course && (
             <div className="mt-6 text-center text-amber-200 bg-amber-500/10 border border-amber-400/20 p-4 rounded-xl">
               {error}
             </div>
           )}
+          </div>{/* end flex-1 main content */}
         </div>
+
+        {/* CROSS-SELL: MicroAI Studios Ecosystem */}
+        <div className="mt-12 rounded-2xl border border-white/10 bg-gradient-to-r from-slate-800/60 via-indigo-900/30 to-slate-800/60 p-6 md:p-8">
+          <p className="text-xs uppercase tracking-[0.2em] text-cyan-400 mb-2">From the MicroAI Studios Ecosystem</p>
+          <h3 className="text-xl font-bold text-white mb-2">Ready to Deploy What You've Learned?</h3>
+          <p className="text-sm text-slate-400 mb-6">The course teaches the skills. These tools let you ship them at scale.</p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <a
+              href="https://buy.stripe.com/8wMeYG9Yz0Vb2Oc7sH"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 hover:border-amber-500/40 transition-colors"
+            >
+              <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Founder Autopilot</p>
+                <p className="text-xs text-slate-400">17 AI agents for CRM, scheduling &amp; invoicing &mdash; from $39/mo</p>
+              </div>
+            </a>
+            <a
+              href="https://buy.stripe.com/5kA4k2caN1Zf6asfZd"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4 hover:border-cyan-500/40 transition-colors"
+            >
+              <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">ProofGuard AI</p>
+                <p className="text-xs text-slate-400">AI compliance &amp; audit trails &mdash; from $299/mo</p>
+              </div>
+            </a>
+          </div>
+        </div>
+
       </div>
     </div>
   );

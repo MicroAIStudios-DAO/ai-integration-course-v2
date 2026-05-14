@@ -1,4 +1,4 @@
-import { collection, getDocs, doc, getDoc, setDoc, updateDoc, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, setDoc, updateDoc, query, orderBy, arrayUnion } from 'firebase/firestore';
 import { ref, getDownloadURL } from 'firebase/storage';
 import { db, app } from './firebase'; // Import from centralized firebase config
 import { getStorage } from 'firebase/storage';
@@ -7,6 +7,48 @@ import { User } from 'firebase/auth';
 
 // Initialize Firebase Storage
 const storage = getStorage(app);
+
+type LessonAccessSubject = Pick<Lesson, 'id' | 'tier' | 'isFree'> | null | undefined;
+type LessonContentDoc = {
+  content?: string;
+  markdown?: string;
+};
+
+const PUBLIC_PREVIEW_LESSON_IDS = new Set([
+  'lesson_founders_01_content_architect',
+  'lesson_founders_02_informed_architect',
+]);
+
+export const getLessonContentDocumentId = (courseId: string, moduleId: string, lessonId: string): string =>
+  `${courseId}__${moduleId}__${lessonId}`;
+
+const normalizeVideoUrl = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') return undefined;
+
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
+    return `https://www.youtube.com/watch?v=${trimmed}`;
+  }
+
+  return trimmed;
+};
+
+const normalizeLesson = (raw: any): Lesson => {
+  const isFree = raw?.tier === 'free' || !!raw?.isFree;
+  const videoUrl = normalizeVideoUrl(raw?.videoUrl) || normalizeVideoUrl(raw?.youtubeUrl) || normalizeVideoUrl(raw?.videoId);
+
+  return {
+    ...raw,
+    isFree,
+    ...(videoUrl ? { videoUrl } : {}),
+  } as Lesson;
+};
 
 // --- Course & Lesson Data --- //
 
@@ -26,12 +68,7 @@ export const getCourses = async (): Promise<Course[]> => {
     for (const module of course.modules) {
       const lessonsCol = collection(db, `courses/${course.id}/modules/${module.id}/lessons`);
       const lessonSnapshot = await getDocs(query(lessonsCol, orderBy('order')));
-      module.lessons = lessonSnapshot.docs.map(lessDoc => {
-        const raw = { id: lessDoc.id, ...lessDoc.data() } as any;
-        // Normalize: map Firestore 'tier' to isFree flag expected by UI
-        const isFree = (raw.tier === 'free') || !!raw.isFree;
-        return { ...raw, isFree } as Lesson;
-      });
+      module.lessons = lessonSnapshot.docs.map((lessDoc) => normalizeLesson({ id: lessDoc.id, ...lessDoc.data() }));
     }
   }
   return coursesList;
@@ -56,11 +93,7 @@ export const getCourseById = async (courseId: string): Promise<Course | null> =>
   for (const module of courseData.modules) {
     const lessonsCol = collection(db, `courses/${courseId}/modules/${module.id}/lessons`);
     const lessonSnapshot = await getDocs(query(lessonsCol, orderBy('order')));
-    module.lessons = lessonSnapshot.docs.map(lessDoc => {
-      const raw = { id: lessDoc.id, ...lessDoc.data() } as any;
-      const isFree = (raw.tier === 'free') || !!raw.isFree;
-      return { ...raw, isFree } as Lesson;
-    });
+    module.lessons = lessonSnapshot.docs.map((lessDoc) => normalizeLesson({ id: lessDoc.id, ...lessDoc.data() }));
   }
   return courseData;
 };
@@ -76,6 +109,24 @@ export const getLessonMarkdownUrl = async (storagePath: string): Promise<string>
   }
 };
 
+export const getSecureLessonContent = async (
+  courseId: string,
+  moduleId: string,
+  lessonId: string
+): Promise<string | null> => {
+  const contentRef = doc(db, 'lessonContent', getLessonContentDocumentId(courseId, moduleId, lessonId));
+  const contentSnap = await getDoc(contentRef);
+  if (!contentSnap.exists()) {
+    return null;
+  }
+
+  const data = contentSnap.data() as LessonContentDoc;
+  return data.content || data.markdown || null;
+};
+
+export const isPublicPreviewLesson = (lesson: LessonAccessSubject): boolean =>
+  typeof lesson?.id === 'string' && PUBLIC_PREVIEW_LESSON_IDS.has(lesson.id);
+
 // --- User Profile & Progress --- //
 
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
@@ -87,37 +138,55 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
   return null;
 };
 
-const toDate = (value: UserProfile['trialEndsAt'] | UserProfile['trialEndDate']): Date | null => {
-  if (!value) return null;
-  if (value instanceof Date) return value;
-  if (typeof (value as any)?.toDate === 'function') return (value as any).toDate();
-  if (typeof value === 'string') {
-    const parsed = new Date(value);
-    return Number.isNaN(parsed.getTime()) ? null : parsed;
-  }
-  return null;
-};
-
 export const userHasPaidAccess = (profile: UserProfile | null | undefined): boolean => {
   if (!profile) return false;
   if (profile.foundingMember === true) return true;
   if (profile.premium === true) return true;
-  if (profile.isSubscribed === true) return true;
-
-  const trialEndsAt = toDate(profile.trialEndsAt) || toDate(profile.trialEndDate);
-  if (profile.activeTrial === true) {
-    return !trialEndsAt || trialEndsAt > new Date();
-  }
 
   if (profile.subscriptionStatus === 'active') {
     return true;
   }
 
-  if (profile.subscriptionStatus === 'trialing') {
-    return !!trialEndsAt && trialEndsAt > new Date();
+  return false;
+};
+
+export const isAdminProfile = (profile: UserProfile | null | undefined): boolean => {
+  if (!profile) return false;
+  return profile.isAdmin === true || profile.role === 'admin';
+};
+
+export const userHasFounderAccess = (profile: UserProfile | null | undefined): boolean => {
+  if (!profile) return false;
+  if (profile.foundingMember === true) return true;
+  return profile.isBetaTester === true && userHasPaidAccess(profile);
+};
+
+export const isFreeLesson = (lesson: LessonAccessSubject): boolean =>
+  lesson?.tier === 'free' ||
+  lesson?.isFree === true ||
+  isPublicPreviewLesson(lesson);
+
+export const isFoundersLesson = (lesson: LessonAccessSubject): boolean =>
+  lesson?.tier === 'founders';
+
+export const userCanAccessLesson = (
+  lesson: LessonAccessSubject,
+  profile: UserProfile | null | undefined
+): boolean => {
+  if (isFreeLesson(lesson)) {
+    return true;
   }
 
-  return false;
+  if (isAdminProfile(profile)) {
+    return true;
+  }
+
+
+  if (isFoundersLesson(lesson)) {
+    return userHasFounderAccess(profile);
+  }
+
+  return userHasPaidAccess(profile);
 };
 
 export const createUserProfile = async (user: User, additionalData?: Partial<UserProfile>): Promise<void> => {
@@ -134,6 +203,19 @@ export const createUserProfile = async (user: User, additionalData?: Partial<Use
     ...additionalData,
   };
   await setDoc(userRef, profileData, { merge: true });
+};
+
+export const syncUserIdentityProfile = async (user: User): Promise<void> => {
+  const userRef = doc(db, 'users', user.uid);
+  await setDoc(
+    userRef,
+    {
+      email: user.email || undefined,
+      displayName: user.displayName || undefined,
+      photoURL: user.photoURL || undefined,
+    },
+    { merge: true }
+  );
 };
 
 export const getUserCourseProgress = async (userId: string, courseId: string): Promise<UserCourseProgress | null> => {
@@ -206,6 +288,28 @@ export const createAdminUserProfile = async (user: User): Promise<void> => {
 export const isUserAdmin = async (userId: string): Promise<boolean> => {
   const userProfile = await getUserProfile(userId);
   return userProfile?.isAdmin === true || userProfile?.role === 'admin';
+};
+
+// --- Certification --- //
+
+export interface CertRecord {
+  certId: string;
+  courseName: string;
+  issuedAt: string; // ISO date string
+  tier: string;
+}
+
+/**
+ * Persist a generated certificate to the user's Firestore document.
+ * Uses setDoc with merge:true so it works even if the user doc is missing.
+ * Each certificate has a unique certId, so multiple calls create distinct entries.
+ */
+export const saveCertificate = async (
+  userId: string,
+  cert: CertRecord
+): Promise<void> => {
+  const userRef = doc(db, 'users', userId);
+  await setDoc(userRef, { certs: arrayUnion(cert) }, { merge: true });
 };
 
 export { db, storage }; // Export db and storage if needed directly elsewhere

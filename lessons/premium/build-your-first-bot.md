@@ -2,11 +2,12 @@
 
 **Duration:** 2-3 hours (spread over 14 days)  
 **Difficulty:** Beginner  
+**Availability:** Premium  
 **Guarantee:** Complete this project in 14 days or get a full refund!
 
 ---
 
-## 🎯 What You'll Build
+## What You'll Build
 
 By the end of this lesson, you'll have a **working Customer Service Email Bot** that:
 
@@ -20,7 +21,7 @@ By the end of this lesson, you'll have a **working Customer Service Email Bot** 
 
 ---
 
-## 📋 Prerequisites
+## Prerequisites
 
 Before starting, make sure you have:
 
@@ -59,7 +60,7 @@ No coding experience required! We'll use no-code tools to build this bot.
 4. Click **Create new secret key**
 5. Copy and save this key securely (you won't see it again!)
 
-> 💡 **Pro Tip:** Set a usage limit of $10/month to start. Customer service bots typically cost $0.01-0.05 per email processed.
+> Pro tip: Set a usage limit of $10/month to start. Customer service bots typically cost $0.01-0.05 per email processed.
 
 ### Step 1.2: Set Up Zapier
 
@@ -91,7 +92,7 @@ No coding experience required! We'll use no-code tools to build this bot.
 2. In Zapier, click **Test trigger**
 3. You should see your test email appear
 
-> ✅ **Checkpoint:** If you see your test email in Zapier, you've completed Part 2!
+> Checkpoint: If you see your test email in Zapier, you've completed Part 2.
 
 ---
 
@@ -176,7 +177,7 @@ Replace the bracketed sections with your actual business information:
    - Provided a confidence level
    - Generated an appropriate response
 
-> ✅ **Checkpoint:** If the AI generates a sensible response, you've completed Part 4!
+> Checkpoint: If the AI generates a sensible response, you've completed Part 4.
 
 ---
 
@@ -252,7 +253,7 @@ For each test:
 3. Ensure the tone is appropriate
 4. Refine your prompt if needed
 
-> 💡 **Pro Tip:** Keep a log of emails that didn't get good responses. Use these to improve your prompt.
+> Pro tip: Keep a log of emails that didn't get good responses. Use these to improve your prompt.
 
 ---
 

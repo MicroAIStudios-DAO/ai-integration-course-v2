@@ -15,18 +15,19 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
+const buildLessonContentId = (courseId, moduleId, lessonId) => `${courseId}__${moduleId}__${lessonId}`;
 
 const lessons = [
   {
     courseId: 'course_01_id',
     moduleId: 'module_01_id',
     lessonId: 'lesson_5_1_github_repository',
-    title: 'Lesson 5.1: GitHub Repository',
+    title: 'Build 5.1: GitHub Setup + Your First Module Repo',
     order: 5.1,
-    tier: 'free',
-    isFree: true,
-    durationMinutes: 45,
-    description: 'Create your GitHub account and starter repo for all module builds.',
+    tier: 'premium',
+    isFree: false,
+    durationMinutes: 30,
+    description: 'Create your GitHub account, install Git, and push your first simple practice repo with Windows, macOS, or Linux instructions.',
     markdownPath: path.join(__dirname, '..', 'lessons', 'premium', 'github-lesson-00-github-starter-repo.md'),
   },
   {
@@ -112,14 +113,18 @@ async function addLesson(lesson) {
     .doc(lesson.moduleId)
     .collection('lessons')
     .doc(lesson.lessonId);
+  const contentRef = db.collection('lessonContent').doc(
+    buildLessonContentId(lesson.courseId, lesson.moduleId, lesson.lessonId)
+  );
+  const batch = db.batch();
 
-  await lessonRef.set(
+  batch.set(
+    lessonRef,
     {
       title: lesson.title,
       order: lesson.order,
       isFree: lesson.isFree,
       tier: lesson.tier,
-      content,
       videoUrl: null,
       durationMinutes: lesson.durationMinutes,
       description: lesson.description,
@@ -129,6 +134,20 @@ async function addLesson(lesson) {
     },
     { merge: true }
   );
+  batch.set(
+    contentRef,
+    {
+      courseId: lesson.courseId,
+      moduleId: lesson.moduleId,
+      lessonId: lesson.lessonId,
+      tier: lesson.tier,
+      content,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  await batch.commit();
 
   console.log(`Added: ${lesson.title} -> courses/${lesson.courseId}/modules/${lesson.moduleId}/lessons/${lesson.lessonId}`);
 }

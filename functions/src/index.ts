@@ -28,6 +28,8 @@ export { verifyRecaptcha } from './recaptcha';
 export {
   onUserCreateV2,
   createCheckoutSessionV2,
+  getCheckoutSessionSummaryV2,
+  attachCheckoutSessionToUserV2,
   stripeWebhookV2,
   validateIdMappingV2,
   backfillStripeCustomersV2,
@@ -51,6 +53,26 @@ export { claimBetaTesterV2, redeemFoundingCodeV2, submitFeedbackV2 } from './fou
 
 // Import and export Beta Testing functions
 export { userJotToGithub, githubToUserJot, betaTesterSync } from './beta-testing';
+
+// Lead magnet capture
+export { submitLeadMagnetV2 } from './leadMagnet';
+
+// Spec §14: Billing portal — Stripe Customer Portal session creation
+export { createBillingPortalSession } from './billingPortal';
+
+// Email queue delivery
+export { processEmailQueueV2, drainPendingEmailQueueV2 } from './email';
+
+// Lifecycle email queueing
+export { queueLifecycleEmailCadenceV2 } from './emailLifecycle';
+
+// HubSpot CRM sync — mirrors leads and subscription events to HubSpot contacts
+export {
+  onLeadCreated,
+  onLeadUpdated,
+  onUserSubscriptionUpdated,
+  syncLeadToHubSpot,
+} from './hubspotSync';
 
 // export const helloWorld = onRequest((request, response) => {
 //   logger.info("Hello logs!", {structuredData: true});

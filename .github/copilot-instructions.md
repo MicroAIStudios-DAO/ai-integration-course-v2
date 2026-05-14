@@ -1,312 +1,86 @@
-# GitHub Copilot Instructions for AI Integration Course
+# Project Guidelines
 
-## Project Overview
+AI Integration Course — educational platform (React 19 + Firebase) with AI tutoring, premium subscriptions, and structured learning paths.
 
-This is the AI Integration Course platform - a comprehensive educational platform that teaches users how to integrate AI technologies into their workflows and investments. The platform combines structured learning paths with AI-powered tutoring capabilities.
+**Firebase Project ID**: `ai-integra-course-v2`
+**Production**: https://aiintegrationcourse.com
 
-### Key Features
-- **Structured Learning**: Organized courses, modules, and lessons with premium/free tiers
-- **AI Tutoring System**: Interactive AI tutor powered by OpenAI APIs with RAG (Retrieval-Augmented Generation)
-- **Premium Content**: Subscription-based access to advanced lessons and features
-- **Multi-platform**: React frontend with Firebase backend and Vercel deployment
+## Build and Test
 
-## Technology Stack & Architecture
-
-### Frontend (React + TypeScript)
-- **Framework**: React 19.1.0 with TypeScript 4.9.5
-- **Styling**: TailwindCSS with custom CSS
-- **Routing**: React Router DOM v6
-- **State Management**: React Context API for authentication
-- **Testing**: Vitest for unit tests
-- **Build Tool**: React Scripts (Create React App)
-
-### Backend & APIs
-- **Firebase**: Authentication, Firestore database, Cloud Functions
-- **Vercel Functions**: Serverless API endpoints (in `/api` directory)
-- **OpenAI Integration**: GPT models for AI tutoring with embeddings
-- **Stripe**: Payment processing for premium subscriptions
-
-### Key Directories
-```
-src/
-├── components/         # Reusable UI components
-├── pages/             # Route components and page layouts
-├── config/            # Environment and configuration
-├── context/           # React Context providers
-├── types/             # TypeScript type definitions
-├── utils/             # Utility functions
-└── styles/            # Global CSS and styling
-
-api/                   # Vercel serverless functions
-backend/               # Flask backend (alternative implementation)
-functions/             # Firebase Cloud Functions
-lessons/               # Course content (Markdown files)
-```
-
-## Critical Developer Workflows
-
-### Build & Deploy Commands
 ```bash
-# Development
-npm start              # React dev server with legacy OpenSSL provider
-npm run build          # Production build with legacy OpenSSL provider
+nvm use                            # Node 22 (.nvmrc)
+npm run install:all                # Install root + functions deps
+npm start                          # React dev server (includes --openssl-legacy-provider)
+npm run build                      # Production build via scripts/run-build.js
+npm test                           # Vitest (NOT Jest) — jsdom environment, globals enabled
 
-# Deployment (use specific commands, NOT generic firebase deploy)
-npm run deploy         # Build + deploy to Firebase hosting only
-npm run deploy:functions  # Build + deploy Firebase functions (requires functions build first)
+# Deployment — use specific commands, NOT generic `firebase deploy`
+npm run deploy                     # Build + deploy Firebase Hosting only
+npm run deploy:functions           # Build + deploy Cloud Functions
+npm run deploy:prod                # Full production: clean, install, build, deploy all
 
-# Firebase Functions (from functions/ directory)
-npm run build          # TypeScript compilation for functions
-npm run deploy         # Deploy functions only
-firebase deploy --only functions  # Alternative deploy command
+# Functions (from functions/ directory)
+cd functions && npm run build      # TypeScript → lib/
 ```
 
-### Testing
-```bash
-npm test              # Run Vitest tests (not Jest)
+## Architecture
+
+**Frontend**: Create React App + React Router v6 + TailwindCSS. NOT Next.js.
+**Backend**: Firebase Cloud Functions (TypeScript, Node 22, `us-central1`).
+**Only root React app + Cloud Functions are production-deployed.** Directories `api/`, `allie/`, `backend/` are inactive/experimental.
+
+### Key Files
+| Purpose | File |
+|---------|------|
+| All Firestore reads | `src/firebaseService.ts` |
+| Auth state (Context API) | `src/context/AuthContext.tsx` |
+| Firebase bootstrap | `src/firebase.ts` |
+| AI tutor UI | `src/components/AITutor.tsx` |
+| Cloud Functions entry | `functions/src/index.ts` |
+| Routes (~25) | `src/App.tsx` |
+| Premium access hook | `src/hooks/usePremiumAccess` |
+
+### Firestore Data Model
 ```
-
-### Environment Setup
-- **Node Version**: 20.x (specified in package.json engines)
-- **Firebase Project**: "ai-integra-course-v2" (production project ID)
-- **Multiple Firebase Codebases**: Default, "new" - check firebase.json for configuration
-
-## Architecture Patterns
-
-### Data Flow Architecture
-**Firestore Hierarchy** (critical for understanding data relationships):
+courses/{courseId}/modules/{moduleId}/lessons/{lessonId}
 ```
-courses/{courseId}/
-├── title, description, order, imageUrl
-└── modules/{moduleId}/
-    ├── title, description, order
-    └── lessons/{lessonId}/
-        ├── title, order, durationMinutes, isFree
-        ├── tier: "free"|"premium" (maps to isFree boolean in UI)
-        ├── videoUrl, markdownContentPath
-        └── content (lesson text for AI processing)
-```
+- Always query with `orderBy('order')` for consistent sorting
+- Lessons have `tier: "free"|"premium"` in Firestore → mapped to `isFree: boolean` in UI via `firebaseService.ts`
+- Keep both `tier` and `isFree` in sync when modifying lesson data
 
-**Data Fetching Pattern** (`firebaseService.ts`):
-- Always use `query(collection, orderBy('order'))` for consistent sorting
-- Nested fetches: courses → modules → lessons
-- Type normalization: `tier === 'free'` maps to `isFree` boolean
+### Cloud Functions (functions/src/)
+All exported from `index.ts` with `maxInstances: 10`. Key modules: `tutor.ts` (OpenAI streaming + RAG), `stripe.ts` (subscriptions), `founding.ts` (founding member codes), `churn.ts` (retention), `adminLessons.ts`, `email.ts`, `leadMagnet.ts`.
 
-### AI Integration Architecture
+### AI Tutor RAG Pipeline
+- Chunking: 900-char chunks, 100-char overlap
+- Embeddings: `text-embedding-3-small`
+- Streaming: Server-Sent Events
+- Model fallback: specified model → `gpt-4o-mini` → `gpt-3.5-turbo`
+- `/api/tutor` path rewrites to the `tutor` Cloud Function (configured in `firebase.json`)
 
-**RAG Implementation** (`api/tutor.ts`):
-- **Chunking**: 900-character chunks with 100-character overlap
-- **Embeddings**: text-embedding-3-small model
-- **Streaming**: Server-sent events for real-time responses
-- **Model Fallback**: Try specified models, then gpt-4o-mini, then gpt-3.5-turbo
+## Conventions
 
-**Tutor API Flow**:
-1. Vercel function proxies to Firebase Functions in production
-2. Fallback to Vercel implementation if Firebase fails
-3. Environment variable: `FIREBASE_TUTOR_URL` for production endpoint
+- **Styling**: TailwindCSS utility classes. Custom fonts: Open Sans (body), Montserrat (headings)
+- **State**: `useState` for local, Context API for global (auth/user). No Redux
+- **Env vars**: Frontend uses `REACT_APP_*` prefix; functions use Firebase secrets/params — don't mix
+- **Premium access**: Checked via `usePremiumAccess` hook — founding member OR premium OR active subscription OR trial
+- **Components**: Default-exported function components with typed Props interfaces
 
-### Authentication & Authorization
+## Gotchas
 
-**Firebase Auth Pattern** (`AuthContext.tsx`):
-- Context-based auth state management
-- Automatic auth state persistence
-- Custom claims for subscription status (not implemented in UI yet)
+- **`--openssl-legacy-provider`** is required by React Scripts on Node 18+ — already wired into `npm start` and `npm run build`
+- **Build output goes to `build/`** but Firebase Hosting serves from `public/` — `scripts/prepare-hosting.cjs` syncs them
+- **Node version mismatch**: `.nvmrc` = 22, `package.json` engines = `>=20 <21`, CI uses Node 20. Use Node 22 locally
+- **Two install targets**: `npm run install:all` handles both root and `functions/` — they have separate `node_modules`
+- **Firebase predeploy** auto-runs `npm --prefix functions run build` — ensure TypeScript compiles clean before deploy
+- **Security rules**: `firestore.rules` (active), `premium_rules.rules` (reference), `storage.rules`
 
-**Premium Access Control**:
-- Check `premium && !hasAccess` before AI tutor interactions
-- Graceful degradation with subscription prompts
+## Detailed Documentation
 
-## Component Architecture
-
-### AI Tutor Component (`src/components/AITutor.tsx`)
-- Streaming chat interface with message history
-- Premium access validation
-- Error handling for API failures
-- Auto-scroll to latest messages
-
-### Firebase Service (`src/firebaseService.ts`)
-- Centralized data access layer
-- Hierarchical data fetching (courses → modules → lessons)
-- Storage integration for lesson content
-- Progress tracking for user completion
-
-## Development Patterns & Conventions
-
-### Component Structure
-```typescript
-interface Props {
-  // Define props with clear types
-}
-
-export default function ComponentName({ prop1, prop2 }: Props) {
-  // Component logic
-  return (
-    <div className="tailwind-classes">
-      {/* JSX content */}
-    </div>
-  );
-}
-```
-
-### State Management
-- **Local State**: useState for component-level state
-- **Global State**: Context API for authentication and user data
-- **Authentication**: `AuthContext` provides user state across the app
-
-### Styling Guidelines
-- **Primary Approach**: TailwindCSS utility classes
-- **Custom Styles**: Inline styles for component-specific styling when needed
-- **Responsive Design**: Mobile-first approach with responsive breakpoints
-- **Color Scheme**: Professional blues and grays with AI-themed gradients
-
-### API Design Patterns
-
-#### Vercel Functions (`/api/*.ts`)
-- RESTful endpoints following Vercel Edge Functions pattern
-- Error handling with proper HTTP status codes
-- Environment variables for API keys
-- TypeScript interfaces for request/response
-
-#### Example API Pattern:
-```typescript
-import { VercelRequest, VercelResponse } from '@vercel/node';
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-  
-  try {
-    // API logic here
-    return res.status(200).json({ success: true, data: result });
-  } catch (error) {
-    console.error('API Error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-}
-```
-
-## Integration Points & Dependencies
-
-### OpenAI Integration
-- **API Key**: `OPENAI_API_KEY` environment variable
-- **Models**: gpt-4o-mini (primary), gpt-3.5-turbo (fallback)
-- **Embeddings**: text-embedding-3-small for semantic search
-- **Cost Optimization**: Model fallback chain to minimize costs
-
-### Firebase Integration
-- **Project ID**: ai-integra-course-v2 (production)
-- **Multiple Codebases**: Default functions + "new" codebase
-- **Emulators**: Full local development environment available
-- **Security Rules**: Custom rules in `premium_rules.rules`
-
-### Stripe Integration
-- **Environment Variables**: `STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
-- **Not Yet Implemented**: Payment flows exist but subscription logic incomplete
-
-## Content Management
-
-### Lesson Structure (`lessons/manifest.json`)
-```json
-{
-  "free": [
-    { "slug": "intro", "title": "Welcome", "path": "free/intro.md" }
-  ],
-  "premium": [
-    { "slug": "advanced", "title": "Advanced Topic", "path": "premium/advanced.md" }
-  ]
-}
-```
-
-### Markdown Content
-- Stored in `lessons/free/` and `lessons/premium/`
-- Rendered via `MarkdownPage.tsx` component
-- AI tutor uses content for RAG context
-
-## Testing & Quality Assurance
-
-### Testing Setup (`vitest.config.ts`)
-- **Environment**: jsdom for DOM testing
-- **Globals**: Vitest globals enabled
-- **Setup**: `./src/setupTests.ts`
-- **Mocking**: Firebase services mocked for testing
-
-### Build Validation
-- **Legacy OpenSSL**: Required for React Scripts compatibility
-- **TypeScript**: Strict compilation in functions directory
-- **Environment Injection**: Test environment variables properly configured
-
-## Deployment & DevOps
-
-- **Frontend**: Deployed to Vercel with automatic deployments from main branch
-- **Backend**: Firebase Functions for serverless backend
-- **Database**: Firestore for scalable NoSQL storage
-- **Hosting**: Firebase Hosting for static assets
-- **Multiple Environments**: Development (emulators) and production
-
-## Security Considerations
-
-1. **API Keys**: Never expose in frontend code (use environment variables)
-2. **Input Validation**: Sanitize all user inputs before processing
-3. **Authentication**: Verify user authentication on all protected endpoints
-4. **Rate Limiting**: Implement appropriate rate limiting for AI features
-5. **Content Security**: Validate and sanitize AI-generated content
-
-## Common Patterns to Follow
-
-### Error Handling
-```typescript
-// Always provide user-friendly error messages
-try {
-  const result = await apiCall();
-} catch (error) {
-  console.error('Detailed error for debugging:', error);
-  setError('User-friendly message here');
-}
-```
-
-### Loading States
-```typescript
-// Always show loading indicators for async operations
-const [loading, setLoading] = useState(false);
-
-const handleAsync = async () => {
-  setLoading(true);
-  try {
-    await operation();
-  } finally {
-    setLoading(false);
-  }
-};
-```
-
-### Form Handling
-```typescript
-// Use controlled components with proper validation
-const [formData, setFormData] = useState({ email: '', password: '' });
-const [errors, setErrors] = useState({});
-
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  // Validation and submission logic
-};
-```
-
-## AI-Specific Guidance
-
-When implementing AI features:
-1. **Context Management**: Always provide relevant lesson context to AI
-2. **Prompt Engineering**: Use clear, structured prompts for consistent responses
-3. **Fallback Handling**: Implement graceful degradation when AI services fail
-4. **Cost Optimization**: Monitor token usage and implement appropriate limits
-5. **User Experience**: Use streaming for real-time feedback
-
-## Key Files for Understanding Architecture
-
-- `src/firebaseService.ts` - Data access patterns and Firestore structure
-- `api/tutor.ts` - AI integration and RAG implementation
-- `src/components/AITutor.tsx` - AI tutor UI component
-- `firebase.json` - Firebase configuration and multiple codebases
-- `src/context/AuthContext.tsx` - Authentication state management
-- `lessons/manifest.json` - Content organization structure
-- `vitest.config.ts` - Testing configuration and environment setup
+Architecture deep dive → `ARCHITECTURE_REVIEW.md`
+Contribution workflow → `CONTRIBUTING.md`
+AI tutor spec → `ai_tutor_spec.md`, `AI_TUTOR_IMPLEMENTATION.md`
+Firebase optimization → `FIREBASE_OPTIMIZATION_GUIDE.md`
+Deployment procedures → `BUILD_DEPLOYMENT_GUIDE.md`, `PRODUCTION_DEPLOYMENT.md`
+Lesson content management → `LESSON_CONTENT_GUIDE.md`
+Claude Code instructions → `CLAUDE.md`

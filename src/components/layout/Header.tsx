@@ -10,7 +10,7 @@ const Header: React.FC = () => {
                <Link to="/courses" className="mr-4 hover:text-gray-300">Courses</Link>
      
           <Link to="/login" className="mr-4 hover:text-gray-300">Login</Link>
-          <Link to="/signup" className="hover:text-gray-300">Sign Up</Link>
+          <Link to="/pricing" className="hover:text-gray-300">Pricing</Link>
         </div>
       </nav>
     </header>
@@ -18,4 +18,3 @@ const Header: React.FC = () => {
 };
 
 export default Header;
-

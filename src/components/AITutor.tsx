@@ -1,5 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { trackAITutorQueried } from "../utils/analytics";
 
 type Props = {
   lessonId: string;
@@ -11,13 +13,14 @@ type Props = {
 type Message = { role: "user"|"assistant"; content: string };
 
 export default function AITutor({ lessonId, premium, hasAccess, supportEmail }: Props) {
+  const { currentUser } = useAuth();
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState<string | null>(null);
   // Remove unused error state as it's set but never displayed
   const scrollRef = useRef<HTMLDivElement>(null);
-  const tutorUrl = process.env.REACT_APP_TUTOR_URL || "https://tutor-z2yrjfoedq-uc.a.run.app";
+  const tutorUrl = import.meta.env.VITE_TUTOR_URL || "/api/tutor";
 
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
@@ -27,12 +30,22 @@ export default function AITutor({ lessonId, premium, hasAccess, supportEmail }: 
       console.error("Subscribe to access premium tutor."); 
       return; 
     }
+    const question = q.trim();
     setError(null);
     setLoading(true);
-    setMessages(m => [...m, { role: "user", content: q }]);
-    const question = q; setQ("");
+    setMessages(m => [...m, { role: "user", content: question }]);
+    setQ("");
+    trackAITutorQueried(lessonId, Boolean(premium));
     try {
-      const res = await fetch(tutorUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lessonId, question }) });
+      const idToken = currentUser ? await currentUser.getIdToken() : null;
+      const res = await fetch(tutorUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+        },
+        body: JSON.stringify({ lessonId, question })
+      });
       if (!res.ok) {
         const text = await res.text();
         throw new Error(text || `Tutor error (${res.status})`);

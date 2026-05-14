@@ -1,3 +1,6 @@
+/* eslint-disable no-undef */
+// checkout.js — legacy Stripe helper (server-side only, not bundled into React app)
+// stripe is injected at runtime via the Stripe Node.js SDK
 
 async function getAndUsePriceId(currentUser) {
     try {

@@ -70,14 +70,14 @@ const resolveRecommendation = (score: number) => {
     };
   }
 
-  return {
-    title: 'Deployment Track',
-    description:
-      'Your team is close to implementation. Use the course to pressure-test tool calling, retrieval, guardrails, and review rules so the first launch is stable instead of brittle.',
-    primaryCta: { label: 'Start Building Now', to: '/signup' },
-    secondaryCta: { label: 'Read the Gemini Guide', to: '/library/function-calling-with-gemini-1-5-pro' }
+    return {
+      title: 'Deployment Track',
+      description:
+        'Your team is close to implementation. Use the course to pressure-test tool calling, retrieval, guardrails, and review rules so the first launch is stable instead of brittle.',
+      primaryCta: { label: 'See Pricing', to: '/pricing' },
+      secondaryCta: { label: 'Read the Gemini Guide', to: '/library/function-calling-with-gemini-1-5-pro' }
+    };
   };
-};
 
 const AIReadinessQuiz: React.FC = () => {
   const [answers, setAnswers] = useState<Record<string, number>>({});

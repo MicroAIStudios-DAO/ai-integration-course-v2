@@ -15,7 +15,7 @@ const FoundingAccessFloatingButton: React.FC = () => {
           onClick={() => setOpen(true)}
           className="rounded-full bg-white/90 px-5 py-3 text-xs font-headings font-bold uppercase tracking-[0.2em] text-slate-900 shadow-lg hover:bg-white"
         >
-          Founding Access
+          Redeem Founding Code
         </button>
       </div>
       <FoundingAccessModal

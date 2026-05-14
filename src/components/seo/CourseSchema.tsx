@@ -23,16 +23,25 @@ interface CourseSchemaProps {
   providerName?: string;
   providerUrl?: string;
   courseUrl?: string;
+  pageUrl?: string;
+  pageTitle?: string;
+  pageDescription?: string;
   imageUrl?: string;
   price?: number;
   currency?: string;
   duration?: string;
   skillLevel?: 'Beginner' | 'Intermediate' | 'Advanced';
   language?: string;
+  isAccessibleForFree?: boolean;
+  breadcrumbItems?: Array<{
+    name: string;
+    item: string;
+  }>;
   modules?: Array<{
     name: string;
     description?: string;
     duration?: string;
+    url?: string;
   }>;
   faqItems?: Array<{
     question: string;
@@ -63,12 +72,17 @@ const CourseSchema: React.FC<CourseSchemaProps> = ({
   providerName = 'MicroAI Studios',
   providerUrl = 'https://aiintegrationcourse.com',
   courseUrl = 'https://aiintegrationcourse.com/courses',
+  pageUrl,
+  pageTitle,
+  pageDescription,
   imageUrl = 'https://aiintegrationcourse.com/assets/hero_background_neural_network.png/hero_background_neural_network.png',
   price,
   currency = 'USD',
   duration = 'P4W', // 4 weeks in ISO 8601 duration format
   skillLevel = 'Beginner',
   language = 'en',
+  isAccessibleForFree = false,
+  breadcrumbItems = [],
   faqItems = [],
   includeFaqSchema = false,
   videoObject,
@@ -80,6 +94,8 @@ const CourseSchema: React.FC<CourseSchemaProps> = ({
     { name: 'Advanced Integration', description: 'Build complex AI-powered systems for enterprise use cases', duration: 'P2W' },
   ]
 }) => {
+  const resolvedPageUrl = pageUrl || courseUrl;
+
   // Main Course schema
   const courseSchema = {
     '@context': 'https://schema.org',
@@ -87,6 +103,7 @@ const CourseSchema: React.FC<CourseSchemaProps> = ({
     name: courseName,
     description: courseDescription,
     url: courseUrl,
+    mainEntityOfPage: resolvedPageUrl,
     image: imageUrl,
     inLanguage: language,
     coursePrerequisites: 'No prior AI or programming experience required',
@@ -144,7 +161,7 @@ const CourseSchema: React.FC<CourseSchemaProps> = ({
     educationalCredentialAwarded: 'Certificate of Completion',
     
     // Additional metadata
-    isAccessibleForFree: false,
+    isAccessibleForFree,
     hasPart: modules.map((module, index) => ({
       '@type': 'Course',
       name: module.name,
@@ -167,7 +184,7 @@ const CourseSchema: React.FC<CourseSchemaProps> = ({
         '@type': 'Course',
         name: module.name,
         description: module.description,
-        url: `${courseUrl}#module-${index + 1}`,
+        url: module.url || `${courseUrl}#module-${index + 1}`,
       }
     }))
   };
@@ -219,6 +236,39 @@ const CourseSchema: React.FC<CourseSchemaProps> = ({
     } : {})
   } : null;
 
+  const webpageSchema = resolvedPageUrl
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: pageTitle || courseName,
+        description: pageDescription || courseDescription,
+        url: resolvedPageUrl,
+        isPartOf: {
+          '@type': 'WebSite',
+          name: providerName,
+          url: providerUrl,
+        },
+        about: {
+          '@type': 'Course',
+          name: courseName,
+          url: courseUrl,
+        },
+      }
+    : null;
+
+  const breadcrumbSchema = breadcrumbItems.length > 0
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: breadcrumbItems.map((crumb, index) => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          name: crumb.name,
+          item: crumb.item,
+        })),
+      }
+    : null;
+
   // Organization schema
   const organizationSchema = {
     '@context': 'https://schema.org',
@@ -250,6 +300,20 @@ const CourseSchema: React.FC<CourseSchemaProps> = ({
       <script type="application/ld+json">
         {JSON.stringify(itemListSchema)}
       </script>
+
+      {/* WebPage Schema */}
+      {webpageSchema && (
+        <script type="application/ld+json">
+          {JSON.stringify(webpageSchema)}
+        </script>
+      )}
+
+      {/* Breadcrumb Schema */}
+      {breadcrumbSchema && (
+        <script type="application/ld+json">
+          {JSON.stringify(breadcrumbSchema)}
+        </script>
+      )}
       
       {/* FAQ Schema */}
       {faqSchema && (

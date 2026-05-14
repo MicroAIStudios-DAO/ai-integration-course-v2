@@ -3,23 +3,30 @@ import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from '../context/AuthContext';
 
-export type SubscriptionStatus = 
-  | 'active' 
-  | 'trialing' 
-  | 'past_due' 
-  | 'canceled' 
-  | 'unpaid' 
-  | 'incomplete' 
+export type SubscriptionStatus =
+  | 'active'
+  | 'trialing'
+  | 'past_due'
+  | 'canceled'
+  | 'unpaid'
+  | 'incomplete'
   | 'incomplete_expired'
   | 'none';
 
 export type ContentTier = 'free' | 'premium';
+
+/** The user's subscription tier (set by webhook from Stripe metadata) */
+export type SubscriptionTier = 'explorer' | 'pro' | 'corporate' | 'founding' | 'none';
 
 interface PremiumAccessState {
   isPremium: boolean;
   isTrialing: boolean;
   hasAccess: boolean;
   subscriptionStatus: SubscriptionStatus;
+  /** Which plan tier the user is on */
+  subscriptionTier: SubscriptionTier;
+  /** Number of seats (1 for individual, 5 for corporate) */
+  seatCount: number;
   trialEndsAt: Date | null;
   subscriptionEndsAt: Date | null;
   loading: boolean;
@@ -46,6 +53,8 @@ export function usePremiumAccess(): PremiumAccessState & {
     isTrialing: false,
     hasAccess: false,
     subscriptionStatus: 'none',
+    subscriptionTier: 'none',
+    seatCount: 1,
     trialEndsAt: null,
     subscriptionEndsAt: null,
     loading: true,
@@ -61,6 +70,8 @@ export function usePremiumAccess(): PremiumAccessState & {
         isTrialing: false,
         hasAccess: false,
         subscriptionStatus: 'none',
+        subscriptionTier: 'none',
+        seatCount: 1,
         trialEndsAt: null,
         subscriptionEndsAt: null,
         loading: false,
@@ -71,7 +82,7 @@ export function usePremiumAccess(): PremiumAccessState & {
 
     try {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
-      
+
       if (!userDoc.exists()) {
         setState(prev => ({
           ...prev,
@@ -79,32 +90,40 @@ export function usePremiumAccess(): PremiumAccessState & {
           isTrialing: false,
           hasAccess: false,
           subscriptionStatus: 'none',
+          subscriptionTier: 'none',
+          seatCount: 1,
           loading: false,
         }));
         return;
       }
 
       const userData = userDoc.data();
-      const isPremium = userData.premium === true || userData.foundingMember === true;
+      const isPremium =
+        userData.premium === true ||
+        userData.foundingMember === true;
       const subscriptionStatus = (userData.subscriptionStatus || 'none') as SubscriptionStatus;
       const isTrialing = subscriptionStatus === 'trialing';
       const isActive = subscriptionStatus === 'active';
-      
-      // Parse dates
+
+      // Tier and seat count from webhook-persisted fields
+      const subscriptionTier: SubscriptionTier = userData.foundingMember
+        ? 'founding'
+        : (userData.subscriptionTier as SubscriptionTier) || 'none';
+      const seatCount = userData.seatCount || 1;
+
       const trialEndsAt = userData.trialEndsAt?.toDate?.() || null;
       const subscriptionEndsAt = userData.subscriptionEndsAt?.toDate?.() || null;
-      
-      // Check if trial is still valid
+
       const trialValid = isTrialing && trialEndsAt && trialEndsAt > new Date();
-      
-      // User has access if premium, active subscription, or valid trial
-      const hasAccess = isPremium || isActive || trialValid;
+      const hasAccess = isPremium || isActive;
 
       setState({
         isPremium,
         isTrialing: trialValid || false,
         hasAccess,
         subscriptionStatus,
+        subscriptionTier,
+        seatCount,
         trialEndsAt,
         subscriptionEndsAt,
         loading: false,
@@ -139,28 +158,39 @@ export function usePremiumAccess(): PremiumAccessState & {
             isTrialing: false,
             hasAccess: false,
             subscriptionStatus: 'none',
+            subscriptionTier: 'none',
+            seatCount: 1,
             loading: false,
           }));
           return;
         }
 
         const userData = snapshot.data();
-        const isPremium = userData.premium === true || userData.foundingMember === true;
+        const isPremium =
+          userData.premium === true ||
+          userData.foundingMember === true;
         const subscriptionStatus = (userData.subscriptionStatus || 'none') as SubscriptionStatus;
         const isTrialing = subscriptionStatus === 'trialing';
         const isActive = subscriptionStatus === 'active';
-        
+
+        const subscriptionTier: SubscriptionTier = userData.foundingMember
+          ? 'founding'
+          : (userData.subscriptionTier as SubscriptionTier) || 'none';
+        const seatCount = userData.seatCount || 1;
+
         const trialEndsAt = userData.trialEndsAt?.toDate?.() || null;
         const subscriptionEndsAt = userData.subscriptionEndsAt?.toDate?.() || null;
-        
-        const trialValid = isTrialing && trialEndsAt && trialEndsAt > new Date();
-        const hasAccess = isPremium || isActive || trialValid;
+
+      const trialValid = isTrialing && trialEndsAt && trialEndsAt > new Date();
+      const hasAccess = isPremium || isActive;
 
         setState({
           isPremium,
           isTrialing: trialValid || false,
           hasAccess,
           subscriptionStatus,
+          subscriptionTier,
+          seatCount,
           trialEndsAt,
           subscriptionEndsAt,
           loading: false,

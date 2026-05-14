@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { Readable } from 'stream';
 
 // Import internal helpers for unit tests
 // Note: This import points at source; in CI/deploy we rely on compiled output.
@@ -24,5 +25,19 @@ describe('tutor helpers', () => {
     expect(estTokensFromChars(400)).toBeCloseTo(100, 0);
     expect(estTokensFromChars(0)).toBe(0);
   });
-});
 
+  it('parses SSE deltas from a node stream', async () => {
+    const { streamOpenAIResponse } = __internals as any;
+    const chunks = [
+      'data: {"choices":[{"delta":{"content":"Hello"}}]}\n',
+      'data: {"choices":[{"delta":{"content":" world"}}]}\n',
+      'data: [DONE]\n',
+    ];
+    let output = '';
+    const streamed = await streamOpenAIResponse(Readable.from(chunks), (delta: string) => {
+      output += delta;
+    });
+    expect(streamed).toBe(true);
+    expect(output).toBe('Hello world');
+  });
+});
