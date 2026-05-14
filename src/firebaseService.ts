@@ -1,4 +1,4 @@
-import { collection, getDocs, doc, getDoc, setDoc, updateDoc, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, setDoc, updateDoc, query, orderBy, arrayUnion } from 'firebase/firestore';
 import { ref, getDownloadURL } from 'firebase/storage';
 import { db, app } from './firebase'; // Import from centralized firebase config
 import { getStorage } from 'firebase/storage';
@@ -288,6 +288,28 @@ export const createAdminUserProfile = async (user: User): Promise<void> => {
 export const isUserAdmin = async (userId: string): Promise<boolean> => {
   const userProfile = await getUserProfile(userId);
   return userProfile?.isAdmin === true || userProfile?.role === 'admin';
+};
+
+// --- Certification --- //
+
+export interface CertRecord {
+  certId: string;
+  courseName: string;
+  issuedAt: string; // ISO date string
+  tier: string;
+}
+
+/**
+ * Persist a generated certificate to the user's Firestore document.
+ * Uses setDoc with merge:true so it works even if the user doc is missing.
+ * Each certificate has a unique certId, so multiple calls create distinct entries.
+ */
+export const saveCertificate = async (
+  userId: string,
+  cert: CertRecord
+): Promise<void> => {
+  const userRef = doc(db, 'users', userId);
+  await setDoc(userRef, { certs: arrayUnion(cert) }, { merge: true });
 };
 
 export { db, storage }; // Export db and storage if needed directly elsewhere
