@@ -88,10 +88,10 @@ jobs:
 
       # ── 5. Install dependencies ──────────────────────────────────────────
       - name: Install root dependencies
-        run: npm ci
+        run: npm install --include=dev
 
       - name: Install Functions dependencies
-        run: npm ci --prefix functions
+        run: npm install --prefix functions --include=dev
 
       # ── 6. Build ─────────────────────────────────────────────────────────
       - name: Build Firebase Functions (TypeScript → JS)
