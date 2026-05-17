@@ -9,12 +9,20 @@ fi
 REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
 cd "$REPO_ROOT"
 
-echo "[session-start] Installing root npm dependencies..."
-npm install --no-audit --no-fund
+if [ ! -d "node_modules" ]; then
+  echo "[session-start] Installing root npm dependencies..."
+  npm ci --no-audit --no-fund
+else
+  echo "[session-start] Root dependencies already present, skipping install."
+fi
 
 if [ -f "functions/package.json" ]; then
-  echo "[session-start] Installing functions npm dependencies..."
-  npm install --prefix functions --no-audit --no-fund
+  if [ ! -d "functions/node_modules" ]; then
+    echo "[session-start] Installing functions npm dependencies..."
+    npm ci --prefix functions --no-audit --no-fund
+  else
+    echo "[session-start] Functions dependencies already present, skipping install."
+  fi
 fi
 
 echo "[session-start] Dependency install complete."
