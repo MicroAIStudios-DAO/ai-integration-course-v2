@@ -10,8 +10,8 @@ AI Integration Course — educational platform (React 19 + Firebase) with AI tut
 ```bash
 nvm use                            # Node 22 (.nvmrc)
 npm run install:all                # Install root + functions deps
-npm start                          # React dev server (includes --openssl-legacy-provider)
-npm run build                      # Production build via scripts/run-build.js
+npm run dev                        # Vite dev server
+npm run build                      # Production build via Vite
 npm test                           # Vitest (NOT Jest) — jsdom environment, globals enabled
 
 # Deployment — use specific commands, NOT generic `firebase deploy`
@@ -25,7 +25,7 @@ cd functions && npm run build      # TypeScript → lib/
 
 ## Architecture
 
-**Frontend**: Create React App + React Router v6 + TailwindCSS. NOT Next.js.
+**Frontend**: Vite + React Router v6 + TailwindCSS. NOT Next.js.
 **Backend**: Firebase Cloud Functions (TypeScript, Node 22, `us-central1`).
 **Only root React app + Cloud Functions are production-deployed.** Directories `api/`, `allie/`, `backend/` are inactive/experimental.
 
@@ -62,15 +62,14 @@ All exported from `index.ts` with `maxInstances: 10`. Key modules: `tutor.ts` (O
 
 - **Styling**: TailwindCSS utility classes. Custom fonts: Open Sans (body), Montserrat (headings)
 - **State**: `useState` for local, Context API for global (auth/user). No Redux
-- **Env vars**: Frontend uses `REACT_APP_*` prefix; functions use Firebase secrets/params — don't mix
+- **Env vars**: Frontend uses `VITE_*` prefix; functions use Firebase secrets/params — don't mix
 - **Premium access**: Checked via `usePremiumAccess` hook — founding member OR premium OR active subscription OR trial
 - **Components**: Default-exported function components with typed Props interfaces
 
 ## Gotchas
 
-- **`--openssl-legacy-provider`** is required by React Scripts on Node 18+ — already wired into `npm start` and `npm run build`
 - **Build output goes to `build/`** but Firebase Hosting serves from `public/` — `scripts/prepare-hosting.cjs` syncs them
-- **Node version mismatch**: `.nvmrc` = 22, `package.json` engines = `>=20 <21`, CI uses Node 20. Use Node 22 locally
+- **Node version mismatch**: `.nvmrc` = 22, `package.json` engines = `>=20 <23`, CI uses Node 20. Use Node 22 locally
 - **Two install targets**: `npm run install:all` handles both root and `functions/` — they have separate `node_modules`
 - **Firebase predeploy** auto-runs `npm --prefix functions run build` — ensure TypeScript compiles clean before deploy
 - **Security rules**: `firestore.rules` (active), `premium_rules.rules` (reference), `storage.rules`
