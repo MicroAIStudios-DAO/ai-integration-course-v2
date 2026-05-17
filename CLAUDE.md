@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-AI Integration Course platform — an educational web app teaching AI integration for workflows and investments. Features structured courses with free/premium tiers, an AI tutor with RAG, Stripe subscriptions, and founding member access.
+AI Integration Course platform — an educational web app teaching AI integration for workflows and investments. Features structured courses with free/premium tiers, an AI tutor with RAG, Stripe subscriptions, and a modern frontend stack.
 
 **Production**: https://aiintegrationcourse.com / https://ai-integra-course-v2.web.app
 **Firebase Project ID**: ai-integra-course-v2
@@ -13,7 +13,7 @@ AI Integration Course platform — an educational web app teaching AI integratio
 
 ```bash
 # Frontend
-npm start                    # Dev server (includes --openssl-legacy-provider)
+npm run dev                  # Vite dev server
 npm run build                # Production build
 npm test                     # Vitest (jsdom environment, globals enabled)
 npm run deploy               # Build + deploy Firebase Hosting
@@ -27,11 +27,9 @@ firebase deploy --only functions # Alternative
 nvm use                      # Node 22.22.0 (.nvmrc)
 ```
 
-**Note**: React Scripts requires `--openssl-legacy-provider` — this is already configured in package.json scripts.
-
 ## Architecture
 
-### Frontend: React 19 + TypeScript + TailwindCSS (Create React App)
+### Frontend: React 19 + TypeScript + TailwindCSS (Vite)
 
 - **Routing**: React Router v6 in `src/App.tsx` (~25 routes)
 - **Auth state**: `src/context/AuthContext.tsx` (Context API, Firebase Auth)
@@ -72,7 +70,7 @@ stripe_customers/{userId}/checkout_sessions/{sessionId}
 
 ### Security Rules
 
-`firestore.rules` enforces access control: free lessons are public-read, premium lessons require auth + active subscription/founding/beta status. `storage.rules` controls file access by path prefix (`/course_content/`, `/premium/`, `/users/{userId}/`).
+`firestore.rules` enforces access control: free lessons are public-read, premium lessons require auth + active subscription/founding/beta status. `storage.rules` controls file access by path prefix.
 
 ## Testing
 
@@ -84,7 +82,7 @@ stripe_customers/{userId}/checkout_sessions/{sessionId}
 ## Deployment
 
 - **CI/CD**: GitHub Actions in `.github/workflows/` — auto-deploy hosting on push to main, preview on PRs
-- **Frontend hosting**: Firebase Hosting (public dir: `build/`)
+- **Frontend hosting**: Firebase Hosting (public dir: `dist/` or `build/` depending on config)
 - **Functions**: Deployed separately via `npm run deploy:functions`
 - **SPA routing**: Firebase rewrites all non-asset paths to `index.html`; `/api/tutor` rewrites to the `tutor` Cloud Function
 
@@ -93,4 +91,4 @@ stripe_customers/{userId}/checkout_sessions/{sessionId}
 - **Tier detection**: `tier === 'free'` maps to `isFree` boolean in the UI — keep both in sync
 - **AI tutor streaming**: Uses Server-Sent Events; client component is `src/components/AITutor.tsx`
 - **Model fallback**: Tutor tries specified model → gpt-4o-mini → gpt-3.5-turbo
-- **Environment variables**: Frontend uses `REACT_APP_` prefix (see `.env.example`); functions use Firebase secrets
+- **Environment variables**: Frontend uses `VITE_` prefix (see `.env.example`); functions use Firebase secrets
