@@ -127,12 +127,14 @@ const WelcomePage: React.FC = () => {
         {hasPaidCohortAccess && (
           <AnnualUpsellBanner
             subscriptionTier={profile?.betaPlanKey || 'explorer'}
-            billingInterval="month"
-            subscriptionStartedAt={
-              currentUser?.metadata?.creationTime
-                ? new Date(currentUser.metadata.creationTime)
-                : null
-            }
+            billingInterval={profile?.billingInterval || 'month'}
+            subscriptionStartedAt={(() => {
+              const raw = profile?.subscriptionUpdatedAt || profile?.lastPaymentAt;
+              if (!raw) return currentUser?.metadata?.creationTime ? new Date(currentUser.metadata.creationTime) : null;
+              if (raw instanceof Date) return raw;
+              if (typeof raw === 'object' && 'toDate' in raw && typeof raw.toDate === 'function') return raw.toDate();
+              return new Date(raw as string);
+            })()}
           />
         )}
 

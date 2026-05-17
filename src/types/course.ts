@@ -69,6 +69,10 @@ export interface UserProfile {
   scholarshipAccessCode?: string;
   scholarshipAccessSource?: string;
   scholarshipGrantedAt?: Date | { toDate?: () => Date } | string | null;
+  // Subscription billing fields (written by Stripe webhook)
+  billingInterval?: 'month' | 'year';
+  subscriptionUpdatedAt?: Date | { toDate?: () => Date } | string | null;
+  lastPaymentAt?: Date | { toDate?: () => Date } | string | null;
   // Admin role fields for testing and administration
   isAdmin?: boolean; // Simple admin flag
   role?: 'user' | 'admin' | 'moderator'; // Role-based access control

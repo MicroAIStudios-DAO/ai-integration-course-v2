@@ -1,10 +1,10 @@
 name: Deploy to Production
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────
 # Triggers: every push to main (merged PRs, direct commits) + manual dispatch
 # Deploys:  Firebase Functions + Firestore rules/indexes + Hosting
 # Auth:     GCP Service Account key stored as GCP_SA_KEY GitHub Secret
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────
 on:
   push:
     branches:
@@ -46,7 +46,6 @@ jobs:
 
       # ── Build flags ──────────────────────────────────────────────────────
       CI: "true"
-      NODE_ENV: production
       SKIP_PYTHON_SETUP: "1"   # Python is set up as a separate step below
 
     steps:
@@ -89,17 +88,21 @@ jobs:
 
       # ── 5. Install dependencies ──────────────────────────────────────────
       - name: Install root dependencies
-        run: npm ci --include=dev
+        run: npm install --include=dev
 
       - name: Install Functions dependencies
-        run: npm ci --prefix functions --include=dev
+        run: npm install --prefix functions --include=dev
 
       # ── 6. Build ─────────────────────────────────────────────────────────
       - name: Build Firebase Functions (TypeScript → JS)
         run: npm --prefix functions run build
+        env:
+          NODE_ENV: production
 
       - name: Build React app (production)
         run: npm run build:production
+        env:
+          NODE_ENV: production
 
       # ── 7. Deploy ────────────────────────────────────────────────────────
       # Deploy target logic:

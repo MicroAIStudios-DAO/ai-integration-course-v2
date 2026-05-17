@@ -33,6 +33,7 @@ import AdminAddLesson from './pages/AdminAddLesson';
 import PlanSelectorPage from './pages/PlanSelectorPage';
 import CheckoutStartPage from './pages/CheckoutStartPage';
 import BillingPage from './pages/BillingPage';
+import CertificationPage from './pages/CertificationPage';
 import { initGA4, trackPageView } from './utils/analytics';
 import ExitIntentModal from './components/ExitIntentModal';
 
@@ -113,6 +114,7 @@ const App: React.FC = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/certification" element={<CertificationPage />} />
           <Route path="/payment-success" element={<PaymentSuccessPage />} />
           <Route path="/payment-cancel" element={<PaymentCancelPage />} />
           <Route path="/terms" element={<TermsOfServicePage />} />
