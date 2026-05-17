@@ -65,6 +65,7 @@ service-account-key.json
 # Credentials
 *.json
 gha-creds-*.json
+!.claude/settings.json
 
 # Credentials / secrets
 *.pem
