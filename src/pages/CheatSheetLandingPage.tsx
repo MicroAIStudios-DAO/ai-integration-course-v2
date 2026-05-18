@@ -6,15 +6,23 @@ const CheatSheetLandingPage: React.FC = () => {
   useEffect(() => {
     // Dynamically load HubSpot form script
     const script = document.createElement('script');
-    script.src = 'https://js.hsforms.net/forms/v2.js';
+        script.src = 'https://js-na2.hsforms.net/forms/embed/v2.js';
     script.async = true;
     script.onload = () => {
       if ((window as any).hbspt) {
         (window as any).hbspt.forms.create({
-          region: 'na1', // Change if your HubSpot region is different
-          portalId: 'YOUR_PORTAL_ID', // REPLACE WITH YOUR HUBSPOT PORTAL ID
-          formId: 'YOUR_FORM_ID',     // REPLACE WITH YOUR HUBSPOT FORM ID
+          region: 'na2',
+          portalId: '244842175',
+          formId: '612ba32c-1916-4460-9cfd-0b0738af5fef',
           target: '#hubspot-form-container',
+          onFormSubmit: function() {
+            if ((window as any).gtag) {
+              (window as any).gtag('event', 'cheat_sheet_download', {
+                event_category: 'lead_magnet',
+                event_label: '2026_AI_Coding_Stack_Cheat_Sheet'
+              });
+            }
+          },
         });
       }
     };
