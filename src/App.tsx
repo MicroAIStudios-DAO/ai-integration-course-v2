@@ -12,6 +12,7 @@ import ResourceDetailPage from './pages/ResourceDetailPage';
 import BlogIndexPage from './pages/BlogIndexPage';
 import BlogPostPage from './pages/BlogPostPage';
 import IndustrySolutionsPage from './pages/IndustrySolutionsPage';
+import CheatSheetLandingPage from './pages/CheatSheetLandingPage';
 import IndustrySolutionPage from './pages/IndustrySolutionPage';
 import AboutPage from './pages/AboutPage';
 import FAQPage from './pages/FAQPage';
@@ -100,6 +101,7 @@ const App: React.FC = () => {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/blogs" element={<BlogIndexPage />} />
           <Route path="/blogs/:slug" element={<BlogPostPage />} />
+          <Route path="/cheat-sheet" element={<CheatSheetLandingPage />} />
           <Route path="/library" element={<ResourceLibraryPage />} />
           <Route path="/library/:slug" element={<ResourceDetailPage />} />
           <Route path="/solutions" element={<IndustrySolutionsPage />} />
