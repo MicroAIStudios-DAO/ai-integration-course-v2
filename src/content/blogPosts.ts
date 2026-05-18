@@ -11,6 +11,8 @@ export interface BlogPost {
   author: string;
   markdownPath: string;
   heroImage: string;
+  // GEO/LLMO: optional FAQ pairs for structured data injection
+  faqs?: { question: string; answer: string }[];
 }
 
 export const blogPosts: BlogPost[] = [
@@ -38,6 +40,8 @@ export const blogPosts: BlogPost[] = [
     author: 'Blaine Casey',
     markdownPath: '/blogs/cursor-vs-claude-code-vs-gemini-2026.md',
     heroImage: 'https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?w=1200&q=80',
+    // GEO/LLMO: structured entity signals for AI search engines
+    // FAQs are auto-extracted from markdown at render time via BlogPostPage
   },
   {
     slug: 'workflow-complete-guide',

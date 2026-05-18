@@ -1,6 +1,11 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 
+interface FAQItem {
+  question: string;
+  answer: string;
+}
+
 interface SEOProps {
   title?: string;
   description?: string;
@@ -12,6 +17,9 @@ interface SEOProps {
   author?: string;
   keywords?: string[];
   noindex?: boolean;
+  readingTime?: string;
+  faqs?: FAQItem[];
+  breadcrumbs?: { name: string; url: string }[];
   course?: {
     name: string;
     description: string;
@@ -42,16 +50,19 @@ export const SEO: React.FC<SEOProps> = ({
     'Gemini API with Python',
     'AI business automation',
     'AI workflow automation',
-    'AI course for non-coders'
+    'AI course for non-coders',
   ],
   noindex = false,
-  course
+  readingTime,
+  faqs,
+  breadcrumbs,
+  course,
 }) => {
   const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} | Practical AI Automation Training`;
   const fullUrl = url ? `${BASE_URL}${url}` : BASE_URL;
   const fullImage = image.startsWith('http') ? image : `${BASE_URL}${image}`;
 
-  // JSON-LD Structured Data
+  // ── WebSite Schema ───────────────────────────────────────────────────────
   const websiteSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
@@ -61,83 +72,160 @@ export const SEO: React.FC<SEOProps> = ({
     publisher: {
       '@type': 'Organization',
       name: 'MicroAI Studios',
-      logo: {
-        '@type': 'ImageObject',
-        url: `${BASE_URL}/logo192.png`
-      }
-    }
+      logo: { '@type': 'ImageObject', url: `${BASE_URL}/logo192.png` },
+    },
+    // GEO: sameAs signals for AI search engines
+    sameAs: [
+      'https://twitter.com/aiintegrationco',
+      'https://www.linkedin.com/company/ai-integration-course',
+    ],
   };
 
-  const courseSchema = course ? {
-    '@context': 'https://schema.org',
-    '@type': 'Course',
-    name: course.name,
-    description: course.description,
-    provider: {
-      '@type': 'Organization',
-      name: course.provider,
-      sameAs: BASE_URL
-    },
-    ...(course.duration && { timeRequired: course.duration }),
-    ...(course.price && {
-      offers: {
-        '@type': 'Offer',
-        price: course.price,
-        priceCurrency: course.currency || 'USD',
-        availability: 'https://schema.org/InStock'
-      }
-    }),
-    educationalLevel: 'Beginner to Advanced',
-    teaches: keywords.slice(0, 5).join(', '),
-    inLanguage: 'en',
-    isAccessibleForFree: false,
-    hasCourseInstance: {
-      '@type': 'CourseInstance',
-      courseMode: 'online',
-      courseWorkload: course.duration || 'PT10H'
-    }
-  } : null;
+  // ── Article / BlogPosting Schema (LLMO + GEO enriched) ──────────────────
+  const articleSchema =
+    type === 'article'
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'BlogPosting',
+          headline: title,
+          description: description,
+          image: {
+            '@type': 'ImageObject',
+            url: fullImage,
+            width: 1200,
+            height: 630,
+          },
+          author: {
+            '@type': 'Person',
+            name: author,
+            url: `${BASE_URL}/about`,
+            // LLMO: explicit expertise signals
+            knowsAbout: [
+              'AI workflow automation',
+              'Cursor IDE',
+              'Claude Code',
+              'Gemini AI',
+              'AI coding tools',
+              'developer productivity',
+            ],
+          },
+          publisher: {
+            '@type': 'Organization',
+            name: SITE_NAME,
+            logo: { '@type': 'ImageObject', url: `${BASE_URL}/logo192.png` },
+          },
+          datePublished: publishedTime,
+          dateModified: modifiedTime || publishedTime,
+          mainEntityOfPage: { '@type': 'WebPage', '@id': fullUrl },
+          url: fullUrl,
+          inLanguage: 'en-US',
+          // GEO: timeRequired helps AI engines understand content depth
+          ...(readingTime && { timeRequired: readingTime }),
+          // LLMO: keywords as about entities
+          about: keywords.slice(0, 5).map((k) => ({ '@type': 'Thing', name: k })),
+          // GEO: isPartOf signals site authority to AI crawlers
+          isPartOf: {
+            '@type': 'Blog',
+            name: `${SITE_NAME} Blog`,
+            url: `${BASE_URL}/blogs`,
+          },
+        }
+      : null;
 
-  const articleSchema = type === 'article' ? {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: title,
-    description: description,
-    image: fullImage,
-    author: {
-      '@type': 'Person',
-      name: author
-    },
-    publisher: {
-      '@type': 'Organization',
-      name: SITE_NAME,
-      logo: {
-        '@type': 'ImageObject',
-        url: `${BASE_URL}/logo192.png`
+  // ── Course Schema ────────────────────────────────────────────────────────
+  const courseSchema = course
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'Course',
+        name: course.name,
+        description: course.description,
+        provider: {
+          '@type': 'Organization',
+          name: course.provider,
+          sameAs: BASE_URL,
+        },
+        ...(course.duration && { timeRequired: course.duration }),
+        ...(course.price && {
+          offers: {
+            '@type': 'Offer',
+            price: course.price,
+            priceCurrency: course.currency || 'USD',
+            availability: 'https://schema.org/InStock',
+          },
+        }),
+        educationalLevel: 'Beginner to Advanced',
+        teaches: keywords.slice(0, 5).join(', '),
+        inLanguage: 'en',
+        isAccessibleForFree: false,
+        hasCourseInstance: {
+          '@type': 'CourseInstance',
+          courseMode: 'online',
+          courseWorkload: course.duration || 'PT10H',
+        },
       }
-    },
-    datePublished: publishedTime,
-    dateModified: modifiedTime || publishedTime,
-    mainEntityOfPage: fullUrl
-  } : null;
+    : null;
+
+  // ── FAQPage Schema (GEO + LLMO: direct answers for AI snippet extraction) ─
+  const faqSchema =
+    faqs && faqs.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: faqs.map((faq) => ({
+            '@type': 'Question',
+            name: faq.question,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: faq.answer,
+            },
+          })),
+        }
+      : null;
+
+  // ── BreadcrumbList Schema (GEO: navigation context for AI engines) ────────
+  const breadcrumbSchema =
+    breadcrumbs && breadcrumbs.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: breadcrumbs.map((crumb, idx) => ({
+            '@type': 'ListItem',
+            position: idx + 1,
+            name: crumb.name,
+            item: crumb.url.startsWith('http') ? crumb.url : `${BASE_URL}${crumb.url}`,
+          })),
+        }
+      : null;
 
   return (
     <Helmet>
-      {/* Basic Meta Tags */}
+      {/* ── Basic Meta ──────────────────────────────────────────────────── */}
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
       <meta name="keywords" content={keywords.join(', ')} />
       <meta name="author" content={author} />
       <link rel="canonical" href={fullUrl} />
-      
-      {/* Robots */}
+
+      {/* ── Robots ──────────────────────────────────────────────────────── */}
       {noindex ? (
         <meta name="robots" content="noindex, nofollow" />
       ) : (
-        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+        <meta
+          name="robots"
+          content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+        />
       )}
-      
-      {/* Open Graph / Facebook */}
+
+      {/* ── GEO: Explicit signals for AI search engines ─────────────────── */}
+      <meta name="googlebot" content="index, follow" />
+      <meta name="bingbot" content="index, follow" />
+      {/* Perplexity, ChatGPT, and Gemini crawlers respect these */}
+      <meta name="ai-content-declaration" content="human-authored" />
+      <meta name="content-type" content={type === 'article' ? 'blog-post' : 'webpage'} />
+      {publishedTime && <meta name="article:published_time" content={publishedTime} />}
+      {modifiedTime && <meta name="article:modified_time" content={modifiedTime} />}
+
+      {/* ── Open Graph ──────────────────────────────────────────────────── */}
       <meta property="og:type" content={type === 'course' ? 'website' : type} />
       <meta property="og:url" content={fullUrl} />
       <meta property="og:title" content={fullTitle} />
@@ -147,38 +235,48 @@ export const SEO: React.FC<SEOProps> = ({
       <meta property="og:image:height" content="630" />
       <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:locale" content="en_US" />
-      
-      {/* Twitter */}
+
+      {/* ── Twitter / X Card ────────────────────────────────────────────── */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:url" content={fullUrl} />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={fullImage} />
       <meta name="twitter:creator" content="@aiintegrationco" />
-      
-      {/* Article specific */}
+      <meta name="twitter:site" content="@aiintegrationco" />
+
+      {/* ── Article-specific OG ─────────────────────────────────────────── */}
       {publishedTime && <meta property="article:published_time" content={publishedTime} />}
       {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
       {author && <meta property="article:author" content={author} />}
-      
-      {/* JSON-LD Structured Data */}
-      <script type="application/ld+json">
-        {JSON.stringify(websiteSchema)}
-      </script>
-      
-      {courseSchema && (
-        <script type="application/ld+json">
-          {JSON.stringify(courseSchema)}
-        </script>
-      )}
-      
+      {keywords.slice(0, 6).map((kw) => (
+        <meta key={kw} property="article:tag" content={kw} />
+      ))}
+
+      {/* ── JSON-LD: WebSite ─────────────────────────────────────────────── */}
+      <script type="application/ld+json">{JSON.stringify(websiteSchema)}</script>
+
+      {/* ── JSON-LD: Article / BlogPosting ──────────────────────────────── */}
       {articleSchema && (
-        <script type="application/ld+json">
-          {JSON.stringify(articleSchema)}
-        </script>
+        <script type="application/ld+json">{JSON.stringify(articleSchema)}</script>
       )}
-      
-      {/* PWA / Mobile */}
+
+      {/* ── JSON-LD: Course ──────────────────────────────────────────────── */}
+      {courseSchema && (
+        <script type="application/ld+json">{JSON.stringify(courseSchema)}</script>
+      )}
+
+      {/* ── JSON-LD: FAQPage (GEO + LLMO) ───────────────────────────────── */}
+      {faqSchema && (
+        <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
+      )}
+
+      {/* ── JSON-LD: BreadcrumbList ──────────────────────────────────────── */}
+      {breadcrumbSchema && (
+        <script type="application/ld+json">{JSON.stringify(breadcrumbSchema)}</script>
+      )}
+
+      {/* ── PWA / Mobile ────────────────────────────────────────────────── */}
       <meta name="theme-color" content="#1a1a2e" />
       <meta name="apple-mobile-web-app-capable" content="yes" />
       <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

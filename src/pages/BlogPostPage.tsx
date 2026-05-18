@@ -34,6 +34,58 @@ const normalizeQuotedMarkdownExport = (markdown: string): string => {
     .trim();
 };
 
+/**
+ * Extract FAQ pairs from markdown content.
+ * Looks for lines starting with "**Q:" and the following "**A:" or paragraph.
+ * Also handles the "## Frequently Asked Questions" section pattern.
+ */
+const extractFAQs = (markdown: string): { question: string; answer: string }[] => {
+  const faqs: { question: string; answer: string }[] = [];
+  // Match bold Q/A pattern: **Q: ...** and following paragraph
+  const qPattern = /\*\*Q:\s*([^*]+)\*\*/g;
+  const aPattern = /\*\*A:\s*([^*]+)\*\*/g;
+  const qMatches = [...markdown.matchAll(qPattern)];
+  const aMatches = [...markdown.matchAll(aPattern)];
+  if (qMatches.length > 0 && aMatches.length === qMatches.length) {
+    qMatches.forEach((q, i) => {
+      faqs.push({ question: q[1].trim(), answer: aMatches[i][1].trim() });
+    });
+    return faqs;
+  }
+  // Fallback: parse "**Q: ...**\n answer paragraph" pattern
+  const lines = markdown.split('\n');
+  let currentQ: string | null = null;
+  for (const line of lines) {
+    const qMatch = line.match(/^\*\*Q:\s*(.+?)\*\*\s*$/);
+    if (qMatch) {
+      currentQ = qMatch[1].trim();
+      continue;
+    }
+    if (currentQ && line.trim().length > 0 && !line.startsWith('#')) {
+      faqs.push({ question: currentQ, answer: line.trim().replace(/\*\*/g, '') });
+      currentQ = null;
+    }
+  }
+  return faqs;
+};
+
+/**
+ * Extract FAQ items from a "## Frequently Asked Questions" section.
+ * Handles the pattern: **Q: question?** followed by answer paragraph.
+ */
+const extractFAQSection = (markdown: string): { question: string; answer: string }[] => {
+  const faqSectionMatch = markdown.match(/##\s+Frequently Asked Questions\s*\n([\s\S]*?)(?=\n##|$)/i);
+  if (!faqSectionMatch) return [];
+  const section = faqSectionMatch[1];
+  const faqs: { question: string; answer: string }[] = [];
+  // Match "**Q: question?**\n\nanswer text" pattern
+  const pairs = section.matchAll(/\*\*Q:\s*([^*]+?)\*\*\s*\n+([^\n*][^\n]*)/g);
+  for (const pair of pairs) {
+    faqs.push({ question: pair[1].trim(), answer: pair[2].trim() });
+  }
+  return faqs;
+};
+
 const BlogPostPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const post = slug ? getBlogPostBySlug(slug) : undefined;
@@ -91,6 +143,16 @@ const BlogPostPage: React.FC = () => {
     );
   }
 
+  // Extract FAQs from loaded markdown for structured data
+  const faqs = markdown ? extractFAQSection(markdown) || extractFAQs(markdown) : [];
+
+  // Build breadcrumb trail
+  const breadcrumbs = [
+    { name: 'Home', url: '/' },
+    { name: 'Blog', url: '/blogs' },
+    { name: post.title, url: `/blogs/${post.slug}` },
+  ];
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <SEO
@@ -103,8 +165,24 @@ const BlogPostPage: React.FC = () => {
         modifiedTime={post.modifiedTime}
         author={post.author}
         keywords={post.keywords}
+        readingTime={post.readingTime}
+        faqs={faqs.length > 0 ? faqs : undefined}
+        breadcrumbs={breadcrumbs}
       />
-      <div className="mx-auto max-w-5xl px-4 py-14">
+
+      {/* ── Breadcrumb Nav ──────────────────────────────────────────────── */}
+      <div className="mx-auto max-w-5xl px-4 pt-6">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-slate-500">
+          <Link to="/" className="hover:text-slate-800">Home</Link>
+          <span>/</span>
+          <Link to="/blogs" className="hover:text-slate-800">Blog</Link>
+          <span>/</span>
+          <span className="text-slate-700 font-medium truncate max-w-xs">{post.title}</span>
+        </nav>
+      </div>
+
+      <div className="mx-auto max-w-5xl px-4 py-8">
+        {/* ── Hero Card ─────────────────────────────────────────────────── */}
         <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
           <img src={post.heroImage} alt={post.title} className="h-80 w-full object-cover" />
           <div className="px-6 py-8 md:px-10">
@@ -123,14 +201,44 @@ const BlogPostPage: React.FC = () => {
           </div>
         </div>
 
+        {/* ── Article Body ──────────────────────────────────────────────── */}
         <div className="mt-8 rounded-[2rem] border border-slate-200 bg-white px-4 py-8 shadow-sm md:px-8">
           {loading && <p className="text-slate-600">Loading article...</p>}
           {error && !loading && <p className="text-red-600">{error}</p>}
           {!loading && !error && (
             <article className="blog-content">
-              <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ pre: MarkdownPre }}>{markdown}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ pre: MarkdownPre }}>
+                {markdown}
+              </ReactMarkdown>
             </article>
           )}
+        </div>
+
+        {/* ── In-page CTA Banner ────────────────────────────────────────── */}
+        {!loading && !error && (
+          <div className="mt-10 rounded-[2rem] border border-cyan-200 bg-gradient-to-br from-cyan-50 to-slate-50 px-6 py-8 shadow-sm md:px-10">
+            <p className="text-xs font-semibold uppercase tracking-widest text-cyan-700">Free Resource</p>
+            <h2 className="mt-2 text-2xl font-bold text-slate-950">
+              Get the 2026 AI Coding Stack Cheat Sheet
+            </h2>
+            <p className="mt-3 max-w-2xl text-slate-700">
+              The exact Cursor + Claude Code + Gemini workflow, the prompts that get the best results from each tool,
+              and the n8n glue layer that ties it all together — delivered free to your inbox.
+            </p>
+            <Link
+              to="/pricing"
+              className="mt-6 inline-flex items-center rounded-xl bg-slate-950 px-6 py-3 font-semibold text-white hover:bg-slate-800 transition-colors"
+            >
+              Get the Free Cheat Sheet →
+            </Link>
+          </div>
+        )}
+
+        {/* ── Back to Blog ──────────────────────────────────────────────── */}
+        <div className="mt-8">
+          <Link to="/blogs" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900">
+            ← Back to all articles
+          </Link>
         </div>
       </div>
     </div>
