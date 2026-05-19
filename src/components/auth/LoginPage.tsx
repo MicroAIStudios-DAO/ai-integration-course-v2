@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getAuth, sendPasswordResetEmail } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../config/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useReCaptcha } from "../../hooks/useReCaptcha";
 import {
@@ -113,6 +115,33 @@ const LoginPage: React.FC = () => {
         navigate("/welcome", { replace: true });
         return;
       }
+
+      // --- GUARD: Never send a paying/active member back into checkout ---
+      // Check Firestore directly (auth user is now available after login)
+      const freshUser = getAuth().currentUser;
+      if (freshUser) {
+        try {
+          const userSnap = await getDoc(doc(db, 'users', freshUser.uid));
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            const alreadyHasAccess =
+              userData.premium === true ||
+              userData.foundingMember === true ||
+              userData.subscriptionStatus === 'active' ||
+              userData.subscriptionStatus === 'trialing';
+            if (alreadyHasAccess) {
+              // Member is already paid — clear any stale plan intent and go to courses
+              clearStoredPlanKey();
+              navigate("/courses", { replace: true });
+              return;
+            }
+          }
+        } catch (accessCheckError) {
+          // Non-fatal: if Firestore check fails, fall through to normal routing
+          console.warn('Access check failed, proceeding with normal routing:', accessCheckError);
+        }
+      }
+      // --- END GUARD ---
 
       if (intendedPlan) {
         storePlanKey(intendedPlan);
