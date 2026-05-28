@@ -152,9 +152,11 @@ const LoginPage: React.FC = () => {
       navigate("/courses");
     } catch (loginError: any) {
       setError(loginError?.message || "Failed to log in. Please check your credentials.");
+    } finally {
+      // Always clear the loading state — every code path (success, error, early return)
+      // must unblock the UI. Without this, early returns leave the spinner stuck.
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const helperCopy = checkoutSessionId
