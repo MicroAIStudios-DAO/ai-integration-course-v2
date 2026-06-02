@@ -60,7 +60,7 @@ const NewLandingPage: React.FC = () => {
         <div className="w-full max-w-6xl mb-12">
           <div className="relative overflow-hidden rounded-3xl border border-white/20 bg-slate-950/40 shadow-[0_20px_80px_rgba(15,23,42,0.55)]">
             <img
-              src="/assets/hero_background_neural_network.png/hero_background_neural_network.png"
+              src="/assets/hero_background_neural_network.png"
               alt="Premium AI systems and automation visual for AI Integration Course"
               className="h-[260px] w-full object-cover object-center md:h-[360px]"
               loading="eager"

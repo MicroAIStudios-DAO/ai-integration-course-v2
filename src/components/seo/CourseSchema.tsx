@@ -75,7 +75,7 @@ const CourseSchema: React.FC<CourseSchemaProps> = ({
   pageUrl,
   pageTitle,
   pageDescription,
-  imageUrl = 'https://aiintegrationcourse.com/assets/hero_background_neural_network.png/hero_background_neural_network.png',
+  imageUrl = 'https://aiintegrationcourse.com/assets/hero_background_neural_network.png',
   price,
   currency = 'USD',
   duration = 'P4W', // 4 weeks in ISO 8601 duration format

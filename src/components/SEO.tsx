@@ -31,7 +31,7 @@ interface SEOProps {
 }
 
 const BASE_URL = 'https://aiintegrationcourse.com';
-const DEFAULT_IMAGE = `${BASE_URL}/assets/hero_background_neural_network.png/hero_background_neural_network.png`;
+const DEFAULT_IMAGE = `${BASE_URL}/assets/hero_background_neural_network.png`;
 const SITE_NAME = 'AI Integration Course';
 const DEFAULT_DESCRIPTION =
   'Practical AI automation training for business owners and developers. Learn Gemini API integration, workflow automation, and real deployment patterns.';
