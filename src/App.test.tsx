@@ -2,10 +2,24 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { vi } from 'vitest';
 import App from './App';
+import { AuthProvider } from './context/AuthContext';
+import { HelmetProvider } from 'react-helmet-async';
+
+vi.mock('./context/AuthContext', () => ({
+  useAuth: () => ({
+    currentUser: null,
+    loading: false,
+    logout: vi.fn(),
+    login: vi.fn(),
+    signup: vi.fn(),
+  }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
 
 vi.mock('./components/UserJotWidget', () => ({
   UserJotWidget: () => null
 }));
+
 
 // Full analytics mock — covers all named exports and the default export object.
 // Pre-existing failure was missing trackEvent (and others); now exhaustive.
@@ -78,12 +92,30 @@ vi.mock('./pages/HomePage', () => ({
   default: () => <main>Mock Home Page</main>
 }));
 
+vi.mock('./pages/PaidTrafficLandingPage', () => ({
+  default: () => <main>Mock Paid Traffic Landing Page</main>
+}));
+
 test('renders app root route', () => {
-  render(<App />);
-  expect(screen.getByText(/Mock Home Page/i)).toBeInTheDocument();
+  render(
+    <HelmetProvider>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </HelmetProvider>
+  );
+  expect(screen.getByText(/Mock Paid Traffic Landing Page/i)).toBeInTheDocument();
 });
 
 test('renders router without crashing', () => {
-  render(<App />);
-  expect(screen.getByText(/Mock Home Page/i)).toBeInTheDocument();
+  render(
+    <HelmetProvider>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </HelmetProvider>
+  );
+  expect(screen.getByText(/Mock Paid Traffic Landing Page/i)).toBeInTheDocument();
 });
+
+

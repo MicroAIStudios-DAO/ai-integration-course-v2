@@ -34,6 +34,7 @@ function getStripe(): Stripe {
   if (!stripeInstance) {
     stripeInstance = new Stripe(secret || '', { apiVersion: '2024-06-20' });
   }
+
   return stripeInstance;
 }
 

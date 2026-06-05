@@ -319,7 +319,8 @@ function deriveLessonKey(docPath: string): string {
   return docPath.replace(/\//g, '_');
 }
 
-let usageCount = 0; // local-only counter (non-persistent)
+// let usageCount = 0; // local-only counter (non-persistent)
+
 
 export async function tutorHandler(req: any, res: any) {
   res.set('Access-Control-Allow-Origin', '*');
@@ -452,7 +453,7 @@ export async function tutorHandler(req: any, res: any) {
     res.end();
 
     // Local-only usage counter (not persisted)
-    usageCount += 1;
+    // usageCount += 1;
   } catch (e: any) {
     console.error('Tutor error:', e?.message || e);
     res.status(500).send(e?.message || 'Tutor error');

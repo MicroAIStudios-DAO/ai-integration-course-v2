@@ -204,6 +204,51 @@ const _isCorporatePlan = (planKey: string | null | undefined): boolean => planKe
 
 export { _isTrialPlan as isTrialPlan, _isCorporatePlan as isCorporatePlan };
 
+function getSubscriptionPeriodEnd(subscription: Stripe.Subscription): number {
+  if (subscription.items && subscription.items.data && subscription.items.data.length > 0) {
+    const item = subscription.items.data[0];
+    if (item && 'current_period_end' in item && typeof (item as any).current_period_end === 'number') {
+      return (item as any).current_period_end;
+    }
+  }
+  if ('current_period_end' in subscription && typeof (subscription as any).current_period_end === 'number') {
+    return (subscription as any).current_period_end;
+  }
+  return Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60; // 30 days fallback
+}
+
+function getInvoiceSubscriptionId(invoice: Stripe.Invoice): string | null {
+  const parent = (invoice as any).parent;
+  if (parent && parent.type === 'subscription_details') {
+    const subDetails = parent.subscription_details;
+    if (subDetails && subDetails.subscription) {
+      return typeof subDetails.subscription === 'string'
+        ? subDetails.subscription
+        : subDetails.subscription.id;
+    }
+  }
+  if (invoice.subscription) {
+    return typeof invoice.subscription === 'string'
+      ? invoice.subscription
+      : invoice.subscription.id;
+  }
+  return null;
+}
+
+function getInvoiceSubscriptionMetadata(invoice: Stripe.Invoice): Record<string, string> | null {
+  const parent = (invoice as any).parent;
+  if (parent && parent.type === 'subscription_details') {
+    const subDetails = parent.subscription_details;
+    if (subDetails && subDetails.metadata) {
+      return subDetails.metadata;
+    }
+  }
+  if ((invoice as any).subscription_details && (invoice as any).subscription_details.metadata) {
+    return (invoice as any).subscription_details.metadata;
+  }
+  return null;
+}
+
 function getStripe() {
   const secret = process.env.STRIPE_SECRET || STRIPE_SECRET.value();
   if (!stripe) {
@@ -211,6 +256,8 @@ function getStripe() {
   }
   return { stripe, secret };
 }
+
+
 
 async function resolveCheckoutStripePriceId(
   planKey: CheckoutPlanKey,
@@ -509,7 +556,8 @@ async function syncCheckoutSessionRecord(
   const status = subscription?.status || session.status || 'open';
   const isTrialing = status === 'trialing';
   const premiumUnlocked = isPremiumContentUnlocked(status);
-  const periodEnd = subscription ? new Date(subscription.current_period_end * 1000) : null;
+  const periodEnd = subscription ? new Date(getSubscriptionPeriodEnd(subscription) * 1000) : null;
+
   const email = normalizeEmail(session.customer_details?.email || customer?.email || existingRecordSnap.get('email'));
   const displayName =
     session.customer_details?.name || customer?.name || (existingRecordSnap.get('displayName') as string | undefined) || null;
@@ -736,7 +784,8 @@ async function updatePendingCheckoutByStripeIds(params: {
 }
 
 async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
-  let uid = deriveMetadataUid(invoice.subscription_details?.metadata || null);
+  const subscriptionMetadata = getInvoiceSubscriptionMetadata(invoice);
+  let uid = deriveMetadataUid(subscriptionMetadata || null);
   const customerId = getStripeCustomerId(invoice.customer as string | Stripe.Customer | null | undefined);
 
   if (!uid && customerId) {
@@ -748,23 +797,24 @@ async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
     }
   }
 
-  const subscriptionId = getStripeSubscriptionId(invoice.subscription as string | Stripe.Subscription | null | undefined);
+  const subscriptionId = getInvoiceSubscriptionId(invoice);
   const subscription = subscriptionId ? await getExpandedSubscription(subscriptionId) : null;
-  const planKey = safePlanKey(subscription?.metadata?.planKey || invoice.subscription_details?.metadata?.planKey);
+  const planKey = safePlanKey(subscription?.metadata?.planKey || subscriptionMetadata?.planKey);
   const plan = getPlanConfig(planKey);
-  const tier = subscription?.metadata?.tier || invoice.subscription_details?.metadata?.tier || plan.tier;
+  const tier = subscription?.metadata?.tier || subscriptionMetadata?.tier || plan.tier;
   const seatCount = resolveRequestedSeatCount(
     planKey,
     subscription?.metadata?.seatCount,
     plan.seatCount
   );
-  const periodEnd = subscription ? new Date(subscription.current_period_end * 1000) : null;
+  const periodEnd = subscription ? new Date(getSubscriptionPeriodEnd(subscription) * 1000) : null;
   const status = subscription?.status || 'active';
 
   const snapshot: CheckoutSessionSnapshot = {
-    sessionId: subscriptionId || invoice.id,
+    sessionId: subscriptionId || invoice.id || '',
     email: normalizeEmail(invoice.customer_email),
     displayName: null,
+
     planKey,
     planName: plan.name,
     status,
@@ -1021,11 +1071,11 @@ export const createCheckoutSessionV2 = onCall(
       subscription_data: subscriptionData,
       // Spec §2-F: No visible coupon field on base sessions
       allow_promotion_codes: false,
-      // Spec §2-E + §2-F: Consent collection
-      // terms_of_service: 'required' enforces ToS acceptance before payment
-      // promotions: 'auto' enables Stripe's promotional consent checkbox (US only)
+      // terms_of_service: 'required' is disabled ('none') because the Stripe Dashboard
+      // does not have a Terms of Service URL configured under public business details,
+      // which was completely breaking the payment funnel with Stripe API creation errors.
       consent_collection: {
-        terms_of_service: 'required',
+        terms_of_service: 'none',
         promotions: 'auto',
       },
       // Spec §2-C: Recovery URL — generated by Stripe only after session expires.
@@ -1418,9 +1468,12 @@ export const stripeWebhookV2 = onRequest(
         case 'invoice.payment_failed': {
           const invoice = event.data.object as Stripe.Invoice;
           const failedCustomerId = getStripeCustomerId(invoice.customer as string | Stripe.Customer | null | undefined);
-          let failedUid = invoice.subscription_details?.metadata?.firebaseUID
-            || invoice.subscription_details?.metadata?.firebase_uid
+          const subMetadata = getInvoiceSubscriptionMetadata(invoice);
+          let failedUid = subMetadata?.firebaseUID
+            || subMetadata?.firebase_uid
             || null;
+
+
           if (!failedUid && failedCustomerId) {
             failedUid = await findUidByStripeCustomerId(failedCustomerId);
           }
@@ -1607,7 +1660,7 @@ export const stripeWebhookV2 = onRequest(
 
           const planKey = safePlanKey(subscription.metadata?.planKey);
           const plan = getPlanConfig(planKey);
-          const periodEnd = new Date(subscription.current_period_end * 1000);
+          const periodEnd = new Date(getSubscriptionPeriodEnd(subscription) * 1000);
           const status = subscription.status;
           const seatCount = resolveRequestedSeatCount(
             planKey,
