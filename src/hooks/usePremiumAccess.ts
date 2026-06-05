@@ -115,7 +115,7 @@ export function usePremiumAccess(): PremiumAccessState & {
       const subscriptionEndsAt = userData.subscriptionEndsAt?.toDate?.() || null;
 
       const trialValid = isTrialing && trialEndsAt && trialEndsAt > new Date();
-      const hasAccess = isPremium || isActive;
+      const hasAccess = isPremium || isActive || trialValid;
 
       setState({
         isPremium,
@@ -182,7 +182,7 @@ export function usePremiumAccess(): PremiumAccessState & {
         const subscriptionEndsAt = userData.subscriptionEndsAt?.toDate?.() || null;
 
       const trialValid = isTrialing && trialEndsAt && trialEndsAt > new Date();
-      const hasAccess = isPremium || isActive;
+      const hasAccess = isPremium || isActive || trialValid;
 
         setState({
           isPremium,
