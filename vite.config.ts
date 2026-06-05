@@ -25,5 +25,23 @@ export default defineConfig({
   build: {
     outDir: 'build',
     sourcemap,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('firebase')) {
+              return 'firebase';
+            }
+            if (id.includes('react')) {
+              return 'react-core';
+            }
+            if (id.includes('stripe')) {
+              return 'stripe';
+            }
+            return 'vendor';
+          }
+        },
+      },
+    },
   },
 });
