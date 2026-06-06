@@ -138,29 +138,31 @@ const WelcomePage: React.FC = () => {
           />
         )}
 
-        {isPioneerTagged && !hasPaidCohortAccess && (
-          <div className="mb-8 rounded-[1.75rem] border border-amber-300/20 bg-amber-300/10 p-6 text-amber-100">
-            <p className="text-xs font-headings font-semibold uppercase tracking-[0.22em] text-amber-200">
-              Cohort Tag Saved
+        {!hasPaidCohortAccess && (
+          <div className="mb-8 rounded-[1.75rem] border border-cyan-300/20 bg-cyan-950/40 p-6 text-slate-200">
+            <p className="text-xs font-headings font-semibold uppercase tracking-[0.22em] text-cyan-400">
+              {isPioneerTagged ? "Cohort Tag Saved" : "Academic Membership Pending"}
             </p>
             <h2 className="mt-3 text-2xl font-headings font-bold text-white">
-              Complete checkout to activate paid beta access.
+              Activate your premium engineering sandbox & curriculum.
             </h2>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-amber-50/90">
-              Your <code>PIONEER</code> tag is attached to this account, but the paid beta membership is not active yet. Finish the {cohortRateLabel} checkout to unlock the dashboard, direct feedback lane, and launch-week onboarding.
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
+              {isPioneerTagged 
+                ? `Your PIONEER tag is attached to this account, but the paid beta membership is not active yet. Finish the ${cohortRateLabel} checkout to unlock the dashboard, direct feedback lane, and launch-week onboarding.`
+                : `You are currently on our free student track. Upgrade to a premium tuition plan to unlock all 50+ hours of advanced system builds, 1-on-1 AI tutor guidance, and get certified.`}
             </p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <Link
                 to="/pricing"
-                className="inline-flex items-center justify-center rounded-2xl bg-amber-300 px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-slate-950 transition-colors hover:bg-amber-200"
+                className="inline-flex items-center justify-center rounded-2xl bg-cyan-400 px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-slate-950 transition-colors hover:bg-cyan-300 shadow-lg shadow-cyan-500/20"
               >
-                Activate Founding Rate
+                {isPioneerTagged ? "Activate Founding Rate" : "View Tuition Plans"}
               </Link>
               <Link
                 to="/courses"
                 className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-white/10"
               >
-                Preview Curriculum
+                Preview Free Lessons
               </Link>
             </div>
           </div>

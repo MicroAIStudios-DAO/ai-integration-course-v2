@@ -1097,9 +1097,6 @@ export const createCheckoutSessionV2 = onCall(
         after_submit: {
           message: "You're in. Access unlocks immediately. If you don't ship your first AI workflow in 14 days, reply to any email for a full refund — no questions.",
         },
-        terms_of_service_acceptance: {
-          message: 'I agree to the [Terms of Service](https://aiintegrationcourse.com/terms) and [Privacy Policy](https://aiintegrationcourse.com/privacy).',
-        },
       },
       // Spec §6: 2-hour expiry is deliberate — shortens from Stripe's 24h default.
       // checkout.session.expired fires at T+2h, Stripe recovery URL is generated,

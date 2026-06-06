@@ -23,19 +23,39 @@ const ReCaptcha: React.FC<ReCaptchaProps> = ({ onVerify, action }) => {
   }, [onVerify, action]);
 
   useEffect(() => {
-    // Load reCAPTCHA script if not already loaded
-    if (!document.querySelector('script[src*="recaptcha/enterprise"]')) {
-      const script = document.createElement('script');
-      script.src = 'https://www.google.com/recaptcha/enterprise.js?render=' + SITE_KEY;
-      script.async = true;
-      document.head.appendChild(script);
-      
-      script.onload = () => {
-        window.grecaptcha.enterprise.ready(handleVerify);
-      };
-    } else if (window.grecaptcha) {
+    if (window.grecaptcha?.enterprise) {
       window.grecaptcha.enterprise.ready(handleVerify);
+      return;
     }
+
+    const existingScript = document.querySelector('script[src*="recaptcha/enterprise"]') as HTMLScriptElement | null;
+    if (existingScript) {
+      const handleScriptLoad = () => {
+        if (window.grecaptcha?.enterprise) {
+          window.grecaptcha.enterprise.ready(handleVerify);
+        }
+      };
+      existingScript.addEventListener('load', handleScriptLoad);
+      // Immediately check again in case it finished loading
+      if (window.grecaptcha?.enterprise) {
+        window.grecaptcha.enterprise.ready(handleVerify);
+      }
+      return;
+    }
+
+    if (!SITE_KEY) {
+      console.warn('reCAPTCHA site key is missing, skipping ReCaptcha rendering');
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://www.google.com/recaptcha/enterprise.js?render=' + SITE_KEY;
+    script.async = true;
+    document.head.appendChild(script);
+    
+    script.onload = () => {
+      window.grecaptcha.enterprise.ready(handleVerify);
+    };
   }, [handleVerify]);
 
   return null; // Invisible reCAPTCHA

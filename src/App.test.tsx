@@ -92,6 +92,10 @@ vi.mock('./pages/HomePage', () => ({
   default: () => <main>Mock Home Page</main>
 }));
 
+vi.mock('./pages/NewLandingPage', () => ({
+  default: () => <main>Mock Paid Traffic Landing Page</main>
+}));
+
 vi.mock('./pages/PaidTrafficLandingPage', () => ({
   default: () => <main>Mock Paid Traffic Landing Page</main>
 }));

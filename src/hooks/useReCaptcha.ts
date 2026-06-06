@@ -27,10 +27,30 @@ export const useReCaptcha = () => {
   const [isLoaded, setIsLoaded] = useState(false);
 
   const loadReCaptcha = useCallback(() => {
-    if (document.querySelector('script[src*="recaptcha/enterprise"]')) {
+    if (window.grecaptcha?.enterprise) {
+      setIsLoaded(true);
+      return;
+    }
+
+    const existingScript = document.querySelector('script[src*="recaptcha/enterprise"]') as HTMLScriptElement | null;
+    if (existingScript) {
+      const handleScriptLoad = () => {
+        if (window.grecaptcha?.enterprise) {
+          window.grecaptcha.enterprise.ready(() => {
+            setIsLoaded(true);
+          });
+        }
+      };
+      existingScript.addEventListener('load', handleScriptLoad);
+      // Check again immediately in case it finished loading between checks
       if (window.grecaptcha?.enterprise) {
         setIsLoaded(true);
       }
+      return;
+    }
+
+    if (!SITE_KEY) {
+      console.warn('reCAPTCHA site key is missing, skipping script load');
       return;
     }
 

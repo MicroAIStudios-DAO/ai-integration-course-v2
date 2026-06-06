@@ -75,7 +75,7 @@ const App: React.FC = () => {
       <ExitIntentWrapper />
       <Routes>
         {/* Root route is the primary onboarding funnel for direct visitors */}
-        <Route path="/" element={<PaidTrafficLandingPage />} />
+        <Route path="/" element={<NewLandingPage />} />
         {/* Preserve the legacy homepage for editorial traffic and internal links */}
         <Route path="/home" element={<HomePage />} />
         {/* NewLandingPage renders without Layout for full-screen landing page */}

@@ -33,7 +33,7 @@ const SignupPage: React.FC = () => {
 
   useEffect(() => {
     if (!checkoutSessionId) {
-      navigate("/pricing", { replace: true });
+      setLoadingSession(false);
       return;
     }
 
@@ -79,8 +79,8 @@ const SignupPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!checkoutSessionId || !email) {
-      setError("Your checkout session is missing. Please return to pricing and try again.");
+    if (!email) {
+      setError("Please enter your email address.");
       return;
     }
 
@@ -107,23 +107,35 @@ const SignupPage: React.FC = () => {
       const userCredential = await signup(email, password);
 
       await syncUserIdentityProfile(userCredential.user);
-      await attachCheckoutSessionToCurrentUser(checkoutSessionId);
+      if (checkoutSessionId) {
+        await attachCheckoutSessionToCurrentUser(checkoutSessionId);
+      }
       trackSignUp("Email");
 
       // SECONDARY conversion — account creation after checkout.
       // The PRIMARY purchase conversion fires earlier on PaymentSuccessPage.
       // Mark this action as SECONDARY in Google Ads so Smart Bidding ignores it.
       const signupConversionValue = checkoutSummary?.analyticsValue || selectedPlan?.analyticsValue || 0;
-      if (signupConversionValue > 0) {
+      if (checkoutSessionId && signupConversionValue > 0) {
         trackGoogleAdsSignupConversion(signupConversionValue, "USD");
       }
 
       clearStoredPlanKey();
-      navigate("/welcome", { replace: true });
+      
+      // If signed up without checkout, redirect to pricing to encourage purchase
+      if (!checkoutSessionId) {
+        navigate("/pricing", { replace: true });
+      } else {
+        navigate("/welcome", { replace: true });
+      }
       return;
     } catch (signupError: any) {
       if (signupError?.code === "auth/email-already-in-use") {
-        navigate(`/login?checkout_session_id=${checkoutSessionId}`, { replace: true });
+        if (checkoutSessionId) {
+          navigate(`/login?checkout_session_id=${checkoutSessionId}`, { replace: true });
+        } else {
+          navigate("/login", { replace: true });
+        }
         return;
       } else {
         setError(signupError?.message || "Failed to secure your account. Please try again.");
@@ -155,24 +167,33 @@ const SignupPage: React.FC = () => {
           <Link to="/" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">
             &larr; Home
           </Link>
-          {checkoutSessionId && (
+          {checkoutSessionId ? (
             <Link
               to={`/login?checkout_session_id=${checkoutSessionId}`}
               className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
             >
               Already have an account?
             </Link>
+          ) : (
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              Sign In
+            </Link>
           )}
         </div>
 
         <div className="text-center">
           <h2 className="text-2xl sm:text-3xl font-headings font-extrabold text-gray-900">
-            Create your login
+            {checkoutSessionId ? "Create your login" : "Join the Academy"}
           </h2>
           <p className="mt-2 text-sm text-gray-600 font-body">
-            {selectedPlan
-              ? `Checkout is complete for ${selectedPlan.name}. Create your password now so your access, progress, and billing stay on one account.`
-              : "Checkout is complete. Create your password now so your access, progress, and billing stay on one account."}
+            {checkoutSessionId
+              ? (selectedPlan
+                ? `Checkout is complete for ${selectedPlan.name}. Create your password now so your access, progress, and billing stay on one account.`
+                : "Checkout is complete. Create your password now so your access, progress, and billing stay on one account.")
+              : "Register your free student profile to immediately access 5 foundation modules, interactive sandbox components, and preview our premium curriculum."}
           </p>
         </div>
 
@@ -191,13 +212,21 @@ const SignupPage: React.FC = () => {
                   type="email"
                   autoComplete="email"
                   required
-                  readOnly
-                  className="appearance-none relative block w-full px-3 py-3 border border-gray-200 bg-gray-50 text-gray-700 rounded-md focus:outline-none sm:text-sm font-body"
+                  readOnly={!!checkoutSessionId}
+                  className={`appearance-none relative block w-full px-3 py-3 border rounded-md focus:outline-none sm:text-sm font-body ${
+                    checkoutSessionId
+                      ? "border-gray-200 bg-gray-50 text-gray-700 cursor-not-allowed"
+                      : "border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+                  }`}
                   placeholder="Email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
-                <p className="mt-2 text-xs text-gray-500">Sign-in will always use this Stripe checkout email. You can add a display name later.</p>
+                <p className="mt-2 text-xs text-gray-500">
+                  {checkoutSessionId
+                    ? "Sign-in will always use this Stripe checkout email. You can add a display name later."
+                    : "Use your primary email. No spam, no credit card required to begin free builds."}
+                </p>
               </div>
               <div className="relative">
                 <label htmlFor="password" className="sr-only">Password</label>
@@ -247,14 +276,20 @@ const SignupPage: React.FC = () => {
               disabled={loading || loadingSession}
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-headings font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 form-button"
             >
-              {loading ? "Creating your login..." : "Create Login & Open Dashboard"}
+              {loading ? "Creating your account..." : checkoutSessionId ? "Create Login & Open Dashboard" : "Create Account & Preview Courses"}
             </button>
           </form>
         )}
 
-        <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          Your payment step is already complete. This final step only creates the permanent login tied to that checkout email.
-        </div>
+        {checkoutSessionId ? (
+          <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+            Your payment step is already complete. This final step only creates the permanent login tied to that checkout email.
+          </div>
+        ) : (
+          <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+            No credit card required. You can upgrade to a premium tuition plan at any time.
+          </div>
+        )}
       </div>
     </div>
   );

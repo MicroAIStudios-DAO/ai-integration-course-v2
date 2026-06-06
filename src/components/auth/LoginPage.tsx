@@ -22,6 +22,7 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resetSuccess, setResetSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingSession, setLoadingSession] = useState(false);
   const { login } = useAuth();
@@ -88,6 +89,7 @@ const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setResetSuccess(null);
     setLoading(true);
 
     try {
@@ -255,23 +257,38 @@ const LoginPage: React.FC = () => {
               <div className="text-sm">
                 <button
                   type="button"
-                  className="font-medium text-blue-600 hover:text-blue-500 font-body bg-transparent border-none cursor-pointer p-0"
+                  disabled={loading || loadingSession}
+                  className="font-medium text-blue-600 hover:text-blue-500 font-body bg-transparent border-none cursor-pointer p-0 disabled:text-blue-300 disabled:cursor-not-allowed"
                   onClick={async () => {
+                    setError(null);
+                    setResetSuccess(null);
                     try {
                       if (!email) {
-                        setError("Enter your email above and try again.");
+                        setError("Please enter your email in the email field above first, then click 'Forgot your password?' again.");
                         return;
                       }
-                      const verification = await executeAndVerify("PASSWORD_RESET");
-                      if (!verification?.success) {
-                        setError("Security verification failed. Please try again.");
-                        return;
+                      setLoading(true);
+                      
+                      try {
+                        if (isLoaded) {
+                          const verification = await executeAndVerify("PASSWORD_RESET");
+                          if (verification !== null && !verification.success) {
+                            setError("Security verification failed. Please try again.");
+                            setLoading(false);
+                            return;
+                          }
+                        }
+                      } catch (recaptchaError) {
+                        console.warn("reCAPTCHA failed during password reset, proceeding:", recaptchaError);
                       }
+
                       const auth = getAuth();
                       await sendPasswordResetEmail(auth, email);
-                      alert("Password reset email sent. Check your inbox.");
+                      setResetSuccess(`Password reset email sent to ${email}. Check your inbox.`);
                     } catch (resetError: any) {
-                      setError(resetError?.message || "Failed to send reset email");
+                      setError(resetError?.message || "Failed to send reset email. Ensure the email is correct.");
+                    } finally {
+                      setLoading(false);
                     }
                   }}
                 >
@@ -293,8 +310,14 @@ const LoginPage: React.FC = () => {
         )}
 
         {error && (
-          <div className="rounded-md bg-red-50 p-4 mt-4">
+          <div className="rounded-md bg-red-50 p-4 mt-4 border border-red-200">
             <p className="text-sm font-medium text-red-700 font-body">{error}</p>
+          </div>
+        )}
+
+        {resetSuccess && (
+          <div className="rounded-md bg-emerald-50 p-4 mt-4 border border-emerald-200">
+            <p className="text-sm font-medium text-emerald-800 font-body">{resetSuccess}</p>
           </div>
         )}
 
