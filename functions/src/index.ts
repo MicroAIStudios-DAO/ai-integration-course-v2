@@ -18,8 +18,11 @@ setGlobalOptions({
   serviceAccount: "firebase-app-hosting-compute@ai-integra-course-v2.iam.gserviceaccount.com",
 });
 
-// Import and export the tutor function
+// Import and export the tutor function (v1 legacy — stateless RAG)
 export { tutor } from './tutor';
+
+// Import and export the AI Tutor v2.0 Adaptive Learning Engine (LangGraph + Gemini)
+export { tutorV2 } from './tutorEngine';
 
 // Import and export the reCAPTCHA verification function
 export { verifyRecaptcha } from './recaptcha';

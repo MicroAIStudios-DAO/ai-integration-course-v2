@@ -141,6 +141,14 @@ service cloud.firestore {
       match /completedLessons/{lessonId} {
         allow read, write: if isOwner(userId);
       }
+
+      // AI Tutor v2 — Conversation history (Adaptive Learning Engine)
+      match /tutorConversations/{messageId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId);
+        // No client-side updates or deletes (managed by backend)
+        allow update, delete: if isAdmin();
+      }
     }
     
     // ============================================
@@ -368,6 +376,17 @@ service cloud.firestore {
       allow create: if true;
       // Only admins can read and manage
       allow read, update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // GOVERNANCE LABS (Adaptive Learning Engine)
+    // ============================================
+
+    match /labs/{labId} {
+      // Lab configurations are readable by any authenticated user
+      allow read: if isAuthenticated();
+      // Only admins can create/update lab configurations
+      allow write: if isAdmin();
     }
 
     // ============================================
