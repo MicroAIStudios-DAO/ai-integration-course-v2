@@ -19,6 +19,7 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
+  id-token: write
 
 jobs:
   optimize:
@@ -77,11 +78,18 @@ jobs:
             echo "area=${ROT[$IDX]}" >> "$GITHUB_OUTPUT"
           fi
 
+      # --- Load the prompt template into an env var for the action's `prompt` input ---
+      - name: Load optimizer prompt
+        id: prompt
+        run: |
+          {
+            echo 'OPTIMIZER_PROMPT<<OPTIMIZER_EOF'
+            sed "s/{FOCUS_AREA}/${{ steps.focus.outputs.area }}/g" .github/optimizer-prompt.md
+            echo 'OPTIMIZER_EOF'
+          } >> "$GITHUB_ENV"
+
       - name: Run Claude optimizer
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          prompt_file: .github/optimizer-prompt.md
-          # Pass context the prompt template reads:
-          claude_args: >-
-            --append-system-prompt "FOCUS_AREA=${{ steps.focus.outputs.area }}"
+          prompt: ${{ env.OPTIMIZER_PROMPT }}
