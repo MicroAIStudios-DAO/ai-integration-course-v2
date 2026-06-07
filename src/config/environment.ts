@@ -196,7 +196,7 @@ export const config: EnvironmentConfig = createEnvironmentConfig();
 export const firebaseConfig = config.firebase;
 export const recaptchaEnterpriseSiteKey = getEnvVar(
   'VITE_RECAPTCHA_ENTERPRISE_KEY',
-  ''
+  '6LcozxAtAAAAAJIi0EfXIrDjw4OQrsvn7vmCQSWA'
 );
 export const appConfig = config.app;
 
