@@ -1,0 +1,5 @@
+28c32df refactor: transition reCAPTCHA key to VITE_RECAPTCHA_SITE_KEY and update to the new Enterprise key
+2d164ca ci(optimizer): pass Opus via --model in claude_args (top-level model input was ignored)
+84536a7 Update optimizer-prompt.md with new guidelines
+4028441 ci(optimizer): use Opus model + allow gh/git tools so agent can create issues/PRs
+df8fec7 refactor: transition reCAPTCHA key to VITE_RECAPTCHA_SITE_KEY and update to the new Enterprise key
