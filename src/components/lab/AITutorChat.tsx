@@ -80,7 +80,7 @@ export function AITutorChat({ studentProfile, currentLabState, auditFeedback }: 
     try {
       const token = await currentUser?.getIdToken();
       if (!token) {
-        throw new Error('Authentication required');
+        throw new Error('Please sign in to use the AI tutor');
       }
 
       const response = await fetch('/api/tutor-v2', {
@@ -118,9 +118,12 @@ export function AITutorChat({ studentProfile, currentLabState, auditFeedback }: 
       };
       setMessages(prev => [...prev, assistantMessage]);
 
-      while (true) {
-        const { done, value } = await reader.read();
+      let done = false;
+      while (!done) {
+        const chunkResult = await reader.read();
+        done = chunkResult.done;
         if (done) break;
+        const value = chunkResult.value;
         const chunk = decoder.decode(value, { stream: true });
         assistantContent += chunk;
         setMessages(prev => {

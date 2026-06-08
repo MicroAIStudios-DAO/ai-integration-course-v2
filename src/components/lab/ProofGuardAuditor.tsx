@@ -51,7 +51,7 @@ export function ProofGuardAuditor({
     try {
       const token = await currentUser?.getIdToken();
       if (!token) {
-        throw new Error('Authentication required');
+        throw new Error('Please sign in to use the ProofGuard attestation service');
       }
 
       const proofguardAttestUrl = import.meta.env.VITE_PROOFGUARD_ATTEST_URL || '/api/proofguard/attest';
