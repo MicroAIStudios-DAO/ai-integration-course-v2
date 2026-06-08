@@ -90,6 +90,14 @@ jobs:
 
       - name: Run Claude optimizer
         uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ github.token }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: ${{ env.OPTIMIZER_PROMPT }}
+          # Use Opus for the optimizer's analysis and code changes.
+          model: claude-opus-4-1-20250805
+          # Allow the agent to inspect the repo and to create issues / open PRs
+          # via the gh CLI and git. Without these tools it can only emit text.
+          claude_args: >-
+            --allowedTools "Bash,Read,Grep,Glob,Edit,Write,Bash(gh:*),Bash(git:*),Bash(npm:*)"
