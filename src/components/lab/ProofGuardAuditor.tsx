@@ -9,6 +9,7 @@
  */
 
 import React, { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 
 interface AttestationResult {
   cqsScore: number;
@@ -38,6 +39,7 @@ export function ProofGuardAuditor({
   studentIndustry = 'General',
   onAuditComplete,
 }: ProofGuardAuditorProps) {
+  const { currentUser } = useAuth();
   const [result, setResult] = useState<AttestationResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,9 +49,18 @@ export function ProofGuardAuditor({
     setError(null);
 
     try {
-      const response = await fetch('/api/proofguard/attest', {
+      const token = await currentUser?.getIdToken();
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+
+      const proofguardAttestUrl = import.meta.env.VITE_PROOFGUARD_ATTEST_URL || '/api/proofguard/attest';
+      const response = await fetch(proofguardAttestUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token,
+        },
         body: JSON.stringify({
           agentDefinition,
           complianceTarget,
@@ -58,7 +69,13 @@ export function ProofGuardAuditor({
       });
 
       if (!response.ok) {
-        throw new Error(`Attestation failed: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(errorText || `Attestation failed (${response.status})`);
+      }
+
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error('Attestation service unavailable');
       }
 
       const attestationResult: AttestationResult = await response.json();

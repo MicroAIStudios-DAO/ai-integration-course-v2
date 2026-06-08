@@ -10,6 +10,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { StudentProfile } from '../../types/adaptiveLearning';
+import { useAuth } from '../../context/AuthContext';
 
 interface AITutorChatProps {
   studentProfile: StudentProfile | null;
@@ -24,6 +25,7 @@ interface ChatMessage {
 }
 
 export function AITutorChat({ studentProfile, currentLabState, auditFeedback }: AITutorChatProps) {
+  const { currentUser } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
@@ -76,9 +78,17 @@ export function AITutorChat({ studentProfile, currentLabState, auditFeedback }: 
     setIsStreaming(true);
 
     try {
+      const token = await currentUser?.getIdToken();
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+
       const response = await fetch('/api/tutor-v2', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token,
+        },
         body: JSON.stringify({
           question: input,
           labTelemetry: {
@@ -88,7 +98,16 @@ export function AITutorChat({ studentProfile, currentLabState, auditFeedback }: 
         }),
       });
 
-      const reader = response.body?.getReader();
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Tutor error: ${response.status}`);
+      }
+
+      if (!response.body) {
+        throw new Error('Tutor returned no response body');
+      }
+
+      const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let assistantContent = '';
 
@@ -99,7 +118,7 @@ export function AITutorChat({ studentProfile, currentLabState, auditFeedback }: 
       };
       setMessages(prev => [...prev, assistantMessage]);
 
-      while (reader) {
+      while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         const chunk = decoder.decode(value, { stream: true });
