@@ -74,3 +74,15 @@ gha-creds-*.json
 *.pfx
 *service-account*.json
 gha-creds-*.json
+
+# Backup / editor swap / one-off migration artifacts (Repo Optimizer: dead-code)
+*.backup
+*.bak
+*.bak.*
+*.original-backup
+*.orig
+*.swp
+*.swo
+backups/
+reorg_logs/
+log_check.txt
