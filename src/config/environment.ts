@@ -103,9 +103,9 @@ const validateEnvironmentVariables = (): void => {
     throw new Error(errorMsg);
   }
 
-  if (!env.VITE_RECAPTCHA_ENTERPRISE_KEY) {
+  if (!env.VITE_RECAPTCHA_SITE_KEY) {
     console.warn(
-      'Optional environment variable VITE_RECAPTCHA_ENTERPRISE_KEY is not set. ' +
+      'Optional environment variable VITE_RECAPTCHA_SITE_KEY is not set. ' +
       'App will continue without App Check reCAPTCHA Enterprise initialization.'
     );
   }
@@ -195,7 +195,7 @@ export const config: EnvironmentConfig = createEnvironmentConfig();
 // Export individual configurations for convenience
 export const firebaseConfig = config.firebase;
 export const recaptchaEnterpriseSiteKey = getEnvVar(
-  'VITE_RECAPTCHA_ENTERPRISE_KEY',
+  'VITE_RECAPTCHA_SITE_KEY',
   '6LcozxAtAAAAAJIi0EfXIrDjw4OQrsvn7vmCQSWA'
 );
 export const appConfig = config.app;

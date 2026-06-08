@@ -30,9 +30,9 @@ if (typeof window !== "undefined") {
     } catch (error) {
       console.warn("App Check initialization skipped:", error);
     }
-  } else {
-    console.warn("App Check disabled: VITE_RECAPTCHA_ENTERPRISE_KEY is not configured.");
-  }
+    } else {
+      console.warn("App Check disabled: VITE_RECAPTCHA_SITE_KEY is not configured.");
+    }
 
   isSupported()
     .then((supported) => {

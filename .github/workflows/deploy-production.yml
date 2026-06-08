@@ -40,7 +40,7 @@ jobs:
       VITE_FIREBASE_MEASUREMENT_ID:     ${{ secrets.REACT_APP_FIREBASE_MEASUREMENT_ID }}
 
       # ── App Check / reCAPTCHA ────────────────────────────────────────────
-      VITE_RECAPTCHA_ENTERPRISE_KEY:     ${{ secrets.REACT_APP_RECAPTCHA_ENTERPRISE_KEY }}
+      VITE_RECAPTCHA_SITE_KEY:           ${{ secrets.REACT_APP_RECAPTCHA_ENTERPRISE_KEY }}
       # ── Stripe (publishable key only — secret key is a Firebase secret) ──
       VITE_STRIPE_PUBLISHABLE_KEY:       ${{ secrets.REACT_APP_STRIPE_PUBLISHABLE_KEY }}
 
