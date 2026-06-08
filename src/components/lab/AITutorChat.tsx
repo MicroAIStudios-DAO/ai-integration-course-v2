@@ -1,16 +1,19 @@
 /**
  * AITutorChat.tsx — Lab-embedded AI Tutor Chat interface
- * 
+ *
  * This is the proactive coaching interface that runs inside the GovernanceLab.
  * It receives the student's profile, current lab state, and audit feedback
  * to provide contextual, Socratic guidance.
- * 
- * Communicates with the tutorV2 backend at /api/tutor-v2 with labTelemetry context.
+ *
+ * Communicates with the tutorV2 backend at /api/tutor-v2 with:
+ * - Firebase Auth bearer token for authentication
+ * - Lab telemetry context (state, audit results, node info)
+ * - Student profile for personalized analogies
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { StudentProfile } from '../../types/adaptiveLearning';
-import { useAuth } from '../../context/AuthContext';
+import { auth } from '../../firebase';
+import type { StudentProfile } from '../../types/adaptiveLearning';
 
 interface AITutorChatProps {
   studentProfile: StudentProfile | null;
@@ -25,45 +28,59 @@ interface ChatMessage {
 }
 
 export function AITutorChat({ studentProfile, currentLabState, auditFeedback }: AITutorChatProps) {
-  const { currentUser } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const prevLabState = useRef(currentLabState);
 
   // Auto-scroll on new messages
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
-  // Proactive intervention when lab state changes
+  // Proactive intervention when lab state changes (only fire on actual transitions)
   useEffect(() => {
+    if (prevLabState.current === currentLabState) return;
+    prevLabState.current = currentLabState;
+
     if (currentLabState === 'failed' && auditFeedback) {
+      const topVuln = auditFeedback?.vulnerabilities?.[0];
       const intervention: ChatMessage = {
         role: 'assistant',
-        content: `I noticed your agent didn't pass the compliance check. The main issue: **${auditFeedback?.vulnerabilities?.[0]?.description || 'a configuration gap'}**. Let me help you fix this — what part of your Flowise flow handles the input parsing?`,
+        content: topVuln
+          ? `I noticed your agent didn't pass the compliance check. The primary issue is: **${topVuln.description}** (${topVuln.aicmControl || topVuln.category || 'governance gap'}). ${topVuln.recommendation ? `\n\nHint: ${topVuln.recommendation}` : ''}\n\nWhat part of your Flowise flow handles this?`
+          : `Your agent didn't pass this time. Let's look at what went wrong together — can you describe what your current flow does with user input?`,
         timestamp: new Date().toISOString(),
       };
       setMessages(prev => [...prev, intervention]);
     } else if (currentLabState === 'passed') {
       const praise: ChatMessage = {
         role: 'assistant',
-        content: `Excellent work! Your agent passed with a CQS score of **${auditFeedback?.cqsScore || '90+'}**. You've demonstrated mastery of this governance pattern. Ready for the next challenge?`,
+        content: `Excellent work! Your agent passed with a CQS score of **${auditFeedback?.cqsScore || '90+'}**. You've demonstrated mastery of this governance pattern. ${auditFeedback?.competencyUpdate?.unlockedNodes?.length > 0 ? `\n\nNew modules unlocked: ${auditFeedback.competencyUpdate.unlockedNodes.join(', ')}` : ''}\n\nReady for the next challenge?`,
         timestamp: new Date().toISOString(),
       };
       setMessages(prev => [...prev, praise]);
     }
   }, [currentLabState, auditFeedback]);
 
-  // Initial greeting
+  // Initial greeting (personalized based on student profile)
   useEffect(() => {
+    const industryNote = studentProfile?.industryContext
+      ? `Since you're focused on **${studentProfile.industryContext}**, I'll tailor my guidance to your domain — for example, I'll highlight compliance controls most relevant to your industry.`
+      : '';
+
     const greeting: ChatMessage = {
       role: 'assistant',
-      content: `Welcome to the Governance Lab! I'm your AI Mentor, and I'll be watching your progress as you build. ${studentProfile?.industryContext ? `Since you're focused on **${studentProfile.industryContext}**, I'll tailor my guidance to your domain.` : ''} Start building your agent in the Flowise workspace, and run the ProofGuard audit when you're ready.`,
+      content: `Welcome to the Governance Lab! I'm your AI Mentor, and I'll be watching your progress as you build. ${industryNote}\n\nStart building your agent in the Flowise workspace on the right. When you're ready, click **"Audit Agent Architecture"** to run the ProofGuard attestation. I'll help you interpret the results and fix any issues.`,
       timestamp: new Date().toISOString(),
     };
     setMessages([greeting]);
   }, []);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Send message to tutor-v2 endpoint with proper auth
+  // ─────────────────────────────────────────────────────────────────────────
 
   const sendMessage = async () => {
     if (!input.trim() || isStreaming) return;
@@ -78,36 +95,42 @@ export function AITutorChat({ studentProfile, currentLabState, auditFeedback }: 
     setIsStreaming(true);
 
     try {
-      const token = await currentUser?.getIdToken();
-      if (!token) {
-        throw new Error('Please sign in to use the AI tutor');
+      // Get the current user's ID token for authentication
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) {
+        throw new Error('Not authenticated');
       }
 
       const response = await fetch('/api/tutor-v2', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token,
+          'Authorization': `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           question: input,
+          studentProfile: studentProfile ? {
+            technicalVector: studentProfile.technicalVector,
+            industryContext: studentProfile.industryContext,
+            governancePosture: studentProfile.governancePosture,
+          } : null,
           labTelemetry: {
             currentLabState,
-            auditFeedback,
+            auditFeedback: auditFeedback ? {
+              cqsScore: auditFeedback.cqsScore,
+              passed: auditFeedback.passed,
+              vulnerabilities: auditFeedback.vulnerabilities?.slice(0, 3), // Top 3 for context
+              recommendations: auditFeedback.recommendations?.slice(0, 2),
+            } : null,
           },
         }),
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || `Tutor error: ${response.status}`);
+        throw new Error(`Tutor responded with ${response.status}`);
       }
 
-      if (!response.body) {
-        throw new Error('Tutor returned no response body');
-      }
-
-      const reader = response.body.getReader();
+      const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let assistantContent = '';
 
@@ -118,12 +141,9 @@ export function AITutorChat({ studentProfile, currentLabState, auditFeedback }: 
       };
       setMessages(prev => [...prev, assistantMessage]);
 
-      let done = false;
-      while (!done) {
-        const chunkResult = await reader.read();
-        done = chunkResult.done;
+      while (reader) {
+        const { done, value } = await reader.read();
         if (done) break;
-        const value = chunkResult.value;
         const chunk = decoder.decode(value, { stream: true });
         assistantContent += chunk;
         setMessages(prev => {
@@ -132,17 +152,23 @@ export function AITutorChat({ studentProfile, currentLabState, auditFeedback }: 
           return updated;
         });
       }
-    } catch (error) {
-      console.error('Tutor chat error:', error);
+    } catch (error: any) {
+      console.error('[AITutorChat] Error:', error);
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'I encountered an issue connecting. Please try again.',
+        content: error.message === 'Not authenticated'
+          ? 'Your session has expired. Please refresh the page to continue.'
+          : 'I encountered an issue connecting. Please try again in a moment.',
         timestamp: new Date().toISOString(),
       }]);
     } finally {
       setIsStreaming(false);
     }
   };
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Render
+  // ─────────────────────────────────────────────────────────────────────────
 
   return (
     <div className="flex flex-col h-full">

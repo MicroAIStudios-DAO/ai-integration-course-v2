@@ -149,6 +149,20 @@ service cloud.firestore {
         // No client-side updates or deletes (managed by backend)
         allow update, delete: if isAdmin();
       }
+
+      // Attestation records — ProofGuard audit trail
+      // Students can read their own attestations; only backend can write
+      match /attestations/{attestationId} {
+        allow read: if isOwner(userId);
+        // Only backend (admin SDK via Cloud Functions) can create attestations
+        // This ensures attestation integrity — students cannot forge scores
+        allow create, update, delete: if false;
+      }
+
+      // Student diagnostic profile — stored as top-level field on user doc
+      // The studentProfile and competencyGraph fields are writable by the student
+      // during intake but protected from tampering of score-related fields
+      // (scores are only written by backend via attestAgent function)
     }
     
     // ============================================

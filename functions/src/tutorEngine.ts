@@ -450,7 +450,8 @@ async function getLessonContent(lessonPath: string): Promise<string> {
 interface TutorV2Request {
   lessonId?: string;
   question: string;
-  labTelemetry?: LabTelemetry;
+  labTelemetry?: LabTelemetry | { currentLabState?: string; auditFeedback?: any };
+  studentProfile?: Partial<StudentProfile>;
   isIntake?: boolean;
 }
 
@@ -461,10 +462,29 @@ async function tutorV2Handler(req: any, res: any): Promise<void> {
       return;
     }
 
-    const { lessonId, question, labTelemetry, isIntake } = req.body as TutorV2Request;
+    const { lessonId, question, labTelemetry: rawLabTelemetry, studentProfile: requestProfile, isIntake } = req.body as TutorV2Request;
     if (!question) {
       res.status(400).send('Missing question');
       return;
+    }
+
+    // Normalize lab telemetry: accept both canonical LabTelemetry and simplified AITutorChat format
+    let labTelemetry: LabTelemetry | null = null;
+    if (rawLabTelemetry && 'labId' in rawLabTelemetry) {
+      labTelemetry = rawLabTelemetry as LabTelemetry;
+    } else if (rawLabTelemetry && 'currentLabState' in rawLabTelemetry) {
+      // Convert simplified format from AITutorChat to LabTelemetry
+      const simplified = rawLabTelemetry as { currentLabState?: string; auditFeedback?: any };
+      labTelemetry = {
+        labId: lessonId || 'unknown',
+        proofguardAuditsPassed: simplified.auditFeedback?.passed ? 1 : 0,
+        proofguardAuditsFailed: simplified.currentLabState === 'failed' ? 1 : 0,
+        consecutiveFailures: simplified.currentLabState === 'failed' ? 1 : 0,
+        lastFailureReason: simplified.auditFeedback?.vulnerabilities?.[0]?.description || null,
+        completionTimeMs: null,
+        averageCompletionTimeMs: 45 * 60 * 1000,
+        flowiseNodesUsed: [],
+      };
     }
 
     // Extract UID from Authorization header (Firebase ID token)
@@ -502,7 +522,7 @@ async function tutorV2Handler(req: any, res: any): Promise<void> {
       currentState: 'LESSON_ASSIST',
       studentProfile,
       competencyGraph,
-      labTelemetry: labTelemetry || null,
+      labTelemetry,
       conversationHistory,
       currentLessonId: lessonId || null,
       interventionType: null,
@@ -535,7 +555,6 @@ async function tutorV2Handler(req: any, res: any): Promise<void> {
         break;
 
       case 'INTERVENTION':
-      case 'CHALLENGE_MODE':
         systemPrompt = getInterventionPrompt(
           studentProfile!,
           graphState.interventionType || 'drift',
@@ -544,7 +563,68 @@ async function tutorV2Handler(req: any, res: any): Promise<void> {
         temperature = 0.7;
         break;
 
-      case 'LAB_OBSERVATION':
+      case 'CHALLENGE_MODE': {
+        const challengeProfile = studentProfile!;
+        const challengeTelemetry = labTelemetry!;
+        systemPrompt = `You are the AI Tutor in CHALLENGE MODE.
+
+The student completed the lab significantly faster than average, indicating advanced capability.
+
+STUDENT PROFILE:
+- Technical Level: ${challengeProfile.technicalVector}
+- Industry: ${challengeProfile.industryContext}
+- Preferred Analogies: ${challengeProfile.preferredAnalogies.join(', ')}
+
+LAB STATE:
+- Lab: ${challengeTelemetry.labId}
+- Completion Time: ${challengeTelemetry.completionTimeMs ? Math.round(challengeTelemetry.completionTimeMs / 60000) + ' minutes' : 'unknown'}
+- Average Time: ${Math.round(challengeTelemetry.averageCompletionTimeMs / 60000)} minutes
+- CQS Audits Passed: ${challengeTelemetry.proofguardAuditsPassed}
+
+YOUR JOB:
+1. Congratulate them genuinely (not patronizingly).
+2. Offer a "Challenge Mode" extension — a harder variant of the current lab.
+3. Challenge ideas:
+   - "Can you make this agent self-correct using a reflection loop?"
+   - "Can you add a second governance constraint (e.g., data sovereignty) without breaking the first?"
+   - "Can you reduce the agent's token usage by 40% while maintaining the same CQS score?"
+   - "Can you implement a human-in-the-loop kill switch that activates on confidence < 0.7?"
+4. Frame it as optional but rewarding — mention credential/badge implications.
+5. Use their industry context to make the challenge relevant.`;
+        temperature = 0.8;
+        break;
+      }
+
+      case 'LAB_OBSERVATION': {
+        // Active lab session — Socratic coaching with full lab context
+        const labProfile = studentProfile!;
+        const labTelem = labTelemetry!;
+        systemPrompt = `You are the AI Tutor observing a live Governance Lab session.
+
+STUDENT PROFILE:
+- Technical Level: ${labProfile.technicalVector}
+- Industry: ${labProfile.industryContext}
+- Preferred Analogies: ${labProfile.preferredAnalogies.join(', ')}
+
+LAB STATE:
+- Lab: ${labTelem.labId}
+- Audits Passed: ${labTelem.proofguardAuditsPassed} | Failed: ${labTelem.proofguardAuditsFailed}
+- Consecutive Failures: ${labTelem.consecutiveFailures}
+- Last Failure: ${labTelem.lastFailureReason || 'None'}
+- Flowise Nodes Used: ${labTelem.flowiseNodesUsed.join(', ') || 'None yet'}
+
+RULES:
+1. Be SOCRATIC. Ask guiding questions rather than giving direct answers.
+2. Reference the specific Flowise nodes they're using when giving hints.
+3. Use analogies from their industry (${labProfile.industryContext}).
+4. If they ask "what's wrong" after a failure, point them toward the specific AICM control that was violated.
+5. Encourage iterative improvement — each audit attempt teaches something.
+6. If they've passed, congratulate and suggest an extension challenge.
+7. NEVER give the complete solution. Guide them to discover it.`;
+        temperature = 0.7;
+        break;
+      }
+
       case 'LESSON_ASSIST':
       default: {
         const lessonContent = lessonId ? await getLessonContent(lessonId) : '';

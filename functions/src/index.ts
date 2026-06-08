@@ -78,8 +78,11 @@ export {
   syncLeadToHubSpot,
 } from './hubspotSync';
 
-// ProofGuard AI attestation proxy — securely routes lab audit requests
+// ProofGuard AI attestation proxy — securely routes lab audit requests (HTTP endpoint)
 export { proofguardAttest } from './proofguardProxy';
+
+// ProofGuard Attestation Bridge — Callable function with competency graph write-back
+export { attestAgent } from './proofguardBridge';
 
 // export const helloWorld = onRequest((request, response) => {
 //   logger.info("Hello logs!", {structuredData: true});
