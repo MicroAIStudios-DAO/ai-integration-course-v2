@@ -9,7 +9,7 @@ export interface Lesson {
   videoUrl?: string;
   durationMinutes?: number;
   description?: string; // Short description or learning objectives
-  // Potentially other metadata like short description or learning objectives
+  labId?: string; // If set, this lesson has an associated Governance Lab
 }
 
 export interface Module {

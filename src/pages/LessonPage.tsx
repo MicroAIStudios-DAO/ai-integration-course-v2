@@ -20,6 +20,8 @@ import { useAuth } from "../context/AuthContext"; // For gating logic
 // Master access removed for production
 import AnimatedAvatar from "../components/layout/AnimatedAvatar"; // Import AnimatedAvatar
 import AITutor from "../components/AITutor";
+import GovernanceLabPremium from "../components/lab/GovernanceLabPremium";
+import { useAdaptiveLearning } from "../context/AdaptiveLearningContext";
 import CourseSchema from "../components/seo/CourseSchema";
 import SEO from "../components/SEO";
 import "../styles/lesson-content.css"; // Import textbook-style CSS
@@ -29,6 +31,7 @@ import { MarkdownPre } from "../components/common/CopyableCodeBlock";
 const LessonPage: React.FC = () => {
   const { courseId, moduleId, lessonId } = useParams<{ courseId: string; moduleId: string; lessonId: string }>();
   const { currentUser } = useAuth();
+  const { studentProfile } = useAdaptiveLearning();
   const navigate = useNavigate();
 
   const [lesson, setLesson] = useState<LessonType | null>(null);
@@ -373,6 +376,20 @@ The detailed content for this lesson is being prepared. Please check back soon o
                   <p className="text-sm text-slate-300 mt-2">Video is being prepared for this lesson.</p>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Governance Lab: renders full-screen split-pane if lesson has a labId */}
+          {lesson?.labId && studentProfile && (
+            <div className="my-8 rounded-xl overflow-hidden border border-purple-500/30 shadow-lg" style={{ height: '70vh' }}>
+              <GovernanceLabPremium
+                lessonId={`courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`}
+                conceptGraphNode={{
+                  nodeId: lesson.labId,
+                  title: lesson.title,
+                  description: lesson.description,
+                }}
+              />
             </div>
           )}
 

@@ -37,6 +37,10 @@
         ],
         "rewrites": [
             {
+                "source": "/api/proofguard/attest",
+                "function": "proofguardAttest"
+            },
+            {
                 "source": "/api/tutor-v2",
                 "function": "tutorV2"
             },

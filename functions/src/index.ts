@@ -74,8 +74,12 @@ export {
   onLeadCreated,
   onLeadUpdated,
   onUserSubscriptionUpdated,
+  onAttestationCreated,
   syncLeadToHubSpot,
 } from './hubspotSync';
+
+// ProofGuard AI attestation proxy — securely routes lab audit requests
+export { proofguardAttest } from './proofguardProxy';
 
 // export const helloWorld = onRequest((request, response) => {
 //   logger.info("Hello logs!", {structuredData: true});

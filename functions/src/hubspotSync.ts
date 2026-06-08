@@ -65,6 +65,12 @@ interface HubSpotContactProperties {
   last_abandoned_stripe_session?: string;
   hs_marketing_email_opt_in?: boolean;
   hs_sms_opt_in?: boolean;
+  // Governance Lab properties (AI Tutor v2.0 Adaptive Learning)
+  governance_score?: number;
+  governance_lab_status?: string;
+  labs_completed?: number;
+  highest_cqs_score?: number;
+  certification_eligible?: boolean;
 }
 
 async function upsertHubSpotContact(properties: HubSpotContactProperties): Promise<string | null> {
@@ -263,6 +269,65 @@ export const onUserSubscriptionUpdated = onDocumentUpdated('users/{userId}', asy
 
   await upsertHubSpotContact(properties);
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TRIGGER 4: Firestore users/{userId}/attestations/{attestationId} onCreate
+// → Sync governance score to HubSpot for advanced track segmentation
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const onAttestationCreated = onDocumentCreated(
+  'users/{userId}/attestations/{attestationId}',
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+    const attestation = snap.data();
+    const userId = event.params.userId;
+
+    // Get user email for HubSpot lookup
+    const userDoc = await admin.firestore().collection('users').doc(userId).get();
+    const userData = userDoc.data();
+    if (!userData?.email) {
+      console.warn(`[HubSpot] User ${userId} has no email — skipping governance sync`);
+      return;
+    }
+
+    // Calculate aggregate governance metrics
+    const attestationsSnap = await admin.firestore()
+      .collection('users')
+      .doc(userId)
+      .collection('attestations')
+      .orderBy('timestamp', 'desc')
+      .get();
+
+    const allScores = attestationsSnap.docs.map(d => d.data().cqsScore as number).filter(Boolean);
+    const passedLabs = attestationsSnap.docs.filter(d => d.data().passed === true).length;
+    const highestScore = Math.max(...allScores, 0);
+    const avgScore = allScores.length > 0
+      ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length)
+      : 0;
+
+    // Determine lab status for workflow segmentation
+    let labStatus = 'in_progress';
+    if (passedLabs >= 4) labStatus = 'certification_ready';
+    else if (passedLabs >= 2) labStatus = 'advanced_track';
+    else if (highestScore >= 90) labStatus = 'high_performer';
+
+    const properties: HubSpotContactProperties = {
+      email: userData.email as string,
+      governance_score: avgScore,
+      governance_lab_status: labStatus,
+      labs_completed: passedLabs,
+      highest_cqs_score: highestScore,
+      certification_eligible: passedLabs >= 4 && highestScore >= 95,
+    };
+
+    await upsertHubSpotContact(properties);
+    console.log(
+      `[HubSpot] Synced governance score for ${userData.email}: ` +
+      `avg=${avgScore}, highest=${highestScore}, labs=${passedLabs}, status=${labStatus}`
+    );
+  }
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // EXPORT: Callable function for manual HubSpot sync (admin use)

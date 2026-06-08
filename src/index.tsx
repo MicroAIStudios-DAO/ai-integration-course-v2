@@ -4,6 +4,7 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { AuthProvider } from './context/AuthContext';
+import { AdaptiveLearningProvider } from './context/AdaptiveLearningContext';
 import { HelmetProvider } from 'react-helmet-async';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -15,7 +16,9 @@ root.render(
     <ErrorBoundary>
       <HelmetProvider>
         <AuthProvider>
-          <App />
+          <AdaptiveLearningProvider>
+            <App />
+          </AdaptiveLearningProvider>
         </AuthProvider>
       </HelmetProvider>
     </ErrorBoundary>
