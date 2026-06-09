@@ -104,7 +104,21 @@ service cloud.firestore {
         'isSubscribed',
         'activeTrial',
         'checkoutStartedAt',
-        'checkoutAttempts'
+        'checkoutAttempts',
+        'competencyGraph',
+        'lastAttestationAt'
+      ];
+    }
+
+    // Fields that students CAN write during intake diagnostic
+    // (studentProfile is writable during onboarding but competencyGraph scores are not)
+    function allowedStudentProfileFields() {
+      return [
+        'technicalVector',
+        'industryContext',
+        'governancePosture',
+        'preferredLearningStyle',
+        'goals'
       ];
     }
 
@@ -122,9 +136,16 @@ service cloud.firestore {
         isValidEmail(request.resource.data.email) &&
         !request.resource.data.keys().hasAny(protectedAccessFields());
       
-      // Users can update their own profile (but not premium status or role)
+      // Users can update their own profile (but not premium/role/competencyGraph)
+      // competencyGraph and lastAttestationAt are ONLY writable by backend (attestAgent)
       allow update: if isOwner(userId) && 
         !request.resource.data.diff(resource.data).affectedKeys().hasAny(protectedAccessFields());
+
+      // Special rule: Allow students to write their studentProfile during intake
+      // This is a subset of the user doc that contains non-score diagnostic data
+      allow update: if isOwner(userId) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['studentProfile']) &&
+        request.resource.data.studentProfile.keys().hasOnly(allowedStudentProfileFields());
       
       // Only admins can delete users
       allow delete: if isAdmin();
@@ -160,9 +181,9 @@ service cloud.firestore {
       }
 
       // Student diagnostic profile — stored as top-level field on user doc
-      // The studentProfile and competencyGraph fields are writable by the student
-      // during intake but protected from tampering of score-related fields
-      // (scores are only written by backend via attestAgent function)
+      // studentProfile: writable by student during intake (restricted fields only)
+      // competencyGraph: NEVER writable by client — only backend attestAgent function
+      // This ensures students cannot forge their CQS scores or unlock nodes manually
     }
     
     // ============================================
