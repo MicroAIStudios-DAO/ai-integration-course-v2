@@ -74,12 +74,18 @@ export const startCheckoutForPlan = async (planKey: PlanKey, options?: { seatCou
   const createCheckoutSession = httpsCallable(functions, 'createCheckoutSessionV2');
   const attribution = getStoredAttribution();
 
+  // Fix: Pass client_reference_id (Firebase UID) when user is logged in.
+  // This gives the webhook an immediate match to the Firebase user without
+  // needing email normalization or lead_id fallback.
+  const clientReferenceId = auth.currentUser?.uid || undefined;
+
   const result = await createCheckoutSession({
     planKey,
     ...(typeof options?.seatCount === 'number' ? { seatCount: options.seatCount } : {}),
     successUrl: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&plan=${planKey}`,
     cancelUrl: `${origin}/pricing?plan=${planKey}`,
     leadId, // Passed to Stripe metadata for server-side correlation
+    ...(clientReferenceId ? { clientReferenceId } : {}), // Firebase UID for direct webhook matching
     ...attribution,
   });
 
