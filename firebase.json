@@ -41,6 +41,10 @@
                 "function": "proofguardAttest"
             },
             {
+                "source": "/api/verify/**",
+                "function": "verifyCertificate"
+            },
+            {
                 "source": "/api/tutor-v2",
                 "function": "tutorV2"
             },

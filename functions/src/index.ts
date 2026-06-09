@@ -84,6 +84,12 @@ export { proofguardAttest } from './proofguardProxy';
 // ProofGuard Attestation Bridge — Callable function with competency graph write-back
 export { attestAgent } from './proofguardBridge';
 
+// Flowise Multi-Tenant Provisioning — creates isolated workspaces for students
+export { provisionFlowiseWorkspace } from './flowiseProvisioning';
+
+// Certification — blockchain-anchored certificates with Open Badge 2.0
+export { issueCertificate, verifyCertificate } from './certification';
+
 // export const helloWorld = onRequest((request, response) => {
 //   logger.info("Hello logs!", {structuredData: true});
 //   response.send("Hello from Firebase!");

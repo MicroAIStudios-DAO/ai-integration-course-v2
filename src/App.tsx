@@ -38,6 +38,7 @@ import CertificationPage from './pages/CertificationPage';
 import IntakeDiagnostic from './pages/IntakeDiagnostic';
 import GovernanceLabPage from './pages/GovernanceLabPage';
 import DashboardPage from './pages/DashboardPage';
+import VerifyCertificatePage from './pages/VerifyCertificatePage';
 import { initGA4, trackPageView } from './utils/analytics';
 import ExitIntentModal from './components/ExitIntentModal';
 
@@ -77,6 +78,8 @@ const App: React.FC = () => {
       {/* Exit-intent modal — fires on mouse-leave, suppressed post-purchase */}
       <ExitIntentWrapper />
       <Routes>
+        {/* Public certificate verification — no auth required */}
+        <Route path="/verify/:certId" element={<VerifyCertificatePage />} />
         {/* Root route is the primary onboarding funnel for direct visitors */}
         <Route path="/" element={<NewLandingPage />} />
         {/* Preserve the legacy homepage for editorial traffic and internal links */}
