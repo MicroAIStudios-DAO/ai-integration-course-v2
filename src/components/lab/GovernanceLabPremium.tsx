@@ -49,7 +49,9 @@ export default function GovernanceLabPremium({ lessonId, conceptGraphNode }: Gov
       const proofguardAttestUrl = import.meta.env.VITE_PROOFGUARD_ATTEST_URL || '/api/proofguard/attest';
       const proofguardAttestEndpoint = new URL(proofguardAttestUrl, window.location.origin);
       if (proofguardAttestEndpoint.origin !== window.location.origin) {
-        throw new Error('ProofGuard attestation endpoint must be same-origin');
+        throw new Error(
+          `ProofGuard attestation endpoint must be same-origin. Received: ${proofguardAttestEndpoint.toString()}`
+        );
       }
 
       // Calls MicroAIStudios-DAO/proofguard-ai backend
