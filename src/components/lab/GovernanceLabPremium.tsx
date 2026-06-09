@@ -41,16 +41,31 @@ export default function GovernanceLabPremium({ lessonId, conceptGraphNode }: Gov
   const handleRunProofGuardAudit = async (flowiseExportJson?: any) => {
     setLabState('auditing');
     try {
+      const token = await currentUser?.getIdToken();
+      if (!token) {
+        throw new Error('Please sign in to use the audit feature');
+      }
+
+      const proofguardAttestUrl = import.meta.env.VITE_PROOFGUARD_ATTEST_URL || '/api/proofguard/attest';
+
       // Calls MicroAIStudios-DAO/proofguard-ai backend
-      const response = await fetch('/api/proofguard/attest', {
+      const response = await fetch(proofguardAttestUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token,
+        },
         body: JSON.stringify({
           agentDefinition: flowiseExportJson,
           complianceTarget: 'IMDA/AICM',
           studentContext: studentProfile?.industryContext || 'General' // Checks rules based on their specific industry
         })
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Attestation failed (${response.status})`);
+      }
 
       const result = await response.json();
       setAuditReport(result);
