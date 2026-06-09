@@ -30,17 +30,35 @@ This document tracks the end-to-end implementation of the "Build-and-Verify" pla
 - [x] **TODO 3.1:** Update `functions/src/hubspotSync.ts` to sync the `cqsScore` (from `labTelemetry`) to a custom property in HubSpot. *(Done: `onAttestationCreated` trigger + 5 custom properties)*
 - [x] **TODO 3.2:** Document the HubSpot Workflow configuration required to trigger an email sequence when `Governance Score > 90` (invitation to the advanced track). *(Done: `docs/HUBSPOT_GOVERNANCE_WORKFLOW.md`)*
 
-## Phase 4: Infrastructure Provisioning (Flowise)
+## Phase 4: Infrastructure Provisioning (Flowise) ✅
 
 **Goal:** Establish the pattern for provisioning isolated Flowise workspaces for students.
 
-- [ ] **TODO 4.1:** Document the cloud architecture (e.g., Railway/Render/GCP) for deploying multi-tenant Flowise instances (`https://flowise.{tenantId}.aiintegrationcourse.com`).
-- [ ] **TODO 4.2:** Create a Firebase function hook that triggers on user creation (or premium subscription) to call the infrastructure API and spin up their Flowise container.
+- [x] **TODO 4.1:** Document the cloud architecture for multi-tenant Flowise. *(Done: `docs/FLOWISE_MULTI_TENANT_ARCHITECTURE.md` — template cloning via API, not per-tenant containers)*
+- [x] **TODO 4.2:** Create `functions/src/flowiseProvisioning.ts` — Firebase Callable that clones base lab templates into isolated student workspaces on first access. *(Done: exported as `provisionFlowiseWorkspace`)*
 
-## Phase 5: Verification & Certification
+## Phase 5: Verification & Certification ✅
 
 **Goal:** Finalize the credentialing system.
 
 - [x] Create `CompetencyDashboard.tsx`.
-- [ ] **TODO 5.1:** Update the existing Certification page to pull the blockchain-anchored `attestationHash` from the student's `competencyGraph` data.
-- [ ] **TODO 5.2:** Implement Open Badge 2.0 metadata formatting in the certificate generation logic.
+- [x] **TODO 5.1:** Create `functions/src/certification.ts` with `issueCertificate` (Callable) — verifies DAG completion, calculates governance score, anchors cert hash via ProofGuard Tenon Gateway, generates Open Badge 2.0 assertion. *(Done)*
+- [x] **TODO 5.2:** Create `verifyCertificate` (HTTP) — public endpoint for third-party verification at `/api/verify/:certId`. *(Done)*
+- [x] **TODO 5.3:** Create `src/pages/VerifyCertificatePage.tsx` — public verification UI with competency display, governance score, and blockchain proof. Route: `/verify/:certId`. *(Done)*
+- [x] **TODO 5.4:** Open Badge 2.0 JSON-LD assertion embedded in `certification.ts` — includes hashed recipient, badge criteria, issuer metadata, and evidence links. *(Done)*
+
+---
+
+## Remaining Configuration (Manual Steps)
+
+The following items require manual configuration in external services:
+
+- [ ] **ENV:** Set `FLOWISE_API_URL` and `FLOWISE_API_KEY` in Firebase Functions config
+- [ ] **ENV:** Set `PROOFGUARD_API_URL` and `PROOFGUARD_SERVICE_KEY` in Firebase Functions config
+- [ ] **ENV:** Set `GEMINI_API_KEY` in Firebase Functions config (for tutorEngine.ts)
+- [ ] **Flowise:** Deploy Flowise instance and create base lab templates (get template IDs)
+- [ ] **Firestore:** Run `node scripts/seed-labs.js` to populate labs collection
+- [ ] **Firestore:** Run `node scripts/bootstrap-adaptive-learning.js` for existing users
+- [ ] **HubSpot:** Create custom properties: `governance_score`, `governance_lab_status`, `attestation_count`, `last_attestation_date`, `governance_track`
+- [ ] **HubSpot:** Create workflow: "Governance Score > 90 → Advanced Track Invitation"
+- [ ] **Badge Image:** Create and upload `/badges/authentic-ai-agent-badge.png`
