@@ -8,7 +8,7 @@
  * Endpoint: /api/proofguard/attest
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
 interface AttestationResult {
@@ -44,49 +44,65 @@ export function ProofGuardAuditor({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const runAttestation = async () => {
-    setLoading(true);
-    setError(null);
+  useEffect(() => {
+    let cancelled = false;
 
-    try {
-      const token = await currentUser?.getIdToken();
-      if (!token) {
-        throw new Error('Please sign in to use the ProofGuard attestation service');
+    const runAttestation = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const token = await currentUser?.getIdToken();
+        if (!token) {
+          throw new Error('Please sign in to use the ProofGuard attestation service');
+        }
+
+        const proofguardAttestUrl = import.meta.env.VITE_PROOFGUARD_ATTEST_URL || '/api/proofguard/attest';
+        const response = await fetch(proofguardAttestUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token,
+          },
+          body: JSON.stringify({
+            agentDefinition,
+            complianceTarget,
+            studentContext: studentIndustry,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || `Attestation failed (${response.status})`);
+        }
+
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          throw new Error('Attestation service unavailable');
+        }
+
+        const attestationResult: AttestationResult = await response.json();
+        if (!cancelled) {
+          setResult(attestationResult);
+          onAuditComplete?.(attestationResult);
+        }
+      } catch (err: any) {
+        if (!cancelled) {
+          setError(err.message || 'Attestation service unavailable');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
+    };
 
-      const proofguardAttestUrl = import.meta.env.VITE_PROOFGUARD_ATTEST_URL || '/api/proofguard/attest';
-      const response = await fetch(proofguardAttestUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token,
-        },
-        body: JSON.stringify({
-          agentDefinition,
-          complianceTarget,
-          studentContext: studentIndustry,
-        }),
-      });
+    void runAttestation();
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || `Attestation failed (${response.status})`);
-      }
-
-      const contentType = response.headers.get('content-type') || '';
-      if (!contentType.includes('application/json')) {
-        throw new Error('Attestation service unavailable');
-      }
-
-      const attestationResult: AttestationResult = await response.json();
-      setResult(attestationResult);
-      onAuditComplete?.(attestationResult);
-    } catch (err: any) {
-      setError(err.message || 'Attestation service unavailable');
-    } finally {
-      setLoading(false);
-    }
-  };
+    return () => {
+      cancelled = true;
+    };
+  }, [agentDefinition, complianceTarget, currentUser?.uid, onAuditComplete, studentIndustry]);
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -101,6 +117,12 @@ export function ProofGuardAuditor({
   return (
     <div className="space-y-4">
       {/* CQS Score Display */}
+      {loading && (
+        <div className="rounded-lg border border-blue-800 bg-blue-900/20 p-3">
+          <p className="text-sm text-blue-300">Running attestation...</p>
+        </div>
+      )}
+
       {result && (
         <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-4">
           <div className="flex items-center justify-between mb-3">
