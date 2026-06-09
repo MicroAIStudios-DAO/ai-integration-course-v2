@@ -2,6 +2,7 @@ import { signOut } from 'firebase/auth';
 import { httpsCallable } from 'firebase/functions';
 import { auth, functions } from '../config/firebase';
 import type { PlanKey } from '../config/pricing';
+import { generateLeadId, storeLeadId, getStoredLeadId, clearLeadData } from './leadId';
 
 const INTENDED_PLAN_STORAGE_KEY = 'intended_plan';
 
@@ -63,6 +64,12 @@ export const startCheckoutForPlan = async (planKey: PlanKey, options?: { seatCou
     await auth.currentUser.getIdToken();
   }
 
+  // Fix 2: Generate and store a lead_id before redirecting to Stripe.
+  // This creates a hard link between the browser session and the Stripe checkout,
+  // bypassing email matching entirely when the user returns to create an account.
+  const leadId = generateLeadId();
+  storeLeadId(leadId);
+
   const origin = window.location.origin;
   const createCheckoutSession = httpsCallable(functions, 'createCheckoutSessionV2');
   const attribution = getStoredAttribution();
@@ -72,6 +79,7 @@ export const startCheckoutForPlan = async (planKey: PlanKey, options?: { seatCou
     ...(typeof options?.seatCount === 'number' ? { seatCount: options.seatCount } : {}),
     successUrl: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&plan=${planKey}`,
     cancelUrl: `${origin}/pricing?plan=${planKey}`,
+    leadId, // Passed to Stripe metadata for server-side correlation
     ...attribution,
   });
 
@@ -102,7 +110,19 @@ export const attachCheckoutSessionToCurrentUser = async (
     await auth.currentUser.getIdToken(true);
   }
 
-  const attachCheckoutSessionCall = httpsCallable(functions, 'attachCheckoutSessionToUserV2');
-  const result = await attachCheckoutSessionCall({ sessionId, displayName });
+  // Fix 2 + Fix 3: Use the atomic attach function and pass lead_id if available.
+  // The atomic version wraps session attachment + premium grant in a single
+  // Firestore transaction — no partial states possible.
+  const leadId = getStoredLeadId();
+  const attachCheckoutSessionCall = httpsCallable(functions, 'attachCheckoutSessionAtomicV2');
+  const result = await attachCheckoutSessionCall({
+    sessionId,
+    displayName,
+    ...(leadId ? { leadId } : {}),
+  });
+
+  // Clear lead data after successful link
+  clearLeadData();
+
   return result.data as { success: boolean; attachedUid: string; planKey: PlanKey; status: string };
 };

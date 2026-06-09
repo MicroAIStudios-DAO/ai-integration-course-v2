@@ -90,6 +90,15 @@ export { provisionFlowiseWorkspace } from './flowiseProvisioning';
 // Certification — blockchain-anchored certificates with Open Badge 2.0
 export { issueCertificate, verifyCertificate } from './certification';
 
+// Fix 2: Guest Checkout Linker — email normalization + lead_id linking on user creation
+export { linkGuestCheckoutOnUserCreate, linkCheckoutByLeadId } from './guestCheckoutLinker';
+
+// Fix 3: Atomic Provisioning — Firestore transaction-based session attachment
+export { attachCheckoutSessionAtomicV2, verifyProvisioningState } from './atomicProvisioning';
+
+// Fix 4: Stripe Reconciliation Cron — safety net for webhook failures (runs every 6 hours)
+export { reconcileStripePayments } from './cron/reconcileStripe';
+
 // export const helloWorld = onRequest((request, response) => {
 //   logger.info("Hello logs!", {structuredData: true});
 //   response.send("Hello from Firebase!");
