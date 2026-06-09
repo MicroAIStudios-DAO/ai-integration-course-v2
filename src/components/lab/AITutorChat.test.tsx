@@ -9,12 +9,12 @@ Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
   writable: true,
 });
 
-vi.mock('../../context/AuthContext', () => ({
-  useAuth: () => ({
+vi.mock('../../firebase', () => ({
+  auth: {
     currentUser: {
       getIdToken: vi.fn().mockResolvedValue('token-123'),
     },
-  }),
+  },
 }));
 
 describe('AITutorChat', () => {
@@ -40,7 +40,7 @@ describe('AITutorChat', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await waitFor(() => {
-      expect(screen.getByText('I encountered an issue connecting. Please try again.')).toBeInTheDocument();
+      expect(screen.getByText('I encountered an issue connecting. Please try again in a moment.')).toBeInTheDocument();
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
