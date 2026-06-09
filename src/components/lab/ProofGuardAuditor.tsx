@@ -8,7 +8,7 @@
  * Endpoint: /api/proofguard/attest
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
 interface AttestationResult {
@@ -43,6 +43,19 @@ export function ProofGuardAuditor({
   const [result, setResult] = useState<AttestationResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const onAuditCompleteRef = useRef(onAuditComplete);
+  const requestBody = useMemo(
+    () => JSON.stringify({
+      agentDefinition,
+      complianceTarget,
+      studentContext: studentIndustry,
+    }),
+    [agentDefinition, complianceTarget, studentIndustry]
+  );
+
+  useEffect(() => {
+    onAuditCompleteRef.current = onAuditComplete;
+  }, [onAuditComplete]);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,11 +77,7 @@ export function ProofGuardAuditor({
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + token,
           },
-          body: JSON.stringify({
-            agentDefinition,
-            complianceTarget,
-            studentContext: studentIndustry,
-          }),
+          body: requestBody,
         });
 
         if (!response.ok) {
@@ -84,7 +93,7 @@ export function ProofGuardAuditor({
         const attestationResult: AttestationResult = await response.json();
         if (!cancelled) {
           setResult(attestationResult);
-          onAuditComplete?.(attestationResult);
+          onAuditCompleteRef.current?.(attestationResult);
         }
       } catch (err: any) {
         if (!cancelled) {
@@ -102,7 +111,7 @@ export function ProofGuardAuditor({
     return () => {
       cancelled = true;
     };
-  }, [agentDefinition, complianceTarget, currentUser?.uid, onAuditComplete, studentIndustry]);
+  }, [currentUser?.uid, requestBody]);
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
