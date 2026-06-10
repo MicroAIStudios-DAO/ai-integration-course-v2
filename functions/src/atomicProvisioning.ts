@@ -16,7 +16,6 @@
 import admin from 'firebase-admin';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
-import Stripe from 'stripe';
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -80,11 +79,8 @@ export const attachCheckoutSessionAtomicV2 = onCall(
       const userRef = db.collection('users').doc(uid);
       const subscriptionRef = db.collection('users').doc(uid).collection('subscriptions').doc('current');
 
-      // 1. Read both documents inside the transaction
-      const [sessionSnap, userSnap] = await Promise.all([
-        transaction.get(sessionRef),
-        transaction.get(userRef),
-      ]);
+      // 1. Read the session document inside the transaction
+      const sessionSnap = await transaction.get(sessionRef);
 
       if (!sessionSnap.exists) {
         throw new HttpsError('not-found', 'Checkout session not found.');

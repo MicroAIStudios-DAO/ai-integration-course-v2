@@ -462,7 +462,7 @@ async function tutorV2Handler(req: any, res: any): Promise<void> {
       return;
     }
 
-    const { lessonId, question, labTelemetry: rawLabTelemetry, studentProfile: requestProfile, isIntake } = req.body as TutorV2Request;
+    const { lessonId, question, labTelemetry: rawLabTelemetry, isIntake } = req.body as TutorV2Request;
     if (!question) {
       res.status(400).send('Missing question');
       return;

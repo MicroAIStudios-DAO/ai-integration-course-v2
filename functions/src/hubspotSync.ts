@@ -280,7 +280,6 @@ export const onAttestationCreated = onDocumentCreated(
   async (event) => {
     const snap = event.data;
     if (!snap) return;
-    const attestation = snap.data();
     const userId = event.params.userId;
 
     // Get user email for HubSpot lookup

@@ -16,7 +16,6 @@ import admin from 'firebase-admin';
 import { onCustomEventPublished } from 'firebase-functions/v2/eventarc';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
-import Stripe from 'stripe';
 
 if (!admin.apps.length) {
   admin.initializeApp();
