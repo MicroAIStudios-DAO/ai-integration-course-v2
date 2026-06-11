@@ -4,6 +4,7 @@ import { getCourses } from '../../firebaseService';
 import { Module } from '../../types/course';
 import FeedbackDrawer from '../feedback/FeedbackDrawer';
 import { useAuth } from '../../context/AuthContext'; // Adjusted path
+import { BRAND } from '../../config/brand';
 
 const Header: React.FC = () => {
   const { currentUser, logout } = useAuth();
@@ -61,8 +62,13 @@ const Header: React.FC = () => {
   return (
     <header className="bg-gradient-to-r from-slate-900 via-blue-900 to-blue-700 text-white p-4 shadow-md font-sans border-b border-white/10">
       <nav className="container mx-auto flex items-center justify-between">
-        <NavLink to="/" className="text-xl font-headings font-extrabold hover:text-blue-200 transition-colors">
-          AI Course Platform
+        <NavLink to="/" className="group hover:text-blue-200 transition-colors">
+          <span className="block text-xl font-headings font-extrabold leading-none">
+            {BRAND.courseName}
+          </span>
+          <span className="hidden md:block mt-1 text-[11px] font-medium tracking-wide text-blue-200/80 max-w-md leading-snug">
+            {BRAND.headerTagline}
+          </span>
         </NavLink>
         {!hideMenuLinks && (
           <div className="relative" ref={menuRef}>
@@ -246,7 +252,7 @@ const Layout: React.FC = () => {
       <footer className="bg-slate-900 text-white p-6 font-sans">
         <div className="container mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm">© 2025 MicroAI Studios™ — All rights reserved.</p>
+            <p className="text-sm">{BRAND.copyright}</p>
             <div className="flex gap-6 text-sm">
               <NavLink
                 to="/blogs"

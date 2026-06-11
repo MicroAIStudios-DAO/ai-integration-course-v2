@@ -1,5 +1,6 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
+import { BRAND } from '../../config/brand';
 
 /**
  * CourseSchema Component
@@ -69,7 +70,7 @@ interface CourseSchemaProps {
 const CourseSchema: React.FC<CourseSchemaProps> = ({
   courseName = 'AI Integration Course',
   courseDescription = 'Build Your First AI Solution in 15 Minutes. Learn practical AI integration skills with hands-on projects, from customer service bots to workflow automation. No prior AI experience required.',
-  providerName = 'MicroAI Studios',
+  providerName = BRAND.academyName,
   providerUrl = 'https://aiintegrationcourse.com',
   courseUrl = 'https://aiintegrationcourse.com/courses',
   pageUrl,
@@ -350,7 +351,7 @@ export const generateCourseSchema = (props: CourseSchemaProps) => {
     description: props.courseDescription || 'Learn practical AI integration skills',
     provider: {
       '@type': 'Organization',
-      name: props.providerName || 'MicroAI Studios',
+      name: props.providerName || BRAND.academyName,
       url: props.providerUrl || 'https://aiintegrationcourse.com'
     }
   };

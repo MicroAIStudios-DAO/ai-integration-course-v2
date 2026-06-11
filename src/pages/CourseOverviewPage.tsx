@@ -5,6 +5,7 @@ import { Course, Module, Lesson, UserCourseProgress } from '../types/course';
 import { useAuth } from '../context/AuthContext';
 import CourseSchema from '../components/seo/CourseSchema';
 import SEO from '../components/SEO';
+import { BRAND } from '../config/brand';
 
 const UNTITLED_TITLE_PATTERN = /^untitled lesson$/i;
 const LESSON_PREFIX_PATTERN = /^lesson\s+\d+(\.\d+)?\s*:\s*/i;
@@ -208,7 +209,7 @@ const CourseOverviewPage: React.FC = () => {
         course={{
           name: course.title,
           description: course.description,
-          provider: 'MicroAI Studios',
+          provider: BRAND.academyName,
           duration: 'P4W',
           price: '49',
           currency: 'USD'
@@ -414,9 +415,9 @@ const CourseOverviewPage: React.FC = () => {
           </div>{/* end flex-1 main content */}
         </div>
 
-        {/* CROSS-SELL: MicroAI Studios Ecosystem */}
+        {/* CROSS-SELL: Synconis Labs Ecosystem */}
         <div className="mt-12 rounded-2xl border border-white/10 bg-gradient-to-r from-slate-800/60 via-indigo-900/30 to-slate-800/60 p-6 md:p-8">
-          <p className="text-xs uppercase tracking-[0.2em] text-cyan-400 mb-2">From the MicroAI Studios Ecosystem</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-cyan-400 mb-2">From the {BRAND.ventureName} Ecosystem</p>
           <h3 className="text-xl font-bold text-white mb-2">Ready to Deploy What You've Learned?</h3>
           <p className="text-sm text-slate-400 mb-6">The course teaches the skills. These tools let you ship them at scale.</p>
           <div className="grid sm:grid-cols-2 gap-4">

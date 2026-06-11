@@ -1,5 +1,6 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
+import { BRAND } from '../config/brand';
 
 interface FAQItem {
   question: string;
@@ -71,7 +72,7 @@ export const SEO: React.FC<SEOProps> = ({
     description: DEFAULT_DESCRIPTION,
     publisher: {
       '@type': 'Organization',
-      name: 'MicroAI Studios',
+      name: BRAND.parentCompanyName,
       logo: { '@type': 'ImageObject', url: `${BASE_URL}/logo192.png` },
     },
     // GEO: sameAs signals for AI search engines

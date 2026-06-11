@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { BRAND } from '../config/brand';
 
 interface CertificateVerification {
   valid: boolean;
@@ -219,7 +220,7 @@ export default function VerifyCertificatePage() {
           {/* Footer */}
           <div className="bg-slate-900/50 px-8 py-4 border-t border-slate-700 text-center">
             <p className="text-xs text-slate-500">
-              Issued by AI Integration Course by MicroAI Studios •{' '}
+              Issued by {BRAND.courseName} · {BRAND.academyShortName} ({BRAND.ventureName}) •{' '}
               <a
                 href="https://aiintegrationcourse.com"
                 className="text-purple-400 hover:text-purple-300"

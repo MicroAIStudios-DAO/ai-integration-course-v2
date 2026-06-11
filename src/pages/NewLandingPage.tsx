@@ -7,6 +7,7 @@ import ExitIntentLeadMagnet from '../components/lead-magnet/ExitIntentLeadMagnet
 import { topWorkflowsLeadMagnet } from '../content/leadMagnets';
 import { trackFreeStarterOptIn } from '../utils/analytics';
 import SEO from '../components/SEO';
+import { BRAND } from '../config/brand';
 
 const NewLandingPage: React.FC = () => {
   const handleFreeStarterOptIn = () => {
@@ -16,7 +17,7 @@ const NewLandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans relative overflow-hidden selection:bg-amber-500 selection:text-slate-950">
       <SEO
-        title="MicroAI Academy | Advanced AI Integration & Systems Engineering"
+        title={`${BRAND.courseName} | Advanced AI Integration & Systems Engineering`}
         description="The premier project-backed academy for technical professionals. Master API-first AI systems engineering, bypass brittle prompting, and earn certified credentials."
         url="/new-landing"
         keywords={[
@@ -38,7 +39,7 @@ const NewLandingPage: React.FC = () => {
 
       {/* Academic Top Bar Notice */}
       <div className="relative z-30 bg-slate-900 border-b border-white/5 py-2 px-4 text-center text-xs tracking-wider uppercase text-amber-400 font-semibold font-headings">
-        <span>🎓 College of Applied Artificial Intelligence & Systems Design • Summer 2026 Admissions Open</span>
+        <span>🎓 {BRAND.academyName} • Summer 2026 Admissions Open</span>
       </div>
 
       {/* Modern Navigation Header */}
@@ -46,14 +47,14 @@ const NewLandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-5 md:px-8">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center font-bold text-slate-950 shadow-lg shadow-amber-500/20">
-              μA
+              SΛ
             </div>
             <div>
               <span className="text-lg font-bold tracking-tight text-white block leading-none font-headings uppercase">
-                MicroAI
+                {BRAND.courseName}
               </span>
               <span className="text-[10px] uppercase tracking-[0.25em] text-amber-500 block mt-1 font-semibold">
-                Institute of Technology
+                {BRAND.academyShortName} · {BRAND.ventureName}
               </span>
             </div>
           </div>
@@ -135,7 +136,7 @@ const NewLandingPage: React.FC = () => {
           <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/60 shadow-[0_30px_100px_rgba(0,0,0,0.8)]">
             <img
               src="/assets/hero_background_neural_network.png"
-              alt="MicroAI Tech Campus Environment Blueprint"
+              alt={`${BRAND.academyShortName} Tech Campus Environment Blueprint`}
               className="h-[280px] w-full object-cover object-center md:h-[420px] filter saturate-75 brightness-90 group-hover:scale-[1.01] transition-transform duration-700"
               loading="eager"
             />
@@ -192,7 +193,7 @@ const NewLandingPage: React.FC = () => {
                 "We reject the prompt engineering gimmick. AI is not a writing exercise. It is a distributed network design challenge. Our goal is to train AI Architects who can build resilient, production-ready, fault-tolerant automations."
               </p>
               <p className="text-slate-400 text-sm leading-relaxed">
-                MicroAI Institute was established by practical systems engineers who realized that standard tutorial platforms teach theory but skip implementation realities (rate-limiting, context window degradation, error fallbacks, database integration).
+                {BRAND.courseName} is the premier, highly specialized training program of {BRAND.academyName} — the Academy established by practical systems engineers under {BRAND.ventureName} to close the gap that standard tutorial platforms leave open: rate-limiting, context window degradation, error fallbacks, and database integration in production.
               </p>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
@@ -219,7 +220,7 @@ const NewLandingPage: React.FC = () => {
       <section id="advantages" className="relative z-10 py-20 px-6 md:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <span className="text-xs uppercase tracking-[0.25em] text-amber-500 font-bold font-headings">Why MicroAI Academy</span>
+            <span className="text-xs uppercase tracking-[0.25em] text-amber-500 font-bold font-headings">Why {BRAND.academyShortName}</span>
             <h2 className="mt-3 text-3xl md:text-5xl font-extrabold text-white font-headings uppercase tracking-tight">
               A Superior Digital Campus Experience
             </h2>
@@ -307,7 +308,7 @@ const NewLandingPage: React.FC = () => {
 
             <div className="bg-slate-950 border border-emerald-500/20 rounded-2xl p-6">
               <p className="text-emerald-400 text-xs font-bold uppercase tracking-wider font-headings mb-3">
-                ✓ Systems Architect Track (MicroAI)
+                ✓ Systems Architect Track ({BRAND.academyShortName})
               </p>
               <ul className="space-y-3 text-sm text-slate-300">
                 <li className="flex items-start gap-2">
@@ -507,8 +508,8 @@ const NewLandingPage: React.FC = () => {
           <Link to="/terms" className="hover:text-slate-300 transition-colors">Terms of Use</Link>
           <Link to="/privacy" className="hover:text-slate-300 transition-colors">Privacy Charter</Link>
         </div>
-        <p className="max-w-md mx-auto leading-relaxed">
-          &copy; {new Date().getFullYear()} MicroAI Institute of Technology. Guided by engineering practitioners, built under academic rigor. All rights reserved.
+        <p className="max-w-2xl mx-auto leading-relaxed">
+          {BRAND.copyright} {BRAND.courseName} is offered by {BRAND.academyName}, a {BRAND.ventureName} venture.
         </p>
       </footer>
 

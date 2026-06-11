@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { trackFreeStarterOptIn } from '../utils/analytics';
+import { BRAND } from '../config/brand';
 
 const GITHUB_REPO_URL = 'https://github.com/MicroAIStudios-DAO/ai-integration-course-v2';
 const LINKEDIN_URL = 'https://www.linkedin.com/in/blainecasey';
@@ -66,7 +67,7 @@ const AboutPage: React.FC = () => {
                 Blaine Casey
               </h1>
               <p className="mt-1 text-base font-semibold text-cyan-700">
-                AI Solutions Architect · Founder, MicroAI Studios · San Diego, CA
+                AI Solutions Architect · Founder, {BRAND.ventureName} · San Diego, CA
               </p>
 
               {/* Credential badges */}
@@ -88,7 +89,7 @@ const AboutPage: React.FC = () => {
               </div>
 
               <p className="mt-5 text-lg leading-relaxed text-slate-700">
-                Blaine Casey has spent over a decade building software systems that ship — not decks that impress. He founded MicroAI Studios to close the gap between AI hype and real operational leverage for founders, operators, and developers who need results in weeks, not quarters.
+                Blaine Casey has spent over a decade building software systems that ship — not decks that impress. He founded {BRAND.ventureName} to close the gap between AI hype and real operational leverage for founders, operators, and developers who need results in weeks, not quarters.
               </p>
               <p className="mt-4 text-base leading-relaxed text-slate-600">
                 His methodology is implementation-first: identify the workflow, define the tool contract, add human review checkpoints, then deploy something that earns its keep. Every lesson in AI Integration Course is drawn from a real client engagement or internal build — not recycled YouTube content.

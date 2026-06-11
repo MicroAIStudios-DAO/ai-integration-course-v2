@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { usePremiumAccess } from '../hooks/usePremiumAccess';
 import { saveCertificate, CertRecord } from '../firebaseService';
 import { trackCertificateGenerated } from '../utils/analytics';
+import { BRAND } from '../config/brand';
 
 // Tiers that are allowed to generate certificates
 const CERTIFICATE_TIERS = new Set(['pro', 'corporate', 'founding']);
@@ -85,7 +86,7 @@ const CertificationPage: React.FC = () => {
         const params = new URLSearchParams({
           startTask: 'CERTIFICATION_NAME',
           name: COURSE_NAME,
-          organizationName: 'MicroAI Studios',
+          organizationName: BRAND.parentCompanyName,
           issueYear: String(new Date().getFullYear()),
           issueMonth: String(new Date().getMonth() + 1),
           certId: savedCert.certId,
@@ -197,8 +198,11 @@ const CertificationPage: React.FC = () => {
           {/* Logo / issuer */}
           <div className="mb-6 text-center">
             <span className="text-xs font-semibold uppercase tracking-widest text-indigo-500">
-              MicroAI Studios™
+              {BRAND.academyName}
             </span>
+            <p className="mt-1 text-[10px] uppercase tracking-widest text-indigo-400">
+              A {BRAND.ventureName} venture · {BRAND.parentCompanyName}
+            </p>
           </div>
 
           {/* Certificate body */}
@@ -227,7 +231,7 @@ const CertificationPage: React.FC = () => {
           <div className="mt-10 flex items-end justify-between border-t border-slate-200 pt-6">
             <div className="text-left">
               <p className="text-base font-bold italic text-slate-700">
-                MicroAI Studios
+                {BRAND.academyShortName}
               </p>
               <p className="text-xs text-slate-400">Course Instructor</p>
             </div>

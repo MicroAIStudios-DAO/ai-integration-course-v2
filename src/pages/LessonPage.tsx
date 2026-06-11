@@ -24,6 +24,7 @@ import GovernanceLabPremium from "../components/lab/GovernanceLabPremium";
 import { useAdaptiveLearning } from "../context/AdaptiveLearningContext";
 import CourseSchema from "../components/seo/CourseSchema";
 import SEO from "../components/SEO";
+import { BRAND } from "../config/brand";
 import "../styles/lesson-content.css"; // Import textbook-style CSS
 import { trackLessonStart, trackLessonComplete, trackLesson1Completed } from "../utils/analytics";
 import { MarkdownPre } from "../components/common/CopyableCodeBlock";
@@ -292,7 +293,7 @@ The detailed content for this lesson is being prepared. Please check back soon o
         course={{
           name: course?.title || 'AI Integration Course',
           description: course?.description || lessonDescription,
-          provider: 'MicroAI Studios',
+          provider: BRAND.academyName,
           duration: 'P4W',
           price: '49',
           currency: 'USD'
