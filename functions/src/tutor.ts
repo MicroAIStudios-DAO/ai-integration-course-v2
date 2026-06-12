@@ -323,10 +323,13 @@ function deriveLessonKey(docPath: string): string {
 
 
 export async function tutorHandler(req: any, res: any) {
-  res.set('Access-Control-Allow-Origin', '*');
-  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.set('Vary', 'Authorization');
+  // SECURITY FIX (VULN-03 follow-up): Do NOT set a wildcard
+  // `Access-Control-Allow-Origin: *` here. The `tutor` function is configured
+  // with `cors: ALLOWED_ORIGINS` (see below), which makes the Functions
+  // framework emit the correct, origin-matched CORS headers. Setting `*` in the
+  // handler body silently overrode that allowlist and re-introduced wildcard
+  // CORS on this authenticated endpoint.
+  res.set('Vary', 'Origin, Authorization');
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   if (req.method !== 'POST') { res.status(405).send('Method Not Allowed'); return; }
   try {

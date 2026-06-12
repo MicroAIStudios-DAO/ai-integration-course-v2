@@ -25,6 +25,18 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
+// SECURITY FIX (VULN-03 parity): Explicit CORS origin allowlist instead of a
+// wildcard `Access-Control-Allow-Origin: *`. This is an authenticated endpoint
+// (Firebase ID token required), so a wildcard would let any origin drive
+// cross-origin requests on behalf of a logged-in user. Mirrors the allowlist
+// used by the `tutor` / `tutorV2` functions.
+const ALLOWED_ORIGINS = [
+  "https://aiintegrationcourse.com",
+  "https://www.aiintegrationcourse.com",
+  "http://localhost:3000",
+  "http://localhost:5000",
+];
+
 interface AttestationRequest {
   agentDefinition: any; // Flowise export JSON
   complianceTarget: string; // e.g., 'IMDA/AICM'
@@ -48,8 +60,14 @@ interface AttestationResult {
 }
 
 export const proofguardAttest = functions.https.onRequest(async (req, res) => {
-  // CORS headers
-  res.set("Access-Control-Allow-Origin", "*");
+  // CORS headers — reflect only allowlisted origins (never wildcard).
+  // Requests without an Origin header (server-to-server, curl) are unaffected;
+  // they are still gated by the Firebase Auth check below.
+  const origin = req.headers.origin;
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.set("Access-Control-Allow-Origin", origin);
+  }
+  res.set("Vary", "Origin");
   res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
