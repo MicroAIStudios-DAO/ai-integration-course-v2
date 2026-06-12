@@ -38,6 +38,7 @@ import CertificationPage from './pages/CertificationPage';
 import IntakeDiagnostic from './pages/IntakeDiagnostic';
 import GovernanceLabPage from './pages/GovernanceLabPage';
 import DashboardPage from './pages/DashboardPage';
+import CommunityPage from './pages/Community';
 import VerifyCertificatePage from './pages/VerifyCertificatePage';
 import { initGA4, trackPageView } from './utils/analytics';
 import ExitIntentModal from './components/ExitIntentModal';
@@ -125,6 +126,7 @@ const App: React.FC = () => {
           <Route path="/certification" element={<CertificationPage />} />
           <Route path="/diagnostic" element={<IntakeDiagnostic />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/community" element={<CommunityPage />} />
           <Route path="/lab/:labId" element={<GovernanceLabPage />} />
           <Route path="/payment-success" element={<PaymentSuccessPage />} />
           <Route path="/payment-cancel" element={<PaymentCancelPage />} />
