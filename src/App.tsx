@@ -1,46 +1,61 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Layout from './components/layout/Layout'; // Import the Layout component
-import HomePage from './pages/HomePage';
-import NewLandingPage from './pages/NewLandingPage';
-import PaidTrafficLandingPage from './pages/PaidTrafficLandingPage';
-import PricingPage from './pages/PricingPage';
-import CourseOverviewPage from './pages/CourseOverviewPage';
-import LessonPage from './pages/LessonPage';
-import ResourceLibraryPage from './pages/ResourceLibraryPage';
-import ResourceDetailPage from './pages/ResourceDetailPage';
-import BlogIndexPage from './pages/BlogIndexPage';
-import BlogPostPage from './pages/BlogPostPage';
-import IndustrySolutionsPage from './pages/IndustrySolutionsPage';
-import CheatSheetLandingPage from './pages/CheatSheetLandingPage';
-import IndustrySolutionPage from './pages/IndustrySolutionPage';
-import AboutPage from './pages/AboutPage';
-import FAQPage from './pages/FAQPage';
-import ContactPage from './pages/ContactPage';
-import SanDiegoAIPage from './pages/SanDiegoAIPage';
-import PersonalizedRecapPage from './pages/PersonalizedRecapPage';
-import AIChatTutorPage from './pages/AIChatTutorPage';
-import LearningPathwaysPage from './pages/LearningPathwaysPage';
-import WelcomePage from './pages/WelcomePage';
-import LoginPage from './components/auth/LoginPage';
-import SignupPage from './components/auth/SignupPage';
-import ProfilePage from './components/auth/ProfilePage';
-import PaymentSuccessPage from './pages/PaymentSuccessPage';
-import PaymentCancelPage from './pages/PaymentCancelPage';
 import { UserJotWidget } from './components/UserJotWidget';
-import TermsOfServicePage from './pages/TermsOfServicePage';
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
-import AdminAddLesson from './pages/AdminAddLesson';
-import PlanSelectorPage from './pages/PlanSelectorPage';
-import CheckoutStartPage from './pages/CheckoutStartPage';
-import BillingPage from './pages/BillingPage';
-import CertificationPage from './pages/CertificationPage';
-import IntakeDiagnostic from './pages/IntakeDiagnostic';
-import GovernanceLabPage from './pages/GovernanceLabPage';
-import DashboardPage from './pages/DashboardPage';
-import VerifyCertificatePage from './pages/VerifyCertificatePage';
 import { initGA4, trackPageView } from './utils/analytics';
 import ExitIntentModal from './components/ExitIntentModal';
+
+// Route-level code splitting: each page is loaded on demand so the initial
+// bundle only ships the landing page + shared shell. This drops the main app
+// chunk dramatically and improves first-load performance for direct visitors.
+const HomePage = lazy(() => import('./pages/HomePage'));
+const NewLandingPage = lazy(() => import('./pages/NewLandingPage'));
+const PaidTrafficLandingPage = lazy(() => import('./pages/PaidTrafficLandingPage'));
+const PricingPage = lazy(() => import('./pages/PricingPage'));
+const CourseOverviewPage = lazy(() => import('./pages/CourseOverviewPage'));
+const LessonPage = lazy(() => import('./pages/LessonPage'));
+const ResourceLibraryPage = lazy(() => import('./pages/ResourceLibraryPage'));
+const ResourceDetailPage = lazy(() => import('./pages/ResourceDetailPage'));
+const BlogIndexPage = lazy(() => import('./pages/BlogIndexPage'));
+const BlogPostPage = lazy(() => import('./pages/BlogPostPage'));
+const IndustrySolutionsPage = lazy(() => import('./pages/IndustrySolutionsPage'));
+const CheatSheetLandingPage = lazy(() => import('./pages/CheatSheetLandingPage'));
+const IndustrySolutionPage = lazy(() => import('./pages/IndustrySolutionPage'));
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+const FAQPage = lazy(() => import('./pages/FAQPage'));
+const ContactPage = lazy(() => import('./pages/ContactPage'));
+const SanDiegoAIPage = lazy(() => import('./pages/SanDiegoAIPage'));
+const PersonalizedRecapPage = lazy(() => import('./pages/PersonalizedRecapPage'));
+const AIChatTutorPage = lazy(() => import('./pages/AIChatTutorPage'));
+const LearningPathwaysPage = lazy(() => import('./pages/LearningPathwaysPage'));
+const WelcomePage = lazy(() => import('./pages/WelcomePage'));
+const LoginPage = lazy(() => import('./components/auth/LoginPage'));
+const SignupPage = lazy(() => import('./components/auth/SignupPage'));
+const ProfilePage = lazy(() => import('./components/auth/ProfilePage'));
+const PaymentSuccessPage = lazy(() => import('./pages/PaymentSuccessPage'));
+const PaymentCancelPage = lazy(() => import('./pages/PaymentCancelPage'));
+const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'));
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
+const AdminAddLesson = lazy(() => import('./pages/AdminAddLesson'));
+const PlanSelectorPage = lazy(() => import('./pages/PlanSelectorPage'));
+const CheckoutStartPage = lazy(() => import('./pages/CheckoutStartPage'));
+const BillingPage = lazy(() => import('./pages/BillingPage'));
+const CertificationPage = lazy(() => import('./pages/CertificationPage'));
+const IntakeDiagnostic = lazy(() => import('./pages/IntakeDiagnostic'));
+const GovernanceLabPage = lazy(() => import('./pages/GovernanceLabPage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const VerifyCertificatePage = lazy(() => import('./pages/VerifyCertificatePage'));
+
+// Lightweight fallback shown while a route chunk is being fetched.
+const RouteFallback: React.FC = () => (
+  <div
+    style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+    aria-busy="true"
+    aria-live="polite"
+  >
+    <span style={{ opacity: 0.6 }}>Loading…</span>
+  </div>
+);
 
 // Renders the exit-intent modal with the correct variant based on current route
 const ExitIntentWrapper: React.FC = () => {
@@ -77,6 +92,7 @@ const App: React.FC = () => {
       <PageViewTracker />
       {/* Exit-intent modal — fires on mouse-leave, suppressed post-purchase */}
       <ExitIntentWrapper />
+      <Suspense fallback={<RouteFallback />}>
       <Routes>
         {/* Public certificate verification — no auth required */}
         <Route path="/verify/:certId" element={<VerifyCertificatePage />} />
@@ -132,6 +148,7 @@ const App: React.FC = () => {
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
         </Route>
       </Routes>
+      </Suspense>
     </Router>
   );
 }
