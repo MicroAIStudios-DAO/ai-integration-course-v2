@@ -234,7 +234,7 @@ const PaidTrafficLandingPage: React.FC = () => {
             </div>
             <div>
               <p className="text-3xl md:text-4xl font-bold text-cyan-400">14 days</p>
-              <p className="text-sm text-slate-400 mt-1">Money-back guarantee, no questions</p>
+              <p className="text-sm text-slate-400 mt-1">Build Guarantee, no questions</p>
             </div>
           </div>
 
@@ -266,7 +266,7 @@ const PaidTrafficLandingPage: React.FC = () => {
               },
               {
                 q: 'What does the paid subscription unlock?',
-                a: 'Pro unlocks 50+ hours of advanced builds, a personal AI tutor that answers your questions in context, and live Q&A sessions. The lowest-friction paid option is $29.99/month, and the annual plan drops the effective rate to $19.99/month with a 14-day money-back guarantee.',
+                a: 'Pro unlocks 50+ hours of advanced builds, a personal AI tutor that answers your questions in context, and live Q&A sessions. The lowest-friction paid option is $29.99/month, and the annual plan drops the effective rate to $19.99/month, with a 14-Day Build Guarantee.',
               },
               {
                 q: 'How is this different from YouTube or ChatGPT?',

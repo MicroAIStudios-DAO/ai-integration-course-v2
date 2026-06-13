@@ -1,29 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-M8T3DKFQ');</script>
-    <!-- End Google Tag Manager -->
-
-    <!-- Google Ads + GA4 (single gtag.js instance) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17956658756"></script>
+    <!-- Consent Mode v2 defaults — DENIED until the user opts in via the cookie banner.
+         GTM, GA4, Google Ads, Microsoft Clarity, and Ahrefs are loaded only after consent
+         by src/utils/consent.ts. This keeps all non-essential trackers off until opt-in. -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
+      gtag('consent', 'default', {
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        analytics_storage: 'denied',
+        functionality_storage: 'denied',
+        personalization_storage: 'denied',
+        security_storage: 'granted',
+        wait_for_update: 500
+      });
       gtag('js', new Date());
-      gtag('config', 'AW-17956658756', { allow_enhanced_conversions: true });
-      gtag('config', 'G-15SDDF1S5S', { send_page_view: true });
     </script>
 
     <meta charset="utf-8" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#111827" />
-    <title>AI Integration Course | Practical AI Automation Training</title>
+    <title>Advanced AI Integration & Systems Engineering | AI Integration Course</title>
     <meta name="description" content="Practical AI automation training for business owners and developers. Learn Gemini API integration, AI workflow automation, and real deployment patterns." />
     <meta name="keywords" content="AI integration course, Gemini API with Python, AI business automation, AI workflow automation, AI course for non-coders" />
     <meta name="author" content="Blaine Casey" />
@@ -32,31 +33,21 @@
     <meta property="og:url" content="https://aiintegrationcourse.com/" />
     <meta property="og:title" content="AI Integration Course" />
     <meta property="og:description" content="Learn how to integrate AI into your business with actionable playbooks, live coaching, and real implementation workflows." />
-    <meta property="og:image" content="/assets/hero_background_neural_network.png/hero_background_neural_network.png" />
+    <meta property="og:image" content="/assets/hero_background_neural_network.png" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@aiintegrationco" />
     <meta name="twitter:title" content="AI Integration Course" />
     <meta name="twitter:description" content="Learn the strategies, tools, and workflows to ship AI automation with a practical implementation-first course." />
-    <meta name="twitter:image" content="/assets/hero_background_neural_network.png/hero_background_neural_network.png" />
+    <meta name="twitter:image" content="/assets/hero_background_neural_network.png" />
     <link
       rel="preload"
       as="image"
-      href="/assets/hero_background_neural_network.png/hero_background_neural_network.png"
+      href="/assets/hero_background_neural_network.png"
     />
     <link rel="apple-touch-icon" href="/logo192.png" />
     <link rel="manifest" href="/manifest.json" />
 
-    <!-- Microsoft Clarity: session recording, heatmaps, rage-click detection -->
-    <script type="text/javascript">
-      (function(c,l,a,r,i,t,y){
-        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-      })(window, document, "clarity", "script", "vx54kcsqlx");
-    </script>
-
-    <!-- Ahrefs Web Analytics -->
-    <script src="https://analytics.ahrefs.com/analytics.js" data-key="I2l5sw2gsKNPJvnp9dQpkA" async></script>
+    <!-- Microsoft Clarity + Ahrefs Web Analytics are loaded post-consent by src/utils/consent.ts -->
 
     <!-- JSON-LD: Course + AggregateRating + Offer (structured data for SGE/AI search) -->
     <script type="application/ld+json">
@@ -99,20 +90,13 @@
           },
           "offers": {
             "@type": "Offer",
-            "price": "49.00",
+            "price": "239.00",
             "priceCurrency": "USD",
             "priceValidUntil": "2026-12-31",
             "availability": "https://schema.org/InStock",
             "url": "https://aiintegrationcourse.com/pricing",
-            "description": "Pro monthly subscription. 14-day money-back guarantee. Cancel anytime."
+            "description": "Annual subscription ($239/year). $1 for a 7-day trial, then $29.99/month. 14-Day Build Guarantee. Cancel anytime."
           }
-        },
-        "aggregateRating": {
-          "@type": "AggregateRating",
-          "ratingValue": "4.8",
-          "reviewCount": "127",
-          "bestRating": "5",
-          "worstRating": "1"
         }
       }
     </script>

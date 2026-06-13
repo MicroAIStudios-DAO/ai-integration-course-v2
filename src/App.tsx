@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Layout from './components/layout/Layout'; // Import the Layout component
-import HomePage from './pages/HomePage';
 import NewLandingPage from './pages/NewLandingPage';
 import PaidTrafficLandingPage from './pages/PaidTrafficLandingPage';
 import PricingPage from './pages/PricingPage';
@@ -28,6 +27,7 @@ import ProfilePage from './components/auth/ProfilePage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PaymentCancelPage from './pages/PaymentCancelPage';
 import { UserJotWidget } from './components/UserJotWidget';
+import ConsentBanner from './components/ConsentBanner';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import AdminAddLesson from './pages/AdminAddLesson';
@@ -72,6 +72,8 @@ const App: React.FC = () => {
 
   return (
     <Router>
+      {/* Cookie consent banner — gates analytics/ads/session tags until opt-in */}
+      <ConsentBanner />
       {/* UserJot feedback widget for beta testers */}
       <UserJotWidget />
       <PageViewTracker />
@@ -82,8 +84,8 @@ const App: React.FC = () => {
         <Route path="/verify/:certId" element={<VerifyCertificatePage />} />
         {/* Root route is the primary onboarding funnel for direct visitors */}
         <Route path="/" element={<NewLandingPage />} />
-        {/* Preserve the legacy homepage for editorial traffic and internal links */}
-        <Route path="/home" element={<HomePage />} />
+        {/* Legacy homepage retired — redirect to the canonical landing page */}
+        <Route path="/home" element={<Navigate to="/" replace />} />
         {/* NewLandingPage renders without Layout for full-screen landing page */}
         <Route path="/new-landing" element={<NewLandingPage />} />
         {/* Paid traffic landing page — same onboarding experience available at /start */}

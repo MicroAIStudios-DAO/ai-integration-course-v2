@@ -17,9 +17,9 @@ const NewLandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans relative overflow-hidden selection:bg-amber-500 selection:text-slate-950">
       <SEO
-        title={`${BRAND.courseName} | Advanced AI Integration & Systems Engineering`}
-        description="The premier project-backed academy for technical professionals. Master API-first AI systems engineering, bypass brittle prompting, and earn certified credentials."
-        url="/new-landing"
+        title="Advanced AI Integration & Systems Engineering"
+        description="A project-backed academy for developers, operators, and founders — real technical depth with an accessible on-ramp. Master API-first AI systems engineering, bypass brittle prompting, and earn certified credentials."
+        url="/"
         keywords={[
           "AI integration academy",
           "AI systems engineering course",
@@ -106,10 +106,10 @@ const NewLandingPage: React.FC = () => {
 
         {/* Subheadline */}
         <p className="text-lg md:text-xl lg:text-2xl max-w-3xl text-slate-300 mb-6 leading-relaxed">
-          A rigorous, project-backed curriculum for software developers, technical operators, and founders. Master fault-tolerant agent architectures, production environments, and API-first designs.
+          A project-backed curriculum for developers, operators, and founders — real technical depth with an accessible on-ramp. Master fault-tolerant agent architectures, production environments, and API-first designs.
         </p>
         <p className="text-sm md:text-base max-w-2xl text-slate-400 mb-10">
-          No copy-paste prompt templates. No shallow YouTube summaries. Complete your first deployable automation in under 15 minutes and co-build verified systems.
+          No CS degree required, and no copy-paste prompt templates either. Start from your level and complete your first deployable automation in under 15 minutes.
         </p>
 
         {/* Dual Actions with Low-Friction Entry */}
@@ -181,7 +181,7 @@ const NewLandingPage: React.FC = () => {
                   <h3 className="text-lg font-bold text-white font-headings uppercase">Blaine Casey</h3>
                   <p className="text-xs text-amber-500 uppercase tracking-widest font-semibold mt-1">Lead AI Systems Architect</p>
                   <p className="text-slate-400 text-xs mt-3 leading-relaxed">
-                    Former automation systems lead and full-stack software architect. Architected over 50+ enterprise integrations.
+                    Former automation systems lead and full-stack software architect. Shipped 30+ production AI workflows and integrations.
                   </p>
                 </div>
               </div>
@@ -419,7 +419,7 @@ const NewLandingPage: React.FC = () => {
             </div>
             <div className="p-6 border border-white/5 rounded-2xl bg-slate-950/50">
               <p className="text-4xl md:text-5xl font-extrabold text-amber-500 font-headings">14 Days</p>
-              <p className="text-xs text-slate-400 mt-2 uppercase tracking-wider font-semibold">Tuition Money-Back Policy</p>
+              <p className="text-xs text-slate-400 mt-2 uppercase tracking-wider font-semibold">Build Guarantee</p>
             </div>
             <div className="p-6 border border-white/5 rounded-2xl bg-slate-950/50">
               <p className="text-4xl md:text-5xl font-extrabold text-amber-500 font-headings">24/7</p>
@@ -427,19 +427,22 @@ const NewLandingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Testimonial Quote */}
+          {/* Illustrative outcome — representative of what builders ship in the program (not a specific endorsement) */}
           <div className="bg-slate-950 border border-white/10 rounded-3xl p-8 md:p-10 relative overflow-hidden">
+            <span className="inline-block rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-300 mb-4">
+              Illustrative outcome
+            </span>
             <div className="absolute top-4 right-6 text-7xl text-white/5 font-serif font-bold">“</div>
             <p className="text-slate-300 text-sm md:text-lg italic leading-relaxed relative z-10 max-w-3xl">
-              "This is by far the most rigorous training on modern AI systems architecture available. Blaine Casey completely bypasses the superficial prompting guides that flood the market. In less than a week, I had a custom search-grounded content compiler pipeline syncing to our CRM. It replaced a manual task that used to consume over six hours of engineering labor weekly."
+              "The program skips the superficial prompting guides and goes straight to systems. A representative build: a search-grounded content compiler that syncs to a CRM — replacing a recurring manual task that previously took several hours of engineering time each week."
             </p>
             <div className="mt-6 flex items-center gap-3 relative z-10">
               <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-sm font-bold border border-white/10">
-                JD
+                ⚙
               </div>
               <div>
-                <span className="block text-sm font-bold text-white uppercase font-headings">Julianne Decker</span>
-                <span className="block text-[11px] text-amber-500 uppercase tracking-widest font-semibold">Senior VP of Engineering, SynthesAI</span>
+                <span className="block text-sm font-bold text-white uppercase font-headings">Representative Cohort Build</span>
+                <span className="block text-[11px] text-amber-500 uppercase tracking-widest font-semibold">Example project · not a specific endorsement</span>
               </div>
             </div>
           </div>
@@ -506,7 +509,7 @@ const NewLandingPage: React.FC = () => {
           <Link to="/about" className="hover:text-slate-300 transition-colors">About Faculty</Link>
           <Link to="/faq" className="hover:text-slate-300 transition-colors">FAQ</Link>
           <Link to="/terms" className="hover:text-slate-300 transition-colors">Terms of Use</Link>
-          <Link to="/privacy" className="hover:text-slate-300 transition-colors">Privacy Charter</Link>
+          <Link to="/privacy" className="hover:text-slate-300 transition-colors">Privacy Policy</Link>
         </div>
         <p className="max-w-2xl mx-auto leading-relaxed">
           {BRAND.copyright} {BRAND.courseName} is offered by {BRAND.academyName}, a {BRAND.ventureName} venture.

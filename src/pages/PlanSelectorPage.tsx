@@ -114,6 +114,13 @@ const PlanSelectorPage: React.FC = () => {
             </div>
           </div>
 
+          {/* What happens next — reduces checkout anxiety */}
+          <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-gray-400 mb-6">
+            <span className="flex items-center gap-1.5"><span className="text-emerald-400">①</span> Secure Stripe checkout</span>
+            <span className="flex items-center gap-1.5"><span className="text-emerald-400">②</span> Instant full access</span>
+            <span className="flex items-center gap-1.5"><span className="text-emerald-400">③</span> Build your first workflow today</span>
+          </div>
+
           <button
             onClick={handleTrialCheckout}
             disabled={loading !== null}
@@ -136,50 +143,37 @@ const PlanSelectorPage: React.FC = () => {
           </p>
         </div>
 
-        {/* ANNUAL PATH */}
-        <div className="bg-gray-900 border border-amber-500/30 rounded-2xl p-8 mb-8">
-          <div className="inline-block bg-amber-500 text-black text-xs font-bold px-3 py-1 rounded-full mb-4">
-            BEST VALUE
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-2">
-            Get the best price and full access today
-          </h2>
-          <p className="text-gray-300 mb-6 text-sm">
-            Enjoy our elite academy rate of just $19.95 a month. Billed annually at $239 to unlock maximum savings.
-          </p>
-
-          {/* Dynamic charge summary — Annual */}
-          <div className="bg-gray-800 rounded-xl p-4 mb-6 text-sm">
-            <div className="flex justify-between mb-1">
-              <span className="text-gray-400">Tuition Rate</span>
-              <span className="text-white font-semibold">$19.95 / month</span>
+        {/* ANNUAL PATH — secondary, de-emphasized so the $1 trial stays the single primary CTA */}
+        <div className="bg-gray-900/60 border border-white/10 rounded-2xl p-6 mb-8">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="inline-block bg-amber-500/90 text-black text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Best Value</span>
+                <span className="text-xs text-gray-400 uppercase tracking-wider">Prefer to pay yearly?</span>
+              </div>
+              <p className="text-white font-semibold">
+                Annual tuition — <span className="text-amber-400">$19.99/mo</span>, billed $239/year
+              </p>
+              <p className="text-xs text-gray-500 mt-1">Save over $120 vs standard monthly renewal · 14-Day Build Guarantee</p>
             </div>
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>Billed annually at $239 today</span>
-              <span>Save over $120 vs standard monthly renewal</span>
-            </div>
+            <button
+              onClick={handleAnnualCheckout}
+              disabled={loading !== null}
+              className="flex-shrink-0 border border-amber-500/50 text-amber-300 hover:bg-amber-500 hover:text-slate-950 font-bold py-3 px-6 rounded-xl text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading === 'annual' ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Generating…
+                </>
+              ) : (
+                "Get annual access →"
+              )}
+            </button>
           </div>
-
-          <button
-            onClick={handleAnnualCheckout}
-            disabled={loading !== null}
-            className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-4 px-8 rounded-xl text-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading === 'annual' ? (
-              <>
-                <svg className="animate-spin h-5 w-5 text-black" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Generating Checkout...
-              </>
-            ) : (
-              "Subscribe for $19.95 a Month →"
-            )}
-          </button>
-          <p className="text-center text-xs text-gray-500 mt-3">
-            Instant access after checkout. 14-Day Build Guarantee.
-          </p>
         </div>
 
         {/* Help line */}

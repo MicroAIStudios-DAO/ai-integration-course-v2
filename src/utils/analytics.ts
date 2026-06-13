@@ -130,7 +130,7 @@ export const trackFreeStarterOptIn = (
  * Conversion Label: YJI_CJzD95EcEMS8s_JC
  */
 export const trackGoogleAdsSignupConversion = (
-  value: number = 239.88,
+  value: number = 239,
   currency: string = 'USD'
 ): void => {
   if (typeof window !== 'undefined' && window.gtag) {
@@ -196,7 +196,7 @@ export const trackGoogleAdsPurchaseConversion = (
  */
 export const trackViewPricing = (
   currency: string = 'USD',
-  value: number = 239.88,
+  value: number = 239,
   itemName: string = 'Pro AI Architect'
 ): void => {
   if (typeof window !== 'undefined' && window.gtag) {
