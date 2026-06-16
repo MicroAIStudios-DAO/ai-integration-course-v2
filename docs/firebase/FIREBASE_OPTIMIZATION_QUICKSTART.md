@@ -245,8 +245,8 @@ firebase projects:list
 
 For detailed information, see:
 - [FIREBASE_OPTIMIZATION_GUIDE.md](./FIREBASE_OPTIMIZATION_GUIDE.md) - Comprehensive guide
-- [BUILD_DEPLOYMENT_GUIDE.md](./BUILD_DEPLOYMENT_GUIDE.md) - Build and deployment details
-- [README.md](./README.md) - Project documentation
+- [BUILD_DEPLOYMENT_GUIDE.md](../deployment/BUILD_DEPLOYMENT_GUIDE.md) - Build and deployment details
+- [README.md](../../README.md) - Project documentation
 
 ## Quick Reference
 

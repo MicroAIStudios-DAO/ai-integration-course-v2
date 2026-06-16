@@ -238,8 +238,8 @@ firebase hosting:clone <previous-version> ai-integra-course-v2:live
 
 ## Support Resources
 
-- [README.md](README.md) - Full documentation
-- [QUICKSTART.md](QUICKSTART.md) - Quick reference
+- [README.md](../../README.md) - Full documentation
+- [QUICKSTART.md](../guides/QUICKSTART.md) - Quick reference
 - [PRODUCTION_CHECKLIST.md](PRODUCTION_CHECKLIST.md) - Deployment checklist
 - [DEPLOYMENT.md](DEPLOYMENT.md) - Detailed deployment guide
 - [BUILD_DEPLOYMENT_GUIDE.md](BUILD_DEPLOYMENT_GUIDE.md) - Build troubleshooting

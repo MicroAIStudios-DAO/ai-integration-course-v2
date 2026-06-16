@@ -620,9 +620,9 @@ The `.github/copilot-instructions.md` file contains comprehensive documentation 
 
 ## 📖 Documentation
 
-- [Installation Guide](INSTALLATION.md)
-- [Deployment Guide](DEPLOYMENT.md)
-- [Contributing Guidelines](CONTRIBUTING.md)
+- [Installation Guide](../guides/INSTALLATION.md)
+- [Deployment Guide](../deployment/DEPLOYMENT.md)
+- [Contributing Guidelines](../../CONTRIBUTING.md)
 - [Code Review](CODE_REVIEW.md)
 
 ## 🔒 Security
