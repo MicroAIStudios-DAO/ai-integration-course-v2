@@ -169,8 +169,8 @@ gcloud services enable \
 ## Documentation
 
 - Full Guide: [GCLOUD_DEPLOYMENT.md](./GCLOUD_DEPLOYMENT.md)
-- README: [README.md](./README.md)
-- Build Guide: [BUILD_DEPLOYMENT_GUIDE.md](./BUILD_DEPLOYMENT_GUIDE.md)
+- README: [README.md](../../README.md)
+- Build Guide: [BUILD_DEPLOYMENT_GUIDE.md](../deployment/BUILD_DEPLOYMENT_GUIDE.md)
 
 ## Support
 

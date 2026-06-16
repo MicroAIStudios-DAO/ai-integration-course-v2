@@ -255,7 +255,7 @@ If deployment fails:
 3. **Review Documentation**
    - [GCLOUD_DEPLOYMENT.md](./GCLOUD_DEPLOYMENT.md) - Full deployment guide
    - [GCLOUD_QUICKSTART.md](./GCLOUD_QUICKSTART.md) - Quick reference
-   - [README.md](./README.md) - Project documentation
+   - [README.md](../../README.md) - Project documentation
 
 4. **Common Issues**
    - Authentication: Run `gcloud auth login`

@@ -17,8 +17,10 @@ npm run deploy
 ./repo_finish.sh
 ```
 
-📖 **See [PRODUCTION_DEPLOYMENT.md](PRODUCTION_DEPLOYMENT.md) for complete deployment guide**  
-📋 **See [PRODUCTION_READINESS.md](PRODUCTION_READINESS.md) for deployment checklist**
+📖 **See [docs/deployment/PRODUCTION_DEPLOYMENT.md](docs/deployment/PRODUCTION_DEPLOYMENT.md) for complete deployment guide**  
+📋 **See [docs/deployment/PRODUCTION_READINESS.md](docs/deployment/PRODUCTION_READINESS.md) for deployment checklist**
+
+📚 **See [docs/README.md](docs/README.md) for the full documentation index**
 
 ### ⚠️ Pre-Deployment Requirements
 - [ ] Configure `GCP_SA_KEY` secret in GitHub
@@ -37,8 +39,8 @@ npm run deploy
 ### Quick Start: Firebase Optimization
 
 For automated Firebase setup and optimization, see:
-- **[Firebase Optimization Quick Start](./FIREBASE_OPTIMIZATION_QUICKSTART.md)** - 5-minute setup guide
-- **[Firebase Optimization Guide](./FIREBASE_OPTIMIZATION_GUIDE.md)** - Comprehensive documentation
+- **[Firebase Optimization Quick Start](./docs/firebase/FIREBASE_OPTIMIZATION_QUICKSTART.md)** - 5-minute setup guide
+- **[Firebase Optimization Guide](./docs/firebase/FIREBASE_OPTIMIZATION_GUIDE.md)** - Comprehensive documentation
 
 #### Optimize Firebase (Recommended First Step)
 

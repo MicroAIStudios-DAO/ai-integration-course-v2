@@ -173,10 +173,10 @@ ai-integration-course/
 
 ## Need Help?
 
-- 📖 [Full README](README.md)
-- ✅ [Production Checklist](PRODUCTION_CHECKLIST.md)
-- 🚀 [Deployment Guide](DEPLOYMENT.md)
-- 📋 [Build Guide](BUILD_DEPLOYMENT_GUIDE.md)
+- 📖 [Full README](../../README.md)
+- ✅ [Production Checklist](../deployment/PRODUCTION_CHECKLIST.md)
+- 🚀 [Deployment Guide](../deployment/DEPLOYMENT.md)
+- 📋 [Build Guide](../deployment/BUILD_DEPLOYMENT_GUIDE.md)
 
 ## Security Notes
 
