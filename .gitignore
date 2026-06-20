@@ -54,6 +54,14 @@ scripts/setup-secrets.sh
 public/static/
 public/asset-manifest.json
 
+# Backup / editor swap artifacts (do not commit)
+*.backup
+*.original-backup
+*.bak
+*.orig
+*.swp
+*.swo
+
 # Python virtual environment
 venv/
 .venv/
