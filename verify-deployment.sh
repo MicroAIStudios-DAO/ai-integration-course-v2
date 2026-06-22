@@ -168,9 +168,9 @@ fi
 log_info "Checking documentation..."
 DOCS_FOUND=0
 [ -f "README.md" ] && ((DOCS_FOUND++)) || true
-[ -f "PRODUCTION_DEPLOYMENT.md" ] && ((DOCS_FOUND++)) || true
-[ -f "PRODUCTION_READINESS.md" ] && ((DOCS_FOUND++)) || true
-[ -f "PRODUCTION_CHECKLIST.md" ] && ((DOCS_FOUND++)) || true
+[ -f "docs/deployment/PRODUCTION_DEPLOYMENT.md" ] && ((DOCS_FOUND++)) || true
+[ -f "docs/deployment/PRODUCTION_READINESS.md" ] && ((DOCS_FOUND++)) || true
+[ -f "docs/deployment/PRODUCTION_CHECKLIST.md" ] && ((DOCS_FOUND++)) || true
 log_success "Documentation files found: $DOCS_FOUND/4"
 
 # 12. Check for .env files (should be gitignored)
