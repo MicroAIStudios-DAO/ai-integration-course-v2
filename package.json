@@ -25,7 +25,15 @@
     "web-vitals": "^2.1.4"
   },
   "overrides": {
-    "protobufjs": "^7.6.3"
+    "protobufjs": "^7.6.3",
+    "dompurify": "^3.4.11",
+    "form-data": "^4.0.6",
+    "@firebase/firestore": {
+      "@grpc/grpc-js": "~1.9.16"
+    },
+    "google-gax": {
+      "@grpc/grpc-js": "^1.14.4"
+    }
   },
   "scripts": {
     "preinstall": "echo 'Installing dependencies...'",
@@ -94,7 +102,7 @@
     "postcss": "^8.5.12",
     "tailwindcss": "^3.4.17",
     "typescript": "^4.9.5",
-    "vite": "^8.0.10",
+    "vite": "^8.0.16",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^3.2.4"
   },
