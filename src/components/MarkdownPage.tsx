@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { MarkdownPre } from './common/CopyableCodeBlock';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
+
+// Code-split the markdown rendering stack so react-markdown/remark-gfm only
+// download when a markdown-backed page actually renders.
+const LazyMarkdown = lazy(() => import('./common/LazyMarkdown'));
 
 interface MarkdownPageProps {
   src: string;  // path relative to public/, e.g. "/md/ai_chat_tutor_design.md"
@@ -24,7 +25,9 @@ const MarkdownPage: React.FC<MarkdownPageProps> = (props: MarkdownPageProps) => 
   return (
     <article className="prose mx-auto p-6">
       {content ? (
-        <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ pre: MarkdownPre }}>{content}</ReactMarkdown>
+        <Suspense fallback={<p>Loading…</p>}>
+          <LazyMarkdown>{content}</LazyMarkdown>
+        </Suspense>
       ) : (
         <p>Loading…</p>
       )}

@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import SEO from '../components/SEO';
 import { getBlogPostBySlug } from '../content/blogPosts';
 import '../styles/blog-content.css';
-import { MarkdownPre } from '../components/common/CopyableCodeBlock';
+
+// Defer the markdown rendering stack to an async chunk — it only loads once an
+// article body actually renders, keeping it out of the initial bundle.
+const LazyMarkdown = lazy(() => import('../components/common/LazyMarkdown'));
 
 const formatDate = (value: string): string =>
   new Date(value).toLocaleDateString('en-US', {
@@ -207,9 +208,9 @@ const BlogPostPage: React.FC = () => {
           {error && !loading && <p className="text-red-600">{error}</p>}
           {!loading && !error && (
             <article className="blog-content">
-              <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ pre: MarkdownPre }}>
-                {markdown}
-              </ReactMarkdown>
+              <Suspense fallback={<p className="text-slate-600">Loading article...</p>}>
+                <LazyMarkdown>{markdown}</LazyMarkdown>
+              </Suspense>
             </article>
           )}
         </div>
