@@ -1,8 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { Suspense, lazy, useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import ReactMarkdown from "react-markdown";
-import ReactPlayer from "react-player";
-import remarkGfm from "remark-gfm";
 import {
   getCourseById,
   getLessonMarkdownUrl,
@@ -27,7 +24,11 @@ import SEO from "../components/SEO";
 import { BRAND } from "../config/brand";
 import "../styles/lesson-content.css"; // Import textbook-style CSS
 import { trackLessonStart, trackLessonComplete, trackLesson1Completed } from "../utils/analytics";
-import { MarkdownPre } from "../components/common/CopyableCodeBlock";
+
+// Heavy, lesson-only libraries are code-split into async chunks so they stay
+// out of the initial bundle that every visitor downloads.
+const ReactPlayer = lazy(() => import("react-player"));
+const LazyMarkdown = lazy(() => import("../components/common/LazyMarkdown"));
 
 const LessonPage: React.FC = () => {
   const { courseId, moduleId, lessonId } = useParams<{ courseId: string; moduleId: string; lessonId: string }>();
@@ -357,16 +358,18 @@ The detailed content for this lesson is being prepared. Please check back soon o
           {videoUrlToPlay ? (
             <div className="mb-10">
               <div className="lesson-video">
-                <ReactPlayer
-                  url={videoUrlToPlay}
-                  width="100%"
-                  height="100%"
-                  controls
-                  playing
-                  muted
-                  playsinline
-                  className="react-player"
-                />
+                <Suspense fallback={null}>
+                  <ReactPlayer
+                    url={videoUrlToPlay}
+                    width="100%"
+                    height="100%"
+                    controls
+                    playing
+                    muted
+                    playsinline
+                    className="react-player"
+                  />
+                </Suspense>
               </div>
             </div>
           ) : (
@@ -399,7 +402,9 @@ The detailed content for this lesson is being prepared. Please check back soon o
               {/* Lesson Content with Textbook Styling */}
               {markdownContent && (
                 <div className="lesson-content">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ pre: MarkdownPre }}>{markdownContent}</ReactMarkdown>
+                  <Suspense fallback={null}>
+                    <LazyMarkdown>{markdownContent}</LazyMarkdown>
+                  </Suspense>
                 </div>
               )}
 
