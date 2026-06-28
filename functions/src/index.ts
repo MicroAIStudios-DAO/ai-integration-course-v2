@@ -99,7 +99,16 @@ export { attachCheckoutSessionAtomicV2, verifyProvisioningState } from './atomic
 // Fix 4: Stripe Reconciliation Cron — safety net for webhook failures (runs every 6 hours)
 export { reconcileStripePayments } from './cron/reconcileStripe';
 
-// export const helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+// ─── Phase 3: Advanced Ecosystem Modules ─────────────────────────────────────
+
+// Pinecone Vector DB RAG Lab — semantic search + embedding pipeline
+export { pineconeQuery, pineconeIngest, pineconeLabStatus } from './pineconeLab';
+
+// MCP Protocol Server — Model Context Protocol tools for AI agent integration
+export { mcpListTools, mcpCallTool, mcpEndpoint } from './mcpServer';
+
+// Circle.so Community — SSO bridge + space access management
+export { circleSSO, circleGetSpaces, circleSyncMember } from './circleCommunity';
+
+// Vanta Compliance & AI Governance — enterprise compliance check engine
+export { complianceCheck, complianceReport, complianceFrameworks } from './vantaCompliance';

@@ -39,6 +39,10 @@ import IntakeDiagnostic from './pages/IntakeDiagnostic';
 import GovernanceLabPage from './pages/GovernanceLabPage';
 import DashboardPage from './pages/DashboardPage';
 import VerifyCertificatePage from './pages/VerifyCertificatePage';
+import PineconeLabPage from './pages/PineconeLabPage';
+import MCPLabPage from './pages/MCPLabPage';
+import CommunityPage from './pages/CommunityPage';
+import ComplianceLabPage from './pages/ComplianceLabPage';
 import { initGA4, trackPageView } from './utils/analytics';
 import ExitIntentModal from './components/ExitIntentModal';
 
@@ -128,6 +132,10 @@ const App: React.FC = () => {
           <Route path="/diagnostic" element={<IntakeDiagnostic />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/lab/:labId" element={<GovernanceLabPage />} />
+          <Route path="/lab/pinecone" element={<PineconeLabPage />} />
+          <Route path="/lab/mcp" element={<MCPLabPage />} />
+          <Route path="/lab/compliance" element={<ComplianceLabPage />} />
+          <Route path="/community" element={<CommunityPage />} />
           <Route path="/payment-success" element={<PaymentSuccessPage />} />
           <Route path="/payment-cancel" element={<PaymentCancelPage />} />
           <Route path="/terms" element={<TermsOfServicePage />} />
