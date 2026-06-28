@@ -76,7 +76,7 @@ All exported from `index.ts` with `maxInstances: 10`. Key modules: `tutor.ts` (O
 
 ## Detailed Documentation
 
-Architecture deep dive → `ARCHITECTURE_REVIEW.md`
+Architecture deep dive → `docs/archive/ARCHITECTURE_REVIEW.md`
 Contribution workflow → `CONTRIBUTING.md`
 AI tutor spec → `ai_tutor_spec.md`, `AI_TUTOR_IMPLEMENTATION.md`
 Firebase optimization → `FIREBASE_OPTIMIZATION_GUIDE.md`
