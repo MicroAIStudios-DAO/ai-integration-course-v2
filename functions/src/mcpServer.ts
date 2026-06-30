@@ -20,6 +20,7 @@
 
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 
 // ─── MCP Types (simplified for educational purposes) ────────────────────────
 
@@ -308,9 +309,83 @@ async function executeGetGovernanceScore(args: Record<string, unknown>): Promise
   };
 }
 
+// ─── Access control ─────────────────────────────────────────────────────────
+
+/**
+ * Identity of the principal invoking a tool. `null` means the caller is
+ * anonymous (no verified Firebase ID token).
+ */
+interface CallerContext {
+  uid: string;
+  isAdmin: boolean;
+}
+
+// Tools that only return public course/lab metadata — safe for anonymous use.
+const PUBLIC_TOOLS = new Set(['search_lessons', 'list_labs']);
+
+// Tools that return private, user-scoped data. The caller may only target
+// their OWN uid (or be an admin) — otherwise this is an IDOR.
+const USER_SCOPED_TOOLS = new Set(['get_student_progress', 'get_governance_score']);
+
+/**
+ * Authorize a tool call before it executes. This is the single chokepoint for
+ * both the callable (`mcpCallTool`) and the public HTTP endpoint
+ * (`mcpEndpoint`). Throws an HttpsError when access is denied.
+ *
+ * - Public tools: always allowed.
+ * - Everything else: requires an authenticated caller.
+ * - User-scoped tools: the requested `uid` must match the caller (or admin),
+ *   preventing one user from reading another user's progress / governance data.
+ */
+function assertToolAccess(
+  toolName: string,
+  args: Record<string, unknown>,
+  caller: CallerContext | null
+): void {
+  if (PUBLIC_TOOLS.has(toolName)) return;
+
+  if (!caller) {
+    throw new HttpsError('unauthenticated', `Tool "${toolName}" requires authentication.`);
+  }
+
+  if (USER_SCOPED_TOOLS.has(toolName)) {
+    const requestedUid = (args.uid as string | undefined) || '';
+    if (!requestedUid) {
+      throw new HttpsError('invalid-argument', 'Must specify a uid.');
+    }
+    if (!caller.isAdmin && requestedUid !== caller.uid) {
+      throw new HttpsError('permission-denied', 'You may only access your own student data.');
+    }
+  }
+}
+
+/**
+ * Resolve the caller from an HTTP request's `Authorization: Bearer <token>`
+ * header by verifying the Firebase ID token. Returns `null` for anonymous
+ * callers (missing/invalid token) so only public tools remain reachable.
+ */
+async function getCallerFromRequest(req: { headers: Record<string, unknown> }): Promise<CallerContext | null> {
+  const authHeader = (req.headers.authorization || req.headers.Authorization) as string | undefined;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+  const token = authHeader.split('Bearer ')[1];
+  try {
+    const decoded = await getAuth().verifyIdToken(token);
+    const isAdmin = decoded.admin === true || (decoded as Record<string, unknown>).role === 'admin';
+    return { uid: decoded.uid, isAdmin };
+  } catch {
+    return null;
+  }
+}
+
 // ─── Route tool calls ───────────────────────────────────────────────────────
 
-async function routeToolCall(toolName: string, args: Record<string, unknown>): Promise<MCPToolCallResponse> {
+async function routeToolCall(
+  toolName: string,
+  args: Record<string, unknown>,
+  caller: CallerContext | null
+): Promise<MCPToolCallResponse> {
+  assertToolAccess(toolName, args, caller);
+
   switch (toolName) {
     case 'search_lessons': return executeSearchLessons(args);
     case 'get_lesson_content': return executeGetLessonContent(args);
@@ -363,7 +438,12 @@ export const mcpCallTool = onCall(
       throw new HttpsError('invalid-argument', `Unknown tool "${tool}". Available: ${validTools.join(', ')}`);
     }
 
-    const result = await routeToolCall(tool, args || {});
+    const caller: CallerContext = {
+      uid: request.auth.uid,
+      isAdmin: request.auth.token.admin === true || request.auth.token.role === 'admin',
+    };
+
+    const result = await routeToolCall(tool, args || {}, caller);
     return result;
   }
 );
@@ -385,6 +465,10 @@ export const mcpEndpoint = onRequest(
       params?: Record<string, unknown>;
       id?: string | number;
     };
+
+    // Resolve the caller from the Authorization header. Anonymous callers
+    // (null) may only invoke public tools; user-scoped tools are denied.
+    const caller = await getCallerFromRequest(req);
 
     try {
       let result: unknown;
@@ -408,7 +492,7 @@ export const mcpEndpoint = onRequest(
         case 'tools/call': {
           const toolName = (params as any)?.name as string;
           const toolArgs = (params as any)?.arguments || {};
-          result = await routeToolCall(toolName, toolArgs);
+          result = await routeToolCall(toolName, toolArgs, caller);
           break;
         }
 
@@ -422,6 +506,20 @@ export const mcpEndpoint = onRequest(
         result,
       });
     } catch (err: any) {
+      // Authorization failures (thrown by assertToolAccess as HttpsError) map to
+      // a JSON-RPC error with an appropriate HTTP status instead of a 500 so the
+      // client can distinguish "denied" from "server error". No data is leaked.
+      const authCodes = ['unauthenticated', 'permission-denied', 'invalid-argument'];
+      if (err && authCodes.includes(err.code)) {
+        const status = err.code === 'unauthenticated' ? 401
+          : err.code === 'permission-denied' ? 403 : 400;
+        res.status(status).json({
+          jsonrpc: '2.0',
+          id: id || null,
+          error: { code: -32600, message: err.message || 'Request denied' },
+        });
+        return;
+      }
       res.status(500).json({
         jsonrpc: '2.0',
         id: id || null,
