@@ -17,6 +17,8 @@ import AboutPage from './pages/AboutPage';
 import FAQPage from './pages/FAQPage';
 import ContactPage from './pages/ContactPage';
 import SanDiegoAIPage from './pages/SanDiegoAIPage';
+import AITrainingProgramPage from './pages/AITrainingProgramPage';
+import AICoursesOnlinePage from './pages/AICoursesOnlinePage';
 import PersonalizedRecapPage from './pages/PersonalizedRecapPage';
 import AIChatTutorPage from './pages/AIChatTutorPage';
 import LearningPathwaysPage from './pages/LearningPathwaysPage';
@@ -104,6 +106,8 @@ const App: React.FC = () => {
           <Route path="/solutions" element={<IndustrySolutionsPage />} />
           <Route path="/solutions/:slug" element={<IndustrySolutionPage />} />
           <Route path="/ai-workshops-san-diego" element={<SanDiegoAIPage />} />
+          <Route path="/ai-training-program" element={<AITrainingProgramPage />} />
+          <Route path="/ai-courses-online" element={<AICoursesOnlinePage />} />
           <Route path="/courses" element={<CourseOverviewPage />} />
           <Route path="/courses/:courseId/modules/:moduleId/lessons/:lessonId" element={<LessonPage />} />
           <Route path="/welcome" element={<WelcomePage />} />
