@@ -374,10 +374,10 @@ npm run deploy
 ## Additional Resources
 
 - [README.md](README.md) - Project documentation
-- [QUICKSTART.md](QUICKSTART.md) - Quick setup guide
+- [QUICKSTART.md](docs/getting-started/QUICKSTART.md) - Quick setup guide
 - [PRODUCTION_CHECKLIST.md](PRODUCTION_CHECKLIST.md) - Pre-deployment checklist
-- [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md) - Launch verification steps
-- [DEPLOYMENT_SUMMARY.md](DEPLOYMENT_SUMMARY.md) - Summary of deployment changes
+- [LAUNCH_CHECKLIST.md](docs/planning/LAUNCH_CHECKLIST.md) - Launch verification steps
+- [DEPLOYMENT_SUMMARY.md](docs/deployment/DEPLOYMENT_SUMMARY.md) - Summary of deployment changes
 
 ## Security Considerations
 
