@@ -2,6 +2,8 @@
 
 A comprehensive platform for learning about AI integration and investment strategies in the age of artificial intelligence.
 
+📚 **Full documentation is organized in [`docs/`](./docs/README.md)** — deployment, GCloud, Firebase optimization, AI tutor, setup, reviews, and planning guides.
+
 ## 🚀 Quick Start for Production Deployment
 
 **Ready to deploy?** This repository is production-ready!
@@ -37,8 +39,8 @@ npm run deploy
 ### Quick Start: Firebase Optimization
 
 For automated Firebase setup and optimization, see:
-- **[Firebase Optimization Quick Start](./FIREBASE_OPTIMIZATION_QUICKSTART.md)** - 5-minute setup guide
-- **[Firebase Optimization Guide](./FIREBASE_OPTIMIZATION_GUIDE.md)** - Comprehensive documentation
+- **[Firebase Optimization Quick Start](./docs/firebase/FIREBASE_OPTIMIZATION_QUICKSTART.md)** - 5-minute setup guide
+- **[Firebase Optimization Guide](./docs/firebase/FIREBASE_OPTIMIZATION_GUIDE.md)** - Comprehensive documentation
 
 #### Optimize Firebase (Recommended First Step)
 
