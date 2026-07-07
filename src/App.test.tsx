@@ -100,7 +100,9 @@ vi.mock('./pages/PaidTrafficLandingPage', () => ({
   default: () => <main>Mock Paid Traffic Landing Page</main>
 }));
 
-test('renders app root route', () => {
+// Routes are lazy-loaded, so the page resolves asynchronously behind Suspense —
+// use findByText to await the chunk instead of a synchronous getByText.
+test('renders app root route', async () => {
   render(
     <HelmetProvider>
       <AuthProvider>
@@ -108,10 +110,10 @@ test('renders app root route', () => {
       </AuthProvider>
     </HelmetProvider>
   );
-  expect(screen.getByText(/Mock Paid Traffic Landing Page/i)).toBeInTheDocument();
+  expect(await screen.findByText(/Mock Paid Traffic Landing Page/i)).toBeInTheDocument();
 });
 
-test('renders router without crashing', () => {
+test('renders router without crashing', async () => {
   render(
     <HelmetProvider>
       <AuthProvider>
@@ -119,7 +121,7 @@ test('renders router without crashing', () => {
       </AuthProvider>
     </HelmetProvider>
   );
-  expect(screen.getByText(/Mock Paid Traffic Landing Page/i)).toBeInTheDocument();
+  expect(await screen.findByText(/Mock Paid Traffic Landing Page/i)).toBeInTheDocument();
 });
 
 
