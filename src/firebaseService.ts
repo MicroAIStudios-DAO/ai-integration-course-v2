@@ -54,21 +54,33 @@ const normalizeLesson = (raw: any): Lesson => {
 
 export const getCourses = async (): Promise<Course[]> => {
   const coursesCol = collection(db, 'courses');
-  // Add orderBy if you have an 'order' field in your courses collection
-  const courseSnapshot = await getDocs(query(coursesCol, orderBy('title'))); // Assuming courses also have an order or title to sort by
+  // Fetch all courses without orderBy to avoid requiring a composite index
+  const courseSnapshot = await getDocs(coursesCol);
   const coursesList = courseSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
-  
+  // Sort client-side by title to avoid Firestore index requirement
+  coursesList.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+
   // For each course, fetch its modules
   for (const course of coursesList) {
-    const modulesCol = collection(db, `courses/${course.id}/modules`);
-    const moduleSnapshot = await getDocs(query(modulesCol, orderBy('order')));
-    course.modules = moduleSnapshot.docs.map(modDoc => ({ id: modDoc.id, ...modDoc.data() } as Module));
+    try {
+      const modulesCol = collection(db, `courses/${course.id}/modules`);
+      const moduleSnapshot = await getDocs(query(modulesCol, orderBy('order')));
+      course.modules = moduleSnapshot.docs.map(modDoc => ({ id: modDoc.id, ...modDoc.data() } as Module));
 
-    // For each module, fetch its lessons
-    for (const module of course.modules) {
-      const lessonsCol = collection(db, `courses/${course.id}/modules/${module.id}/lessons`);
-      const lessonSnapshot = await getDocs(query(lessonsCol, orderBy('order')));
-      module.lessons = lessonSnapshot.docs.map((lessDoc) => normalizeLesson({ id: lessDoc.id, ...lessDoc.data() }));
+      // For each module, fetch its lessons with graceful fallback
+      for (const module of course.modules) {
+        try {
+          const lessonsCol = collection(db, `courses/${course.id}/modules/${module.id}/lessons`);
+          const lessonSnapshot = await getDocs(query(lessonsCol, orderBy('order')));
+          module.lessons = lessonSnapshot.docs.map((lessDoc) => normalizeLesson({ id: lessDoc.id, ...lessDoc.data() }));
+        } catch (lessonErr) {
+          console.warn(`Could not load lessons for module ${module.id}:`, lessonErr);
+          module.lessons = module.lessons || [];
+        }
+      }
+    } catch (moduleErr) {
+      console.warn(`Could not load modules for course ${course.id}:`, moduleErr);
+      course.modules = course.modules || [];
     }
   }
   return coursesList;

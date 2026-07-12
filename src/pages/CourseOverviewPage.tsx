@@ -182,8 +182,23 @@ const CourseOverviewPage: React.FC = () => {
 
   if (!course) {
     return (
-      <div className="flex justify-center items-center h-full p-8">
-        <div className="text-red-500">Failed to load course data</div>
+      <div className="flex flex-col justify-center items-center h-full p-8 gap-4 text-center">
+        <div className="text-red-400 text-lg font-semibold">Unable to load course content</div>
+        <div className="text-slate-400 text-sm max-w-md">
+          {error || 'There was a problem connecting to the course database. This is usually temporary.'}
+        </div>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-2 px-6 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-sm font-medium transition-colors"
+        >
+          Try Again
+        </button>
+        <a
+          href="/pricing"
+          className="text-teal-400 hover:text-teal-300 text-sm underline"
+        >
+          View pricing and get access
+        </a>
       </div>
     );
   }
