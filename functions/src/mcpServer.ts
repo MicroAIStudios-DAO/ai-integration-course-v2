@@ -20,6 +20,7 @@
 
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 
 // ─── MCP Types (simplified for educational purposes) ────────────────────────
 
@@ -111,6 +112,46 @@ const MCP_TOOLS: MCPTool[] = [
     },
   },
 ];
+
+// ─── Authorization ──────────────────────────────────────────────────────────
+
+/**
+ * Tools that read user-specific PII (progress, competency graph, attestation
+ * history). These MUST be scoped to the authenticated caller — a caller may
+ * only ever read their own data, never another user's by passing a foreign uid.
+ */
+const UID_SCOPED_TOOLS = new Set(['get_student_progress', 'get_governance_score']);
+
+/**
+ * Resolve the uid a PII-scoped tool is allowed to operate on.
+ * Returns the caller's own uid, or an error response if the request is
+ * unauthenticated or attempts to access a different user's data (IDOR).
+ */
+function authorizeUidAccess(
+  requestedUid: unknown,
+  callerUid: string | null
+): { ok: true; uid: string } | { ok: false; response: MCPToolCallResponse } {
+  if (!callerUid) {
+    return {
+      ok: false,
+      response: {
+        content: [{ type: 'text', text: 'Error: authentication is required for this tool.' }],
+        isError: true,
+      },
+    };
+  }
+  // Ignore any caller-supplied uid that isn't their own; deny cross-user access.
+  if (typeof requestedUid === 'string' && requestedUid && requestedUid !== callerUid) {
+    return {
+      ok: false,
+      response: {
+        content: [{ type: 'text', text: 'Error: you may only access your own data.' }],
+        isError: true,
+      },
+    };
+  }
+  return { ok: true, uid: callerUid };
+}
 
 // ─── Tool Implementations ───────────────────────────────────────────────────
 
@@ -220,13 +261,15 @@ async function executeGetLessonContent(args: Record<string, unknown>): Promise<M
   };
 }
 
-async function executeGetStudentProgress(args: Record<string, unknown>): Promise<MCPToolCallResponse> {
+async function executeGetStudentProgress(
+  args: Record<string, unknown>,
+  callerUid: string | null
+): Promise<MCPToolCallResponse> {
   const db = getFirestore();
-  const uid = args.uid as string;
 
-  if (!uid) {
-    return { content: [{ type: 'text', text: 'Error: uid is required' }], isError: true };
-  }
+  const auth = authorizeUidAccess(args.uid, callerUid);
+  if (!auth.ok) return auth.response;
+  const uid = auth.uid;
 
   const userDoc = await db.collection('users').doc(uid).get();
   if (!userDoc.exists) {
@@ -271,13 +314,15 @@ async function executeListLabs(args: Record<string, unknown>): Promise<MCPToolCa
   };
 }
 
-async function executeGetGovernanceScore(args: Record<string, unknown>): Promise<MCPToolCallResponse> {
+async function executeGetGovernanceScore(
+  args: Record<string, unknown>,
+  callerUid: string | null
+): Promise<MCPToolCallResponse> {
   const db = getFirestore();
-  const uid = args.uid as string;
 
-  if (!uid) {
-    return { content: [{ type: 'text', text: 'Error: uid is required' }], isError: true };
-  }
+  const auth = authorizeUidAccess(args.uid, callerUid);
+  if (!auth.ok) return auth.response;
+  const uid = auth.uid;
 
   const attestationsSnap = await db
     .collection('users').doc(uid)
@@ -310,13 +355,26 @@ async function executeGetGovernanceScore(args: Record<string, unknown>): Promise
 
 // ─── Route tool calls ───────────────────────────────────────────────────────
 
-async function routeToolCall(toolName: string, args: Record<string, unknown>): Promise<MCPToolCallResponse> {
+async function routeToolCall(
+  toolName: string,
+  args: Record<string, unknown>,
+  callerUid: string | null = null
+): Promise<MCPToolCallResponse> {
+  // Defense in depth: PII-scoped tools are never reachable without an
+  // authenticated caller, regardless of how the request arrived.
+  if (UID_SCOPED_TOOLS.has(toolName) && !callerUid) {
+    return {
+      content: [{ type: 'text', text: 'Error: authentication is required for this tool.' }],
+      isError: true,
+    };
+  }
+
   switch (toolName) {
     case 'search_lessons': return executeSearchLessons(args);
     case 'get_lesson_content': return executeGetLessonContent(args);
-    case 'get_student_progress': return executeGetStudentProgress(args);
+    case 'get_student_progress': return executeGetStudentProgress(args, callerUid);
     case 'list_labs': return executeListLabs(args);
-    case 'get_governance_score': return executeGetGovernanceScore(args);
+    case 'get_governance_score': return executeGetGovernanceScore(args, callerUid);
     default:
       return { content: [{ type: 'text', text: `Unknown tool: ${toolName}` }], isError: true };
   }
@@ -363,7 +421,7 @@ export const mcpCallTool = onCall(
       throw new HttpsError('invalid-argument', `Unknown tool "${tool}". Available: ${validTools.join(', ')}`);
     }
 
-    const result = await routeToolCall(tool, args || {});
+    const result = await routeToolCall(tool, args || {}, request.auth.uid);
     return result;
   }
 );
@@ -385,6 +443,20 @@ export const mcpEndpoint = onRequest(
       params?: Record<string, unknown>;
       id?: string | number;
     };
+
+    // Resolve the caller from a Firebase ID token (Authorization: Bearer <token>).
+    // Unauthenticated callers keep access to public discovery/course tools, but
+    // PII-scoped tools (student progress, governance score) are denied downstream.
+    let callerUid: string | null = null;
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+    const bearer = typeof authHeader === 'string' ? authHeader.match(/^Bearer\s+(.+)$/i)?.[1] : null;
+    if (bearer) {
+      try {
+        callerUid = (await getAuth().verifyIdToken(bearer)).uid;
+      } catch {
+        callerUid = null; // Invalid/expired token — treat as unauthenticated.
+      }
+    }
 
     try {
       let result: unknown;
@@ -408,7 +480,7 @@ export const mcpEndpoint = onRequest(
         case 'tools/call': {
           const toolName = (params as any)?.name as string;
           const toolArgs = (params as any)?.arguments || {};
-          result = await routeToolCall(toolName, toolArgs);
+          result = await routeToolCall(toolName, toolArgs, callerUid);
           break;
         }
 
