@@ -474,7 +474,7 @@ const NewLandingPage: React.FC = () => {
             <span className="text-slate-400 text-sm">/ month (Annual)</span>
           </div>
           <p className="text-slate-400 text-xs mt-2">
-            Standard monthly is available at $29.99/mo. Risk-free academic trial for 14-days.
+            Standard monthly is available at $29.99/mo. Start with a $1 seven-day trial — backed by our 14-Day Build Guarantee.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 justify-center">
