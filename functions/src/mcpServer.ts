@@ -21,6 +21,12 @@
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
+import {
+  LessonMetadata,
+  UserAccessProfile,
+  isFreeLessonData,
+  canAccessLesson,
+} from './accessControl';
 
 // ─── MCP Types (simplified for educational purposes) ────────────────────────
 
@@ -66,7 +72,7 @@ const MCP_TOOLS: MCPTool[] = [
   },
   {
     name: 'get_lesson_content',
-    description: 'Retrieve the full content of a specific lesson by its ID.',
+    description: 'Retrieve the content of a specific lesson by its ID. Free lessons return full content; premium lessons return metadata only unless the caller is authenticated with an active subscription, trial, or founding access.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -197,7 +203,10 @@ async function executeSearchLessons(args: Record<string, unknown>): Promise<MCPT
   };
 }
 
-async function executeGetLessonContent(args: Record<string, unknown>): Promise<MCPToolCallResponse> {
+async function executeGetLessonContent(
+  args: Record<string, unknown>,
+  callerUid: string | null
+): Promise<MCPToolCallResponse> {
   const db = getFirestore();
   const lessonId = args.lessonId as string;
 
@@ -205,57 +214,49 @@ async function executeGetLessonContent(args: Record<string, unknown>): Promise<M
     return { content: [{ type: 'text', text: 'Error: lessonId is required' }], isError: true };
   }
 
-  // Search across all courses/modules for this lesson
-  const lessonsSnap = await db.collectionGroup('lessons')
-    .where('__name__', '==', lessonId)
-    .limit(1)
-    .get();
+  // collectionGroup queries cannot filter __name__ by a bare document ID
+  // (it requires a full document path), so match against scanned doc IDs.
+  const allLessons = await db.collectionGroup('lessons').limit(500).get();
+  const found = allLessons.docs.find((d) => d.id === lessonId);
+  if (!found) {
+    return { content: [{ type: 'text', text: `Lesson "${lessonId}" not found.` }], isError: true };
+  }
+  const data = found.data() as LessonMetadata & Record<string, any>;
 
-  if (lessonsSnap.empty) {
-    // Try by document ID match
-    const allLessons = await db.collectionGroup('lessons').limit(200).get();
-    const found = allLessons.docs.find((d) => d.id === lessonId);
-    if (!found) {
-      return { content: [{ type: 'text', text: `Lesson "${lessonId}" not found.` }], isError: true };
-    }
-    const data = found.data();
-    return {
-      content: [{
-        type: 'resource',
-        resource: {
-          uri: `course://lessons/${lessonId}`,
-          mimeType: 'application/json',
-          text: JSON.stringify({
-            id: found.id,
-            title: data.title,
-            description: data.description,
-            content: data.markdownContent || data.content || '(Content available in full course)',
-            durationMinutes: data.durationMinutes,
-            module: data.module,
-            prerequisites: data.prerequisites || [],
-          }, null, 2),
-        },
-      }],
-    };
+  // Premium gating: the full lesson body is returned only for free lessons or
+  // entitled callers — the same access model as the AI tutor and firestore.rules
+  // (see accessControl.ts). Everyone gets public metadata.
+  let entitled = isFreeLessonData(data);
+  if (!entitled && callerUid) {
+    const userSnap = await db.collection('users').doc(callerUid).get();
+    const profile = userSnap.exists ? (userSnap.data() as UserAccessProfile) : null;
+    entitled = canAccessLesson(data, profile);
   }
 
-  const doc = lessonsSnap.docs[0];
-  const data = doc.data();
+  const payload: Record<string, unknown> = {
+    id: found.id,
+    title: data.title,
+    description: data.description,
+    durationMinutes: data.durationMinutes,
+    module: data.module,
+    prerequisites: data.prerequisites || [],
+    tier: data.tier || (data.isFree ? 'free' : 'premium'),
+  };
+  if (entitled) {
+    payload.content = data.markdownContent || data.content || '(No content stored for this lesson)';
+  } else {
+    payload.content = null;
+    payload.locked = true;
+    payload.notice = 'This is a premium lesson. Sign in with an active subscription, or start the $1 seven-day trial at https://aiintegrationcourse.com/pricing to unlock the full content.';
+  }
+
   return {
     content: [{
       type: 'resource',
       resource: {
         uri: `course://lessons/${lessonId}`,
         mimeType: 'application/json',
-        text: JSON.stringify({
-          id: doc.id,
-          title: data.title,
-          description: data.description,
-          content: data.markdownContent || data.content || '(Content available in full course)',
-          durationMinutes: data.durationMinutes,
-          module: data.module,
-          prerequisites: data.prerequisites || [],
-        }, null, 2),
+        text: JSON.stringify(payload, null, 2),
       },
     }],
   };
@@ -371,7 +372,7 @@ async function routeToolCall(
 
   switch (toolName) {
     case 'search_lessons': return executeSearchLessons(args);
-    case 'get_lesson_content': return executeGetLessonContent(args);
+    case 'get_lesson_content': return executeGetLessonContent(args, callerUid);
     case 'get_student_progress': return executeGetStudentProgress(args, callerUid);
     case 'list_labs': return executeListLabs(args);
     case 'get_governance_score': return executeGetGovernanceScore(args, callerUid);
