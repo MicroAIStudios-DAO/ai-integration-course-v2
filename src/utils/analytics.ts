@@ -33,7 +33,10 @@ const GOOGLE_ADS_SIGNUP_LABEL = 'YJI_CJzD95EcEMS8s_JC';
 //   Name: Paid_Subscription  |  Category: Purchase  |  Value: Use different values  |  Count: One
 //   Set as: PRIMARY action  |  Attribution: Data-driven
 //   Then paste the label here:
-const GOOGLE_ADS_PURCHASE_LABEL = 'wFMCIPj_5gcEMS8s_JC'; // Repurposed from Pro_Trial_Value (no trials exist)
+// Repurposed from Pro_Trial_Value. Fires only on verified PAID subscriptions;
+// the $1 seven-day trial start is tracked separately as trial_start and must
+// never fire this purchase conversion.
+const GOOGLE_ADS_PURCHASE_LABEL = 'wFMCIPj_5gcEMS8s_JC';
 
 // Type definitions for gtag
 declare global {
@@ -525,7 +528,7 @@ export const trackAnnualUpsellClick = (
     window.gtag('event', 'annual_upsell_click', {
       current_plan: currentPlan,
       source: resolvedSource,
-      potential_value: 239,
+      potential_value: 239.88,
     });
     console.log('[Analytics] annual_upsell_click:', { currentPlan, source: resolvedSource });
   }

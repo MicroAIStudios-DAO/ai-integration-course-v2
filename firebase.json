@@ -35,6 +35,13 @@
             "**/.*",
             "**/node_modules/**"
         ],
+        "redirects": [
+            {
+                "source": "/landing.html",
+                "destination": "/",
+                "type": 301
+            }
+        ],
         "rewrites": [
             {
                 "source": "/api/proofguard/attest",

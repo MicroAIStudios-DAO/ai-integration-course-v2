@@ -82,8 +82,8 @@ This automatically:
 #### Automated Deployment (Recommended)
 ```bash
 # Clone and set up
-git clone https://github.com/Gnoscenti/ai-integration-course.git
-cd ai-integration-course
+git clone https://github.com/MicroAIStudios-DAO/ai-integration-course-v2.git
+cd ai-integration-course-v2
 
 # Run automated environment setup
 chmod +x scripts/setup-environment.sh
@@ -102,8 +102,8 @@ chmod +x scripts/deploy-production.sh
 
 1. **Clone and Install Dependencies**:
    ```bash
-   git clone https://github.com/Gnoscenti/ai-integration-course.git
-   cd ai-integration-course
+   git clone https://github.com/MicroAIStudios-DAO/ai-integration-course-v2.git
+   cd ai-integration-course-v2
    npm run install:all  # Installs root + functions dependencies
    ```
 
@@ -181,8 +181,8 @@ The platform includes an advanced AI-powered tutor that provides personalized le
 
 1. Clone the repository
 ```bash
-git clone https://github.com/Gnoscenti/ai-integration-course.git
-cd ai-integration-course
+git clone https://github.com/MicroAIStudios-DAO/ai-integration-course-v2.git
+cd ai-integration-course-v2
 ```
 
 2. Install dependencies
@@ -272,4 +272,4 @@ This project is licensed under the ISC License - see the LICENSE file for detail
 
 - **Production**: https://aiintegrationcourse.com
 - **Firebase**: https://ai-integra-course-v2.web.app
-- **Repository**: https://github.com/Gnoscenti/ai-integration-course
+- **Repository**: https://github.com/MicroAIStudios-DAO/ai-integration-course-v2

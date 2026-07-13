@@ -70,7 +70,7 @@ const OFFER_LABELS: Record<OfferType, { cta: string; subtext: string; badge: str
   },
   annual_usd239: {
     cta: 'Get Annual Access →',
-    subtext: '$239/year · save $120 vs monthly · 14-Day Build Guarantee',
+    subtext: '$239.88/year · save $120 vs monthly · 14-Day Build Guarantee',
     badge: 'Best Value',
   },
 };

@@ -20,6 +20,13 @@
 
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
+import {
+  LessonMetadata,
+  UserAccessProfile,
+  isFreeLessonData,
+  canAccessLesson,
+} from './accessControl';
 
 // ─── MCP Types (simplified for educational purposes) ────────────────────────
 
@@ -65,7 +72,7 @@ const MCP_TOOLS: MCPTool[] = [
   },
   {
     name: 'get_lesson_content',
-    description: 'Retrieve the full content of a specific lesson by its ID.',
+    description: 'Retrieve the content of a specific lesson by its ID. Free lessons return full content; premium lessons return metadata only unless the caller is authenticated with an active subscription, trial, or founding access.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -112,6 +119,46 @@ const MCP_TOOLS: MCPTool[] = [
   },
 ];
 
+// ─── Authorization ──────────────────────────────────────────────────────────
+
+/**
+ * Tools that read user-specific PII (progress, competency graph, attestation
+ * history). These MUST be scoped to the authenticated caller — a caller may
+ * only ever read their own data, never another user's by passing a foreign uid.
+ */
+const UID_SCOPED_TOOLS = new Set(['get_student_progress', 'get_governance_score']);
+
+/**
+ * Resolve the uid a PII-scoped tool is allowed to operate on.
+ * Returns the caller's own uid, or an error response if the request is
+ * unauthenticated or attempts to access a different user's data (IDOR).
+ */
+function authorizeUidAccess(
+  requestedUid: unknown,
+  callerUid: string | null
+): { ok: true; uid: string } | { ok: false; response: MCPToolCallResponse } {
+  if (!callerUid) {
+    return {
+      ok: false,
+      response: {
+        content: [{ type: 'text', text: 'Error: authentication is required for this tool.' }],
+        isError: true,
+      },
+    };
+  }
+  // Ignore any caller-supplied uid that isn't their own; deny cross-user access.
+  if (typeof requestedUid === 'string' && requestedUid && requestedUid !== callerUid) {
+    return {
+      ok: false,
+      response: {
+        content: [{ type: 'text', text: 'Error: you may only access your own data.' }],
+        isError: true,
+      },
+    };
+  }
+  return { ok: true, uid: callerUid };
+}
+
 // ─── Tool Implementations ───────────────────────────────────────────────────
 
 async function executeSearchLessons(args: Record<string, unknown>): Promise<MCPToolCallResponse> {
@@ -156,7 +203,10 @@ async function executeSearchLessons(args: Record<string, unknown>): Promise<MCPT
   };
 }
 
-async function executeGetLessonContent(args: Record<string, unknown>): Promise<MCPToolCallResponse> {
+async function executeGetLessonContent(
+  args: Record<string, unknown>,
+  callerUid: string | null
+): Promise<MCPToolCallResponse> {
   const db = getFirestore();
   const lessonId = args.lessonId as string;
 
@@ -164,69 +214,63 @@ async function executeGetLessonContent(args: Record<string, unknown>): Promise<M
     return { content: [{ type: 'text', text: 'Error: lessonId is required' }], isError: true };
   }
 
-  // Search across all courses/modules for this lesson
-  const lessonsSnap = await db.collectionGroup('lessons')
-    .where('__name__', '==', lessonId)
-    .limit(1)
-    .get();
+  // collectionGroup queries cannot filter __name__ by a bare document ID
+  // (it requires a full document path), so match against scanned doc IDs.
+  const allLessons = await db.collectionGroup('lessons').limit(500).get();
+  const found = allLessons.docs.find((d) => d.id === lessonId);
+  if (!found) {
+    return { content: [{ type: 'text', text: `Lesson "${lessonId}" not found.` }], isError: true };
+  }
+  const data = found.data() as LessonMetadata & Record<string, any>;
 
-  if (lessonsSnap.empty) {
-    // Try by document ID match
-    const allLessons = await db.collectionGroup('lessons').limit(200).get();
-    const found = allLessons.docs.find((d) => d.id === lessonId);
-    if (!found) {
-      return { content: [{ type: 'text', text: `Lesson "${lessonId}" not found.` }], isError: true };
-    }
-    const data = found.data();
-    return {
-      content: [{
-        type: 'resource',
-        resource: {
-          uri: `course://lessons/${lessonId}`,
-          mimeType: 'application/json',
-          text: JSON.stringify({
-            id: found.id,
-            title: data.title,
-            description: data.description,
-            content: data.markdownContent || data.content || '(Content available in full course)',
-            durationMinutes: data.durationMinutes,
-            module: data.module,
-            prerequisites: data.prerequisites || [],
-          }, null, 2),
-        },
-      }],
-    };
+  // Premium gating: the full lesson body is returned only for free lessons or
+  // entitled callers — the same access model as the AI tutor and firestore.rules
+  // (see accessControl.ts). Everyone gets public metadata.
+  let entitled = isFreeLessonData(data);
+  if (!entitled && callerUid) {
+    const userSnap = await db.collection('users').doc(callerUid).get();
+    const profile = userSnap.exists ? (userSnap.data() as UserAccessProfile) : null;
+    entitled = canAccessLesson(data, profile);
   }
 
-  const doc = lessonsSnap.docs[0];
-  const data = doc.data();
+  const payload: Record<string, unknown> = {
+    id: found.id,
+    title: data.title,
+    description: data.description,
+    durationMinutes: data.durationMinutes,
+    module: data.module,
+    prerequisites: data.prerequisites || [],
+    tier: data.tier || (data.isFree ? 'free' : 'premium'),
+  };
+  if (entitled) {
+    payload.content = data.markdownContent || data.content || '(No content stored for this lesson)';
+  } else {
+    payload.content = null;
+    payload.locked = true;
+    payload.notice = 'This is a premium lesson. Sign in with an active subscription, or start the $1 seven-day trial at https://aiintegrationcourse.com/pricing to unlock the full content.';
+  }
+
   return {
     content: [{
       type: 'resource',
       resource: {
         uri: `course://lessons/${lessonId}`,
         mimeType: 'application/json',
-        text: JSON.stringify({
-          id: doc.id,
-          title: data.title,
-          description: data.description,
-          content: data.markdownContent || data.content || '(Content available in full course)',
-          durationMinutes: data.durationMinutes,
-          module: data.module,
-          prerequisites: data.prerequisites || [],
-        }, null, 2),
+        text: JSON.stringify(payload, null, 2),
       },
     }],
   };
 }
 
-async function executeGetStudentProgress(args: Record<string, unknown>): Promise<MCPToolCallResponse> {
+async function executeGetStudentProgress(
+  args: Record<string, unknown>,
+  callerUid: string | null
+): Promise<MCPToolCallResponse> {
   const db = getFirestore();
-  const uid = args.uid as string;
 
-  if (!uid) {
-    return { content: [{ type: 'text', text: 'Error: uid is required' }], isError: true };
-  }
+  const auth = authorizeUidAccess(args.uid, callerUid);
+  if (!auth.ok) return auth.response;
+  const uid = auth.uid;
 
   const userDoc = await db.collection('users').doc(uid).get();
   if (!userDoc.exists) {
@@ -271,13 +315,15 @@ async function executeListLabs(args: Record<string, unknown>): Promise<MCPToolCa
   };
 }
 
-async function executeGetGovernanceScore(args: Record<string, unknown>): Promise<MCPToolCallResponse> {
+async function executeGetGovernanceScore(
+  args: Record<string, unknown>,
+  callerUid: string | null
+): Promise<MCPToolCallResponse> {
   const db = getFirestore();
-  const uid = args.uid as string;
 
-  if (!uid) {
-    return { content: [{ type: 'text', text: 'Error: uid is required' }], isError: true };
-  }
+  const auth = authorizeUidAccess(args.uid, callerUid);
+  if (!auth.ok) return auth.response;
+  const uid = auth.uid;
 
   const attestationsSnap = await db
     .collection('users').doc(uid)
@@ -310,13 +356,26 @@ async function executeGetGovernanceScore(args: Record<string, unknown>): Promise
 
 // ─── Route tool calls ───────────────────────────────────────────────────────
 
-async function routeToolCall(toolName: string, args: Record<string, unknown>): Promise<MCPToolCallResponse> {
+async function routeToolCall(
+  toolName: string,
+  args: Record<string, unknown>,
+  callerUid: string | null = null
+): Promise<MCPToolCallResponse> {
+  // Defense in depth: PII-scoped tools are never reachable without an
+  // authenticated caller, regardless of how the request arrived.
+  if (UID_SCOPED_TOOLS.has(toolName) && !callerUid) {
+    return {
+      content: [{ type: 'text', text: 'Error: authentication is required for this tool.' }],
+      isError: true,
+    };
+  }
+
   switch (toolName) {
     case 'search_lessons': return executeSearchLessons(args);
-    case 'get_lesson_content': return executeGetLessonContent(args);
-    case 'get_student_progress': return executeGetStudentProgress(args);
+    case 'get_lesson_content': return executeGetLessonContent(args, callerUid);
+    case 'get_student_progress': return executeGetStudentProgress(args, callerUid);
     case 'list_labs': return executeListLabs(args);
-    case 'get_governance_score': return executeGetGovernanceScore(args);
+    case 'get_governance_score': return executeGetGovernanceScore(args, callerUid);
     default:
       return { content: [{ type: 'text', text: `Unknown tool: ${toolName}` }], isError: true };
   }
@@ -363,7 +422,7 @@ export const mcpCallTool = onCall(
       throw new HttpsError('invalid-argument', `Unknown tool "${tool}". Available: ${validTools.join(', ')}`);
     }
 
-    const result = await routeToolCall(tool, args || {});
+    const result = await routeToolCall(tool, args || {}, request.auth.uid);
     return result;
   }
 );
@@ -385,6 +444,20 @@ export const mcpEndpoint = onRequest(
       params?: Record<string, unknown>;
       id?: string | number;
     };
+
+    // Resolve the caller from a Firebase ID token (Authorization: Bearer <token>).
+    // Unauthenticated callers keep access to public discovery/course tools, but
+    // PII-scoped tools (student progress, governance score) are denied downstream.
+    let callerUid: string | null = null;
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+    const bearer = typeof authHeader === 'string' ? authHeader.match(/^Bearer\s+(.+)$/i)?.[1] : null;
+    if (bearer) {
+      try {
+        callerUid = (await getAuth().verifyIdToken(bearer)).uid;
+      } catch {
+        callerUid = null; // Invalid/expired token — treat as unauthenticated.
+      }
+    }
 
     try {
       let result: unknown;
@@ -408,7 +481,7 @@ export const mcpEndpoint = onRequest(
         case 'tools/call': {
           const toolName = (params as any)?.name as string;
           const toolArgs = (params as any)?.arguments || {};
-          result = await routeToolCall(toolName, toolArgs);
+          result = await routeToolCall(toolName, toolArgs, callerUid);
           break;
         }
 

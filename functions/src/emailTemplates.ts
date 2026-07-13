@@ -649,7 +649,7 @@ Your 7-day trial ends tomorrow.
 
 Here's what happens if you do nothing: your access continues automatically at $29.99/month. You keep everything you've built access to.
 
-Here's what happens if you want to save $120/year: upgrade to annual before tomorrow and lock in $19.99/month billed as $239/year.
+Here's what happens if you want to save $120/year: upgrade to annual before tomorrow and lock in $19.99/month billed as $239.88/year.
 
 And here's what happens if it's not for you: cancel before midnight tonight from your account settings. Two clicks. No questions.
 
@@ -665,7 +665,7 @@ Manage your access here:
     <p>Hi {{firstName}},</p>
     <p>Your 7-day trial ends tomorrow.</p>
     <p><strong>Here's what happens if you do nothing:</strong> your access continues automatically at $29.99/month. You keep everything you've built access to.</p>
-    <p><strong>Here's what happens if you want to save $120/year:</strong> upgrade to annual before tomorrow and lock in $19.99/month billed as $239/year.</p>
+    <p><strong>Here's what happens if you want to save $120/year:</strong> upgrade to annual before tomorrow and lock in $19.99/month billed as $239.88/year.</p>
     <p><strong>Here's what happens if it's not for you:</strong> cancel before midnight tonight from your account settings. Two clicks. No questions.</p>
     <p>Whatever you decide, I want you to make it consciously — not by accident.</p>
     <p><a href="{{ctaUrl}}" style="display:inline-block;padding:12px 20px;background:#111827;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;">Manage My Access →</a></p>
@@ -768,7 +768,7 @@ You've been a member for 30 days. That means you've already seen what this syste
 Here's a simple offer: switch to annual billing and save $120 over the next year.
 
 You're currently on the monthly plan at $29.99/month — $359.88/year.
-Annual billing is $239/year — that's $19.99/month equivalent.
+Annual billing is $239.88/year — that's $19.99/month equivalent.
 
 Same access. Same AI tutor. Same updates. $120 back in your pocket.
 
@@ -786,7 +786,7 @@ If you have any questions about the switch, just reply to this email.
     <p>Here's a simple offer: <strong>switch to annual billing and save $120 over the next year.</strong></p>
     <table style="border-collapse:collapse;width:100%;margin:16px 0;">
       <tr style="background:#f3f4f6;"><td style="padding:10px;font-weight:600;">Monthly plan</td><td style="padding:10px;">$29.99/month → $359.88/year</td></tr>
-      <tr><td style="padding:10px;font-weight:600;color:#10b981;">Annual plan</td><td style="padding:10px;color:#10b981;font-weight:600;">$239/year → $19.99/month equivalent</td></tr>
+      <tr><td style="padding:10px;font-weight:600;color:#10b981;">Annual plan</td><td style="padding:10px;color:#10b981;font-weight:600;">$239.88/year → $19.99/month equivalent</td></tr>
     </table>
     <p>Same access. Same AI tutor. Same updates. <strong>$120 back in your pocket.</strong></p>
     <p><a href="{{ctaUrl}}" style="display:inline-block;padding:12px 20px;background:#10b981;color:#000000;text-decoration:none;border-radius:8px;font-weight:700;">Switch to Annual and Save $120 →</a></p>
