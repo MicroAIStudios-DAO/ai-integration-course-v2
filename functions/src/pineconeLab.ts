@@ -203,7 +203,7 @@ export const pineconeCompare = onCall(
       throw new HttpsError('unauthenticated', 'Must be logged in to use the Pinecone lab.');
     }
 
-    const { queryText, vector, topK = 5 } = request.data as {
+    const { queryText: _queryText, vector, topK = 5 } = request.data as {
       queryText: string;
       vector: number[];
       topK?: number;

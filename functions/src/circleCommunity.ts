@@ -42,11 +42,6 @@ interface CircleSpace {
   memberCount?: number;
 }
 
-interface CircleMemberGroup {
-  id: string;
-  name: string;
-}
-
 // Tier → Space access mapping
 const TIER_SPACE_ACCESS: Record<string, string[]> = {
   free: ['community', 'introductions'],

@@ -102,7 +102,7 @@ export { reconcileStripePayments } from './cron/reconcileStripe';
 // ─── Phase 3: Advanced Ecosystem Modules ─────────────────────────────────────
 
 // Pinecone Vector DB RAG Lab — semantic search + embedding pipeline
-export { pineconeQuery, pineconeIngest, pineconeLabStatus } from './pineconeLab';
+export { pineconeQuery, pineconeIngest, pineconeCompare } from './pineconeLab';
 
 // MCP Protocol Server — Model Context Protocol tools for AI agent integration
 export { mcpListTools, mcpCallTool, mcpEndpoint } from './mcpServer';

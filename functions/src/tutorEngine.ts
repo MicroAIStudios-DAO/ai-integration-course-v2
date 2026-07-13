@@ -757,7 +757,10 @@ RULES:
         // If in LAB_OBSERVATION, update competency scores
         if (graphState.currentState === 'LAB_OBSERVATION' && labTelemetry && competencyGraph) {
           const updatedGraph = { ...competencyGraph };
-          const labNode = updatedGraph.nodes.find(n => n.nodeId === labTelemetry.labId);
+          // Hoist out of the closure below: TS drops the `labTelemetry` non-null
+          // narrowing inside the .find() callback (TS18047).
+          const labId = labTelemetry.labId;
+          const labNode = updatedGraph.nodes.find(n => n.nodeId === labId);
           if (labNode) {
             labNode.attempts += 1;
             labNode.lastAttemptAt = new Date().toISOString();
