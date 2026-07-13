@@ -8,7 +8,7 @@
  *
  * Offer architecture (per CRO brief v2):
  *   Primary CTA  → pro_trial  ($1 today, 7-day trial, then $29.99/month)
- *   Secondary CTA → pro       ($239/year, best value)
+ *   Secondary CTA → pro       ($239.88/year, best value)
  *   Hidden/de-emphasized → explorer (monthly, post-trial renewal path)
  *   Enterprise → corporate
  */
@@ -74,7 +74,7 @@ export const plans: Record<PlanKey, PlanDefinition> = {
     key: 'pro',
     name: 'Pro Annual — Best Value',
     tagline: "That's just $19.99/month equivalent. Save $120 vs monthly.",
-    displayPrice: 239,
+    displayPrice: 239.88,
     intervalLabel: '/year',
     billingInterval: 'year',
     monthlyEquivalent: 19.99,
@@ -83,7 +83,7 @@ export const plans: Record<PlanKey, PlanDefinition> = {
     seatCount: 1,
     ctaText: 'Get Annual Access',
     featured: false,
-    analyticsValue: 239,
+    analyticsValue: 239.88,
     features: [
       { text: 'Full annual access', included: true, bold: true },
       { text: 'Lowest effective price — $19.99/month', included: true, bold: true },

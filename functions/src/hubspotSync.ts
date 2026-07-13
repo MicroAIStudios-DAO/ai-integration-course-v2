@@ -127,7 +127,7 @@ function planKeyToMrr(planKey: string): number {
   const mrrMap: Record<string, number> = {
     pro_trial: 100,       // $1.00 in cents
     pro_monthly: 2999,    // $29.99 in cents
-    pro_annual: 1992,     // $239/12 = $19.92/mo in cents
+    pro_annual: 1999,     // $239.88/12 = $19.99/mo in cents
     explorer: 0,
   };
   return mrrMap[planKey] ?? 0;

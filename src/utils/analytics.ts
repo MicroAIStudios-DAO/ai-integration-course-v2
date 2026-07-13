@@ -525,7 +525,7 @@ export const trackAnnualUpsellClick = (
     window.gtag('event', 'annual_upsell_click', {
       current_plan: currentPlan,
       source: resolvedSource,
-      potential_value: 239,
+      potential_value: 239.88,
     });
     console.log('[Analytics] annual_upsell_click:', { currentPlan, source: resolvedSource });
   }

@@ -152,7 +152,7 @@ const PlanSelectorPage: React.FC = () => {
                 <span className="text-xs text-gray-400 uppercase tracking-wider">Prefer to pay yearly?</span>
               </div>
               <p className="text-white font-semibold">
-                Annual tuition — <span className="text-amber-400">$19.99/mo</span>, billed $239/year
+                Annual tuition — <span className="text-amber-400">$19.99/mo</span>, billed $239.88/year
               </p>
               <p className="text-xs text-gray-500 mt-1">Save over $120 vs standard monthly renewal · 14-Day Build Guarantee</p>
             </div>
