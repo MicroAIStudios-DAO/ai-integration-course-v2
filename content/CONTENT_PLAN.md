@@ -18,7 +18,7 @@ before it is published.
 | Slug | Status | Primary intent |
 |---|---|---|
 | ai-integration-architecture-reliable-workflows | ✅ published | "AI integration architecture", "reliable AI workflows" |
-| ai-workflow-error-handling-patterns | 📋 planned | "AI workflow error handling", "AI retries/fallbacks" |
+| ai-workflow-error-handling-patterns | ✅ published | "AI workflow error handling", "AI retries/fallbacks" |
 | production-ai-agent-reliability-checklist | 📋 planned | "production AI agent reliability" |
 | ai-systems-engineering-vs-prompt-engineering | 📋 planned | "AI systems engineering" |
 
@@ -44,10 +44,9 @@ before it is published.
 | ai-integration-for-consultants | 📋 planned | "AI integration for consultants" |
 
 ## Priority order (what the cycle writes next)
-1. ai-workflow-error-handling-patterns
-2. ai-agents-for-small-business
-3. persistent-ai-memory-patterns
-4. api-based-ai-automation-guide
-5. production-ai-agent-reliability-checklist
-6. ai-automation-roi
-7. ai-integration-for-founders
+1. ai-agents-for-small-business
+2. persistent-ai-memory-patterns
+3. api-based-ai-automation-guide
+4. production-ai-agent-reliability-checklist
+5. ai-automation-roi
+6. ai-integration-for-founders

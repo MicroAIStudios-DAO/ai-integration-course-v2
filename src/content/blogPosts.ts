@@ -17,6 +17,30 @@ export interface BlogPost {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: 'ai-workflow-error-handling-patterns',
+    title: 'AI Workflow Error Handling Patterns: Retries, Fallbacks, and Resilience in Production',
+    eyebrow: 'Guide',
+    description:
+      'AI workflows fail in ways traditional software does not — silent wrong output, rate limits mid-chain, unsafe retries. Learn the four patterns that keep production AI systems running: retries with backoff, output validation, fallback chains, and idempotency.',
+    summary:
+      'Most AI workflow failures look like success — a 200 with wrong JSON, a rate limit that kills a six-step chain at step three. Here are the four error-handling layers every production AI system needs.',
+    keywords: [
+      'AI workflow error handling',
+      'AI retries fallbacks',
+      'production AI reliability',
+      'LLM error handling',
+      'AI output validation',
+      'AI workflow resilience',
+      'exponential backoff AI',
+    ],
+    readingTime: '9 min read',
+    publishedTime: '2026-07-14T09:00:00-07:00',
+    modifiedTime: '2026-07-14T09:00:00-07:00',
+    author: 'Blaine Casey',
+    markdownPath: '/blogs/ai-workflow-error-handling-patterns.md',
+    heroImage: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80',
+  },
+  {
     slug: 'ai-integration-architecture-reliable-workflows',
     title: 'AI Integration Architecture: A Systems-Engineering Guide to Reliable AI Workflows',
     eyebrow: 'Guide',
