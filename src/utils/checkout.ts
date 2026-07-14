@@ -3,10 +3,9 @@ import { httpsCallable } from 'firebase/functions';
 import { auth, functions } from '../config/firebase';
 import type { PlanKey } from '../config/pricing';
 import { generateLeadId, storeLeadId, getStoredLeadId, clearLeadData } from './leadId';
+import { getStoredAttribution } from './attribution';
 
 const INTENDED_PLAN_STORAGE_KEY = 'intended_plan';
-
-const ATTRIBUTION_KEYS = ['gclid', 'utm_source', 'utm_campaign', 'utm_medium', 'utm_content', 'utm_term'] as const;
 
 export type CheckoutSessionSummary = {
   sessionId: string;
@@ -44,29 +43,57 @@ export const clearStoredPlanKey = (): void => {
   sessionStorage.removeItem(INTENDED_PLAN_STORAGE_KEY);
 };
 
-const getStoredAttribution = (): Record<string, string> => {
-  const attrs: Record<string, string> = {};
-  for (const key of ATTRIBUTION_KEYS) {
-    const val = sessionStorage.getItem(key);
-    if (val) attrs[key] = val;
-  }
-  return attrs;
-};
+export interface StartCheckoutOptions {
+  seatCount?: number;
+  /** Email captured from the lead-capture gate (anonymous flow). */
+  email?: string;
+  phone?: string;
+  smsConsent?: boolean;
+  marketingConsent?: boolean;
+  leadSource?: string;
+  offerType?: string;
+  /**
+   * Skip the /checkout/start email gate even when anonymous. Used by the gate
+   * page itself after it has captured the email, to avoid a redirect loop.
+   */
+  skipLeadGate?: boolean;
+}
 
-export const startCheckoutForPlan = async (planKey: PlanKey, options?: { seatCount?: number }): Promise<void> => {
+/**
+ * Start Stripe Checkout for a plan.
+ *
+ * Email-first lead gate: an anonymous visitor with no captured email is routed
+ * to /checkout/start so a recoverable lead is written BEFORE Stripe. Without it,
+ * abandoned guest checkouts leave no contactable record — the historical
+ * 4-leads-vs-69-sessions gap that starved the abandonment-recovery sequence.
+ * Logged-in users (email known) and calls that already carry an email proceed
+ * directly to Stripe.
+ */
+export const startCheckoutForPlan = async (planKey: PlanKey, options?: StartCheckoutOptions): Promise<void> => {
   storePlanKey(planKey);
 
   if (auth.currentUser?.isAnonymous) {
     await signOut(auth);
   }
 
-  if (auth.currentUser && !auth.currentUser.isAnonymous) {
-    await auth.currentUser.getIdToken();
+  const isLoggedIn = Boolean(auth.currentUser && !auth.currentUser.isAnonymous);
+  const email = (options?.email || (isLoggedIn ? auth.currentUser?.email : '') || '').trim().toLowerCase();
+
+  if (!email && !options?.skipLeadGate) {
+    // Route anonymous, email-less visitors through the lead-capture gate first.
+    const params = new URLSearchParams({ plan: planKey, ...getStoredAttribution() });
+    if (typeof options?.seatCount === 'number') params.set('seatCount', String(options.seatCount));
+    window.location.assign(`/checkout/start?${params.toString()}`);
+    return;
   }
 
-  // Fix 2: Generate and store a lead_id before redirecting to Stripe.
-  // This creates a hard link between the browser session and the Stripe checkout,
-  // bypassing email matching entirely when the user returns to create an account.
+  if (isLoggedIn) {
+    await auth.currentUser!.getIdToken();
+  }
+
+  // Generate and store a lead_id before redirecting to Stripe — a hard link
+  // between the browser session and the Stripe checkout, so returning users are
+  // matched without relying on email normalization.
   const leadId = generateLeadId();
   storeLeadId(leadId);
 
@@ -74,18 +101,23 @@ export const startCheckoutForPlan = async (planKey: PlanKey, options?: { seatCou
   const createCheckoutSession = httpsCallable(functions, 'createCheckoutSessionV2');
   const attribution = getStoredAttribution();
 
-  // Fix: Pass client_reference_id (Firebase UID) when user is logged in.
-  // This gives the webhook an immediate match to the Firebase user without
-  // needing email normalization or lead_id fallback.
+  // client_reference_id (Firebase UID) when logged in — gives the webhook an
+  // immediate user match without email normalization or lead_id fallback.
   const clientReferenceId = auth.currentUser?.uid || undefined;
 
   const result = await createCheckoutSession({
     planKey,
     ...(typeof options?.seatCount === 'number' ? { seatCount: options.seatCount } : {}),
+    ...(email ? { email } : {}),
+    ...(options?.phone ? { phone: options.phone } : {}),
+    ...(typeof options?.smsConsent === 'boolean' ? { smsConsent: options.smsConsent } : {}),
+    ...(typeof options?.marketingConsent === 'boolean' ? { marketingConsent: options.marketingConsent } : {}),
+    ...(options?.leadSource ? { leadSource: options.leadSource } : {}),
+    ...(options?.offerType ? { offerType: options.offerType } : {}),
     successUrl: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}&plan=${planKey}`,
     cancelUrl: `${origin}/pricing?plan=${planKey}`,
     leadId, // Passed to Stripe metadata for server-side correlation
-    ...(clientReferenceId ? { clientReferenceId } : {}), // Firebase UID for direct webhook matching
+    ...(clientReferenceId ? { clientReferenceId } : {}),
     ...attribution,
   });
 

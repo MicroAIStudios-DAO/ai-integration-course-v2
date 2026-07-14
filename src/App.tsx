@@ -44,6 +44,7 @@ import MCPLabPage from './pages/MCPLabPage';
 import CommunityPage from './pages/CommunityPage';
 import ComplianceLabPage from './pages/ComplianceLabPage';
 import { initGA4, trackPageView } from './utils/analytics';
+import { captureAttribution } from './utils/attribution';
 import ExitIntentModal from './components/ExitIntentModal';
 
 // Renders the exit-intent modal with the correct variant based on current route
@@ -69,9 +70,10 @@ const PageViewTracker: React.FC = () => {
 };
 
 const App: React.FC = () => {
-  // Initialize GA4 on app mount
+  // Initialize GA4 + capture first-touch attribution on app mount
   useEffect(() => {
     initGA4();
+    captureAttribution();
   }, []);
 
   return (
