@@ -9,13 +9,17 @@ useDefault = true
 description = """
 Firebase web API key (project identifier, not a credential — paired with \
 Firestore rules + App Check) and reCAPTCHA Enterprise site keys are \
-designed to ship publicly in the browser bundle. Allowlisted by exact \
-value so any unrelated secret would still be flagged.
+designed to ship publicly in the browser bundle. The IndexNow key is \
+public by protocol design — search engines verify site ownership by \
+fetching it from https://aiintegrationcourse.com/<key>.txt. Allowlisted \
+by exact value so any unrelated secret would still be flagged.
 See: https://firebase.google.com/docs/projects/api-keys
+and https://www.indexnow.org/documentation
 """
 regexes = [
   '''AIzaSyDbkztazekIxE8KUB2MydZXLVW7p52CUOQ''',
   '''6LfhDcosAAAAAP6nU36DVwxoGBmjqJW5VWGy-dCa''',
   '''6LcUwlYsAAAAAGURbzyHKnxGXtFHLhCQYnGB3aPz''',
   '''6LcozxAtAAAAAJIi0EfXIrDjw4OQrsvn7vmCQSWA''',
+  '''5a47563e80625dc7c26b5f97d43eeb93''',
 ]
