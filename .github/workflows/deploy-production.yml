@@ -127,7 +127,13 @@ jobs:
         # GOOGLE_APPLICATION_CREDENTIALS is already set by google-github-actions/auth@v2
         # Do NOT override it here — the gcp-sa.json path does not exist at runtime
 
-      # ── 8. Post-deploy health check ──────────────────────────────────────
+      # ── 8. IndexNow ping (Bing/DuckDuckGo/ChatGPT web search indexing) ────
+      - name: Ping IndexNow
+        if: contains(steps.targets.outputs.targets, 'hosting')
+        continue-on-error: true
+        run: node scripts/indexnow-ping.mjs
+
+      # ── 9. Post-deploy health check ──────────────────────────────────────
       - name: Verify live deployment
         run: |
           echo "Checking production URLs..."
@@ -147,7 +153,7 @@ jobs:
           done
           echo "Health check: $PASS passed, $FAIL warnings"
 
-      # ── 9. Deployment summary ────────────────────────────────────────────
+      # ── 10. Deployment summary ───────────────────────────────────────────
       - name: Deployment summary
         if: always()
         run: |
