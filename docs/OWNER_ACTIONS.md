@@ -48,4 +48,19 @@ The dashboard I’m building derives MRR and funnel metrics from **first-party F
 
 ---
 
+## A-5 — Substantiate (or soften) institutional & credential claims 🟡 INTEGRITY
+
+**Why it needs you:** several public claims imply an accredited institution or a faculty that I cannot verify from the repo, and the operating rules forbid presenting an independent training product as accredited without evidence. I have already corrected the clearest overstatement autonomously; the rest need your factual input.
+
+**Already fixed (honesty):** homepage “The Faculty Board / A Faculty of Practicing Systems Engineers” (plural, implied multiple faculty) → “Your Instructor / Taught by a Practicing Systems Engineer,” because only one instructor (Blaine Casey) is presented.
+
+**Needs your decision/evidence — do any of these have legal/documentary backing?**
+1. **“The Foundation for Applied Artificial Intelligence & Systems Design” / “Academy.”** Is this a registered entity? If it’s a brand/venture name, that’s fine — but the “Foundation/Academy” framing can read as accreditation. If not accredited, keep as branding but avoid implying accreditation.
+2. **“Certification” / “cryptography-backed completion badges.”** Confirm these are described as *course-completion* credentials, not industry-accredited certifications. Current copy is mostly OK; just confirm you’re comfortable with the word “Certification.”
+3. **Homepage stat “100%.”** 100% of what? If it’s not a substantiated figure, tell me the real metric and I’ll label it precisely (or remove it).
+
+Reply with the facts (e.g. “Foundation is an unregistered brand; badges are course-completion only; ‘100%’ means 100% hands-on labs”) and I’ll align every surface in one commit. Until then I’ve left the branding intact and only corrected the plural-faculty claim.
+
+---
+
 _Last updated: 2026-07-13 by Fable. Nothing else is blocked._

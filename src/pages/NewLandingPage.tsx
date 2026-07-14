@@ -106,7 +106,7 @@ const NewLandingPage: React.FC = () => {
 
         {/* Subheadline */}
         <p className="text-lg md:text-xl lg:text-2xl max-w-3xl text-slate-300 mb-6 leading-relaxed">
-          A project-backed curriculum for developers, operators, and founders — real technical depth with an accessible on-ramp. Master fault-tolerant agent architectures, production environments, and API-first designs.
+          The hands-on curriculum for developers and technical founders who need to ship <span className="text-white font-semibold">reliable, production-grade AI agents</span> — not brittle prompt demos. Master fault-tolerant agent architectures, production environments, and API-first design.
         </p>
         <p className="text-sm md:text-base max-w-2xl text-slate-400 mb-10">
           No CS degree required, and no copy-paste prompt templates either. Start from your level and complete your first deployable automation in under 15 minutes.
@@ -160,9 +160,9 @@ const NewLandingPage: React.FC = () => {
       <section id="who-we-are" className="relative z-10 border-t border-b border-white/5 bg-slate-900/40 py-20 px-6 md:px-8">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <span className="text-xs uppercase tracking-[0.25em] text-amber-500 font-bold font-headings">The Faculty Board</span>
+            <span className="text-xs uppercase tracking-[0.25em] text-amber-500 font-bold font-headings">Your Instructor</span>
             <h2 className="mt-3 text-3xl md:text-5xl font-extrabold text-white font-headings uppercase tracking-tight">
-              A Faculty of Practicing Systems Engineers
+              Taught by a Practicing Systems Engineer
             </h2>
             <div className="h-1 w-16 bg-amber-500 mx-auto mt-6" />
           </div>
