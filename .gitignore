@@ -15,6 +15,9 @@ vercel-env-setup.txt
 
 # Env and secrets (monorepo)
 .env.*
+# Committed params file with intentionally empty values — required for
+# non-interactive CI deploys (see comments inside the file). No secrets.
+!functions/.env.ai-integra-course-v2
 firebase/functions/.env
 *.local
 *.secret
