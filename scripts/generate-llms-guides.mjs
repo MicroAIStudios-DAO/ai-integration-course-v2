@@ -45,7 +45,8 @@ function main() {
   const sectionRe = new RegExp(`${SECTION_HEADING}[\\s\\S]*?(?=\\n---|\\n## |$)`);
   base = base.replace(sectionRe, '').replace(/\n{3,}/g, '\n\n');
 
-  const guides = buildGuidesSection(loadBlogPosts());
+  const posts = loadBlogPosts();
+  const guides = buildGuidesSection(posts);
 
   // Insert ahead of the AEO guidance section so real content leads; append if
   // that heading ever moves.
@@ -61,7 +62,7 @@ function main() {
     process.exit(1);
   }
   writeFileSync(OUTPUT_PATH, output);
-  console.log(`✅ build/llms.txt updated with ${loadBlogPosts().length} guides`);
+  console.log(`✅ build/llms.txt updated with ${posts.length} guides`);
 }
 
 main();
