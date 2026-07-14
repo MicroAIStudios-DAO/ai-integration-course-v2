@@ -5,6 +5,19 @@ Each item lists the exact command/click path. Ordered by revenue impact.
 
 ---
 
+## 🔴 A-0 — Merge PR #64 (unblocks functions + the 7-day acquisition cycle)
+
+PR #64 (`fable/phase2-funnel`) carries: the revenue dashboard function, the roadmap-activation function, **and the entire SEO acquisition pipeline** (`scripts/content-gap.mjs`, `content-quality-gate.mjs`, `content/CONTENT_PLAN.md`, the daily GitHub Actions cycle).
+
+The scheduled cloud routine **acquisition-cycle-7day** (runs daily 15:00 UTC through 2026-07-20) starts from `main`, so **until PR #64 is merged it will self-detect the missing pipeline and print "merge PR #64 first" instead of drafting.** Merging #64:
+- deploys the functions fixes + dashboard + activation capture via CI,
+- and lets the daily routine start opening one reviewable `content: <slug>` PR per day.
+
+Routine console: https://claude.ai/code/routines/trig_0159cnfEYcuYPJQm9r3dwB2T
+It self-stops after 2026-07-20 (date guard); you can also disable/remove it there anytime.
+
+---
+
 ## ✅ DEPLOY STATUS (2026-07-13)
 
 - **Hosting: DEPLOYED & verified live.** All frontend revenue fixes are in production now — working lead capture + email gate, `$239.88` price consistency, `/landing.html` 301→`/` (the `$49/mo` page is gone), 7-day-trial copy, ICP-focused homepage, honest instructor claim. Verified: prod JS bundle hash matches the built artifact.

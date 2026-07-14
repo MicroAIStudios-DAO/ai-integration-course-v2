@@ -32,9 +32,18 @@ const RESOURCE_PAGE_SLUGS = [
   'function-calling-with-gemini-1-5-pro',
   'openai-vs-anthropic-for-automation'
 ];
-const BLOG_POST_SLUGS = [
-  'workflow-complete-guide'
-];
+// Auto-discover blog posts from public/blogs/*.md so new articles (incl. those
+// produced by the editorial pipeline) are indexed without editing this file.
+const BLOG_POST_SLUGS = (() => {
+  try {
+    const dir = path.join(__dirname, '..', 'public', 'blogs');
+    return fs.readdirSync(dir)
+      .filter((f) => f.endsWith('.md'))
+      .map((f) => f.replace(/\.md$/, ''));
+  } catch {
+    return ['workflow-complete-guide'];
+  }
+})();
 const INDUSTRY_PAGE_SLUGS = [
   'real-estate',
   'e-commerce',

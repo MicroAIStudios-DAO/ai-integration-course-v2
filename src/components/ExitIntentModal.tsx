@@ -136,7 +136,7 @@ const ExitIntentModal: React.FC<ExitIntentModalProps> = ({
             </p>
 
             <Link
-              to="/start-trial?utm_source=exit_modal&utm_medium=onsite&utm_campaign=exit_intent_pricing"
+              to="/checkout/start?plan=pro_trial&utm_source=exit_modal&utm_medium=onsite&utm_campaign=exit_intent_pricing"
               onClick={() => {
                 trackCTAClick('exit_modal_trial', 'exit_intent_modal', 'trial');
                 handleClose();
@@ -185,7 +185,7 @@ const ExitIntentModal: React.FC<ExitIntentModalProps> = ({
               You don't need to commit big to start. Use the $1 trial and decide after you've actually seen the inside.
             </p>
             <Link
-              to="/start-trial?utm_source=exit_modal&utm_medium=onsite&utm_campaign=exit_intent_checkout"
+              to="/checkout/start?plan=pro_trial&utm_source=exit_modal&utm_medium=onsite&utm_campaign=exit_intent_checkout"
               onClick={() => {
                 trackCTAClick('exit_modal_checkout_trial', 'exit_intent_modal', 'trial');
                 handleClose();

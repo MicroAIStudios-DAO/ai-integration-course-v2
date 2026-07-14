@@ -29,6 +29,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://aiintegrationcourse.com/library</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/solutions</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/ai-workshops-san-diego</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://aiintegrationcourse.com/login</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -49,11 +64,6 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://aiintegrationcourse.com/library</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://aiintegrationcourse.com/library/rag-for-small-business</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -69,14 +79,24 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aiintegrationcourse.com/blogs/workflow-complete-guide</loc>
+    <loc>https://aiintegrationcourse.com/blogs/ai-integration-architecture-reliable-workflows</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aiintegrationcourse.com/solutions</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <loc>https://aiintegrationcourse.com/blogs/cursor-vs-claude-code-vs-gemini-2026</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/blogs/rag-implementation-guide-production</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/blogs/workflow-complete-guide</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/solutions/real-estate</loc>
@@ -94,253 +114,320 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://aiintegrationcourse.com/ai-workshops-san-diego</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_01_id/lessons/lesson_founders_01_content_architect</loc>
+    <lastmod>2026-03-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_01_id/lessons/lesson_1</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-02-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_01_id/lessons/lesson_2</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-01-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_01_id/lessons/lesson_3</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-03-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_01_id/lessons/lesson_4</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-03-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_01_id/lessons/lesson_5</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-03-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_01_id/lessons/lesson_5_1_github_repository</loc>
+    <lastmod>2026-03-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_01_id/lessons/lesson_mod1_project</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-03-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_02_id/lessons/lesson_founders_02_informed_architect</loc>
+    <lastmod>2026-03-31</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_02_id/lessons/lesson_6</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_02_id/lessons/lesson_7</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_02_id/lessons/lesson_8</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_02_id/lessons/lesson_mod2_project</loc>
+    <lastmod>2026-03-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_03_id/lessons/lesson_founders_03_persistent_memory</loc>
+    <lastmod>2026-03-31</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_03_id/lessons/lesson_9</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_03_id/lessons/lesson_10</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_03_id/lessons/lesson_11</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_03_id/lessons/lesson_12</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_03_id/lessons/lesson_13</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_03_id/lessons/lesson_14</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_03_id/lessons/lesson_mod3_project</loc>
+    <lastmod>2026-03-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_04_id/lessons/lesson_founders_04_governed_agents</loc>
+    <lastmod>2026-03-31</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_04_id/lessons/lesson_15</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_04_id/lessons/lesson_16</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_04_id/lessons/lesson_17</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_04_id/lessons/lesson_18</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_04_id/lessons/lesson_19</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_04_id/lessons/lesson_20</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_04_id/lessons/lesson_mod4_project</loc>
+    <lastmod>2026-03-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_05_id/lessons/lesson_founders_05_deployment_pipeline</loc>
+    <lastmod>2026-03-31</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_05_id/lessons/lesson_21</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_05_id/lessons/lesson_22</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_05_id/lessons/lesson_23</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_05_id/lessons/lesson_24</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_05_id/lessons/lesson_25</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_05_id/lessons/lesson_26</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_05_id/lessons/lesson_mod5_project</loc>
+    <lastmod>2026-03-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_06_id/lessons/lesson_27</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_06_id/lessons/lesson_28</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_06_id/lessons/lesson_29</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_06_id/lessons/lesson_30</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_06_id/lessons/lesson_31</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_06_id/lessons/lesson_mod6_project</loc>
+    <lastmod>2026-03-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_07_id/lessons/lesson_32</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_07_id/lessons/lesson_33</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_07_id/lessons/lesson_34</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_07_id/lessons/lesson_35</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_07_id/lessons/lesson_36</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_07_id/lessons/lesson_37</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_07_id/lessons/lesson_38</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_07_id/lessons/lesson_39</loc>
-    <lastmod>2026-01-26</lastmod>
+    <lastmod>2026-07-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_07_id/lessons/lesson_mod7_project</loc>
+    <lastmod>2026-03-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
