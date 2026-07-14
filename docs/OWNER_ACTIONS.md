@@ -5,6 +5,15 @@ Each item lists the exact command/click path. Ordered by revenue impact.
 
 ---
 
+## ✅ DEPLOY STATUS (2026-07-13)
+
+- **Hosting: DEPLOYED & verified live.** All frontend revenue fixes are in production now — working lead capture + email gate, `$239.88` price consistency, `/landing.html` 301→`/` (the `$49/mo` page is gone), 7-day-trial copy, ICP-focused homepage, honest instructor claim. Verified: prod JS bundle hash matches the built artifact.
+- **Functions: NOT deployed by me — needs CI.** `npm run deploy:prod` aborted at the functions stage because a non-interactive shell can't resolve the `defineSecret` params (OPENAI_API_KEY, STRIPE_SECRET, SMTP_*, etc.) the way CI does, and I must never write secret values to disk. Nothing was half-deployed. **The functions changes (compiling build fix + preventive MCP security hardening) ship when PR #64 merges to `main` and the "Deploy to Production" workflow runs — which now passes because the build errors it previously failed on are fixed.** The MCP leak fix is preventive (mcpEndpoint was never deployed), so there is no active production exposure in the meantime.
+
+**Action:** merge **PR #64** to deploy the functions changes via CI. (PR #63 already merged.)
+
+---
+
 ## A-1 — Deploy the branch fixes to production 🔴 HIGHEST IMPACT
 
 **Why it needs you:** deploying to live Firebase is a production change; I have Firebase CLI auth in-session (`livetrue2u@gmail.com`) but pushing live billing-adjacent function + hosting changes should be an explicit owner decision. The safest route is to merge the PR and let CI deploy, OR run the deploy yourself.
