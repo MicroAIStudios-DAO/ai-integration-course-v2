@@ -5,6 +5,15 @@ Each item lists the exact command/click path. Ordered by revenue impact.
 
 ---
 
+## ✅ DEPLOY STATUS (2026-07-13)
+
+- **Hosting: DEPLOYED & verified live.** All frontend revenue fixes are in production now — working lead capture + email gate, `$239.88` price consistency, `/landing.html` 301→`/` (the `$49/mo` page is gone), 7-day-trial copy, ICP-focused homepage, honest instructor claim. Verified: prod JS bundle hash matches the built artifact.
+- **Functions: NOT deployed by me — needs CI.** `npm run deploy:prod` aborted at the functions stage because a non-interactive shell can't resolve the `defineSecret` params (OPENAI_API_KEY, STRIPE_SECRET, SMTP_*, etc.) the way CI does, and I must never write secret values to disk. Nothing was half-deployed. **The functions changes (compiling build fix + preventive MCP security hardening) ship when PR #64 merges to `main` and the "Deploy to Production" workflow runs — which now passes because the build errors it previously failed on are fixed.** The MCP leak fix is preventive (mcpEndpoint was never deployed), so there is no active production exposure in the meantime.
+
+**Action:** merge **PR #64** to deploy the functions changes via CI. (PR #63 already merged.)
+
+---
+
 ## A-1 — Deploy the branch fixes to production 🔴 HIGHEST IMPACT
 
 **Why it needs you:** deploying to live Firebase is a production change; I have Firebase CLI auth in-session (`livetrue2u@gmail.com`) but pushing live billing-adjacent function + hosting changes should be an explicit owner decision. The safest route is to merge the PR and let CI deploy, OR run the deploy yourself.
@@ -45,6 +54,21 @@ npm run deploy:hosting
 ## A-4 — (If desired) Enable GA4 Data API read for a fuller baseline ⚪
 
 The dashboard I’m building derives MRR and funnel metrics from **first-party Firestore + Stripe webhook data** (server-authoritative, no external dependency) — this is the preferred approach and needs nothing from you. If you *also* want GA4 session/traffic numbers pulled programmatically, enable the **Google Analytics Data API** on project `ai-integra-course-v2` and grant `livetrue2u@gmail.com` viewer on the GA4 property. Optional.
+
+---
+
+## A-5 — Substantiate (or soften) institutional & credential claims 🟡 INTEGRITY
+
+**Why it needs you:** several public claims imply an accredited institution or a faculty that I cannot verify from the repo, and the operating rules forbid presenting an independent training product as accredited without evidence. I have already corrected the clearest overstatement autonomously; the rest need your factual input.
+
+**Already fixed (honesty):** homepage “The Faculty Board / A Faculty of Practicing Systems Engineers” (plural, implied multiple faculty) → “Your Instructor / Taught by a Practicing Systems Engineer,” because only one instructor (Blaine Casey) is presented.
+
+**Needs your decision/evidence — do any of these have legal/documentary backing?**
+1. **“The Foundation for Applied Artificial Intelligence & Systems Design” / “Academy.”** Is this a registered entity? If it’s a brand/venture name, that’s fine — but the “Foundation/Academy” framing can read as accreditation. If not accredited, keep as branding but avoid implying accreditation.
+2. **“Certification” / “cryptography-backed completion badges.”** Confirm these are described as *course-completion* credentials, not industry-accredited certifications. Current copy is mostly OK; just confirm you’re comfortable with the word “Certification.”
+3. **Homepage stat “100%.”** 100% of what? If it’s not a substantiated figure, tell me the real metric and I’ll label it precisely (or remove it).
+
+Reply with the facts (e.g. “Foundation is an unregistered brand; badges are course-completion only; ‘100%’ means 100% hands-on labs”) and I’ll align every surface in one commit. Until then I’ve left the branding intact and only corrected the plural-faculty claim.
 
 ---
 

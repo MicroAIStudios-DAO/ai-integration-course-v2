@@ -23,8 +23,9 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useReCaptcha } from '../hooks/useReCaptcha';
+import { startCheckoutForPlan, isPlanKey } from '../utils/checkout';
+import type { PlanKey } from '../config/pricing';
 import {
   trackLeadCaptured,
   trackCheckoutStarted,
@@ -32,24 +33,6 @@ import {
 } from '../utils/analytics';
 
 type OfferType = 'trial_7d_usd1' | 'annual_usd239';
-
-interface CheckoutSessionRequest {
-  offerType: OfferType;
-  email: string;
-  phone?: string;
-  smsConsent: boolean;
-  marketingConsent: boolean;
-  leadSource: string;
-  utm: Record<string, string>;
-  referrer: string;
-  experimentBucket: string;
-}
-
-interface CheckoutSessionResponse {
-  leadId: string;
-  checkoutSessionId: string;
-  url: string;
-}
 
 const SOURCE_HEADLINES: Record<string, string> = {
   google: "You searched for AI automation. Here's the fastest path to actually using it.",
@@ -62,36 +45,56 @@ const SOURCE_HEADLINES: Record<string, string> = {
 
 const DEFAULT_HEADLINE = "Start building AI workflows that actually save time. $1 for 7 days.";
 
-const OFFER_LABELS: Record<OfferType, { cta: string; subtext: string; badge: string }> = {
-  trial_7d_usd1: {
+// Labels keyed by the trusted plan key. The server maps planKey → Stripe price;
+// the client never sends a price or amount.
+const PLAN_LABELS: Record<PlanKey, { cta: string; subtext: string; badge: string }> = {
+  pro_trial: {
     cta: 'Start My $1 Trial →',
     subtext: '$1 today · 7-day trial · then $29.99/month · cancel anytime',
     badge: 'Most Popular',
   },
-  annual_usd239: {
+  pro: {
     cta: 'Get Annual Access →',
     subtext: '$239.88/year · save $120 vs monthly · 14-Day Build Guarantee',
     badge: 'Best Value',
   },
+  explorer: {
+    cta: 'Continue to Checkout →',
+    subtext: '$29.99/month · cancel anytime · 14-Day Build Guarantee',
+    badge: 'Monthly',
+  },
+  corporate: {
+    cta: 'Continue to Team Checkout →',
+    subtext: '$14.99/seat/month · 5-seat minimum · 14-Day Build Guarantee',
+    badge: 'Teams',
+  },
 };
+
+// Map a plan key to the analytics offer type used by existing conversion events.
+const offerTypeForPlan = (planKey: PlanKey): OfferType =>
+  planKey === 'pro' ? 'annual_usd239' : 'trial_7d_usd1';
 
 const CheckoutStartPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const emailRef = useRef<HTMLInputElement>(null);
 
-  const offerParam = searchParams.get('offer') as OfferType | null;
-  const offerType: OfferType = offerParam === 'annual_usd239' ? 'annual_usd239' : 'trial_7d_usd1';
+  // Resolve the trusted plan key from ?plan= (any plan) or legacy ?offer=.
+  const planParam = searchParams.get('plan');
+  const offerParam = searchParams.get('offer');
+  const planKey: PlanKey = isPlanKey(planParam)
+    ? planParam
+    : offerParam === 'annual_usd239'
+      ? 'pro'
+      : 'pro_trial';
+  const offerType: OfferType = offerTypeForPlan(planKey);
+  const seatCountParam = Number.parseInt(searchParams.get('seatCount') || '', 10);
+  const seatCount = Number.isFinite(seatCountParam) && seatCountParam >= 5 ? seatCountParam : undefined;
 
   const utmSource = searchParams.get('utm_source') || '';
   const utmMedium = searchParams.get('utm_medium') || '';
-  const utmCampaign = searchParams.get('utm_campaign') || '';
-  const utmContent = searchParams.get('utm_content') || '';
-  const utmTerm = searchParams.get('utm_term') || '';
-  const experimentBucket = searchParams.get('exp') || '';
-  const referrer = typeof document !== 'undefined' ? document.referrer : '';
 
   const headline = SOURCE_HEADLINES[utmSource] || DEFAULT_HEADLINE;
-  const offerLabel = OFFER_LABELS[offerType];
+  const offerLabel = PLAN_LABELS[planKey];
 
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -136,43 +139,31 @@ const CheckoutStartPage: React.FC = () => {
     }
 
     try {
-      const functions = getFunctions();
-      const createSession = httpsCallable<CheckoutSessionRequest, CheckoutSessionResponse>(
-        functions,
-        'createCheckoutSessionV2'
-      );
+      const leadSource = utmSource ? `${utmSource}_${utmMedium}` : 'pricing_primary';
+      trackLeadCaptured(offerType, leadSource, offerType, smsConsent);
 
-      const payload: CheckoutSessionRequest = {
-        offerType,
+      const checkoutPrice = planKey === 'pro' ? 239.88 : planKey === 'explorer' ? 29.99 : 1;
+      const checkoutPlanName =
+        planKey === 'pro' ? 'Pro AI Architect Annual'
+        : planKey === 'explorer' ? 'Explorer Monthly'
+        : planKey === 'corporate' ? 'Corporate Team'
+        : 'Pro AI Architect Trial';
+      trackCheckoutStarted(checkoutPrice, 'USD', checkoutPlanName, planKey);
+
+      // Route through the shared checkout util WITH the captured email, so the
+      // server writes a recoverable lead and creates the Stripe session in one
+      // authoritative place. skipLeadGate prevents bouncing back to this page.
+      await startCheckoutForPlan(planKey, {
         email: normalizedEmail,
         phone: phone.trim() || undefined,
         smsConsent,
         marketingConsent,
-        leadSource: utmSource ? `${utmSource}_${utmMedium}` : 'pricing_primary',
-        utm: {
-          source: utmSource,
-          medium: utmMedium,
-          campaign: utmCampaign,
-          content: utmContent,
-          term: utmTerm,
-        },
-        referrer,
-        experimentBucket,
-      };
-
-      trackLeadCaptured(offerType, payload.leadSource, offerType, smsConsent);
-
-      const result = await createSession(payload);
-      const { url, checkoutSessionId: _checkoutSessionId } = result.data;
-      void _checkoutSessionId; // reserved for future analytics use
-
-      const checkoutPrice = offerType === 'annual_usd239' ? 239 : 1;
-      const checkoutPlanName = offerType === 'annual_usd239' ? 'Pro AI Architect Annual' : 'Pro AI Architect Trial';
-      const checkoutPlanId = offerType === 'annual_usd239' ? 'pro_annual' : 'pro_trial';
-      trackCheckoutStarted(checkoutPrice, 'USD', checkoutPlanName, checkoutPlanId);
-
-      // Redirect to Stripe Checkout
-      window.location.href = url;
+        leadSource,
+        offerType,
+        skipLeadGate: true,
+        ...(seatCount ? { seatCount } : {}),
+      });
+      // startCheckoutForPlan performs the redirect to Stripe on success.
     } catch (err: any) {
       console.error('Checkout session creation failed:', err);
       setError(
