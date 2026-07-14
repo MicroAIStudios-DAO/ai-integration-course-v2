@@ -53,6 +53,7 @@
     "artifactregistry-login": "npx google-artifactregistry-auth --repo-config=./.npmrc --credential-config=./.npmrc",
     "setup": "bash setup.sh",
     "generate-sitemap": "node scripts/generate-sitemap.js",
+    "prebuild": "node scripts/update-sitemap-blogs.mjs",
     "predeploy": "npm run build"
   },
   "browserslist": {
