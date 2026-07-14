@@ -25,7 +25,12 @@ export function loadBlogPosts() {
   );
   const { code } = transformSync(source, { loader: 'ts', format: 'cjs' });
   const mod = { exports: {} };
-  new Function('module', 'exports', 'require', code)(mod, mod.exports, () => ({}));
+  const requireStub = (id) => {
+    throw new Error(
+      `loadBlogPosts: src/content/blogPosts.ts must not import "${id}" (use literal values only).`
+    );
+  };
+  new Function('module', 'exports', 'require', code)(mod, mod.exports, requireStub);
   if (!Array.isArray(mod.exports.blogPosts)) {
     throw new Error('blogPosts export not found in src/content/blogPosts.ts');
   }
