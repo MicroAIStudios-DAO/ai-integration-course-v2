@@ -69,7 +69,7 @@ const NewLandingPage: React.FC = () => {
               Student Login
             </Link>
             <Link
-              to="/start-trial"
+              to="/checkout/start?plan=pro_trial"
               className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2 rounded-xl text-sm transition-all shadow-md shadow-amber-500/10 hover:shadow-amber-400/20 hover:scale-[1.02] active:scale-[0.98]"
             >
               Start Trial
@@ -115,7 +115,7 @@ const NewLandingPage: React.FC = () => {
         {/* Dual Actions with Low-Friction Entry */}
         <div className="flex flex-col sm:flex-row gap-4 mb-16 justify-center w-full max-w-md">
           <Link
-            to="/start-trial"
+            to="/checkout/start?plan=pro_trial"
             className="flex-1 text-center bg-amber-500 hover:bg-amber-400 text-slate-950 px-8 py-4 rounded-xl text-md font-bold shadow-lg shadow-amber-500/10 hover:shadow-amber-500/20 transition-all hover:scale-[1.03] active:scale-[0.98]"
           >
             Start $1 Trial Now
@@ -479,7 +479,7 @@ const NewLandingPage: React.FC = () => {
 
           <div className="mt-8 flex flex-col gap-3 justify-center">
             <Link
-              to="/start-trial"
+              to="/checkout/start?plan=pro_trial"
               className="bg-amber-500 hover:bg-amber-400 text-slate-950 px-8 py-4 rounded-xl font-bold uppercase text-sm tracking-wider shadow shadow-amber-500/20 hover:scale-[1.01] transition-transform"
             >
               Start $1 Trial Now
