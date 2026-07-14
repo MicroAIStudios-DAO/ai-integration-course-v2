@@ -121,11 +121,11 @@ const NewLandingPage: React.FC = () => {
             Start $1 Trial Now
           </Link>
           <Link
-            to="/pricing"
+            to="/roadmap"
             onClick={handleFreeStarterOptIn}
             className="flex-1 text-center border border-white/20 hover:border-white/40 text-white hover:bg-white/5 px-8 py-4 rounded-xl text-md font-bold backdrop-blur-sm transition-all hover:scale-[1.03]"
           >
-            Compare Tuition Plans
+            Get My Free Roadmap →
           </Link>
         </div>
 

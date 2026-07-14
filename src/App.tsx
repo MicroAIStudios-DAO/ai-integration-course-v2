@@ -32,6 +32,7 @@ import TermsOfServicePage from './pages/TermsOfServicePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import AdminAddLesson from './pages/AdminAddLesson';
 import AdminRevenuePage from './pages/AdminRevenuePage';
+import RoadmapActivationPage from './pages/RoadmapActivationPage';
 import PlanSelectorPage from './pages/PlanSelectorPage';
 import CheckoutStartPage from './pages/CheckoutStartPage';
 import BillingPage from './pages/BillingPage';
@@ -104,6 +105,8 @@ const App: React.FC = () => {
         <Route path="/get-access" element={<PlanSelectorPage />} />
         {/* Spec §4: Pre-checkout lead capture — captures email before Stripe redirect */}
         <Route path="/checkout/start" element={<CheckoutStartPage />} />
+        {/* Free 10-minute activation — personalized roadmap, no card, email at value exchange */}
+        <Route path="/roadmap" element={<RoadmapActivationPage />} />
         {/* Spec §14: Billing portal — redirects to Stripe Customer Portal */}
         <Route path="/billing" element={<BillingPage />} />
         {/* Admin page for adding lessons - hidden route */}

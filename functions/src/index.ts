@@ -102,6 +102,9 @@ export { reconcileStripePayments } from './cron/reconcileStripe';
 // First-party revenue & funnel dashboard (admin-gated) — MRR from Stripe
 export { getRevenueDashboardV2 } from './revenueDashboard';
 
+// Free roadmap activation — captures a segmented lead (no card)
+export { submitActivationV2 } from './activation';
+
 // ─── Phase 3: Advanced Ecosystem Modules ─────────────────────────────────────
 
 // Pinecone Vector DB RAG Lab — semantic search + embedding pipeline
