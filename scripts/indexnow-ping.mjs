@@ -47,11 +47,16 @@ async function main() {
   };
 
   console.log(`Submitting ${urls.length} URLs to IndexNow...`);
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15_000);
+
   const res = await fetch(ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json; charset=utf-8' },
     body: JSON.stringify(body),
-  });
+    signal: controller.signal,
+  }).finally(() => clearTimeout(timeout));
 
   if (res.ok) {
     console.log(`✅ IndexNow accepted the submission (HTTP ${res.status})`);
