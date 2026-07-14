@@ -1,0 +1,71 @@
+name: Acquisition Cycle (7-day)
+
+# Zero-cost daily organic-acquisition heartbeat. Runs the deterministic parts of
+# the editorial pipeline: reports the next content gap and enforces the quality
+# gate on any drafts. Creative drafting is done by the scheduled Claude routine
+# (or a human) which opens PRs into content/drafts/ that this gate validates.
+#
+# Self-limits: the "work" steps no-op after CYCLE_END so it naturally winds down
+# after the 7-day window. Remove this workflow file when the cycle is over.
+
+on:
+  schedule:
+    - cron: '0 14 * * *'   # daily 14:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+env:
+  CYCLE_END: '2026-07-20'   # 7 days from 2026-07-13
+
+jobs:
+  cycle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check cycle window
+        id: window
+        run: |
+          today="$(date -u +%Y-%m-%d)"
+          if [[ "$today" > "$CYCLE_END" ]]; then
+            echo "active=false" >> "$GITHUB_OUTPUT"
+            echo "🛑 Past CYCLE_END ($CYCLE_END). This 7-day cycle is complete — safe to remove .github/workflows/acquisition-cycle.yml." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "active=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node
+        if: steps.window.outputs.active == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Content gap — what to write next
+        if: steps.window.outputs.active == 'true'
+        run: |
+          {
+            echo "## Acquisition cycle — $(date -u +%Y-%m-%d)"
+            echo '```'
+            node scripts/content-gap.mjs
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Quality gate — validate any drafts
+        if: steps.window.outputs.active == 'true'
+        run: |
+          shopt -s nullglob
+          drafts=(content/drafts/*.md)
+          # Exclude the README from the gate.
+          drafts=("${drafts[@]/content\/drafts\/README.md}")
+          real=()
+          for d in "${drafts[@]}"; do [[ -n "$d" ]] && real+=("$d"); done
+          if [[ ${#real[@]} -eq 0 ]]; then
+            echo "_No drafts pending. Next gap is ready to be drafted (see above)._" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Draft quality gate" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            node scripts/content-quality-gate.mjs "${real[@]}" | tee -a "$GITHUB_STEP_SUMMARY" || true
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
