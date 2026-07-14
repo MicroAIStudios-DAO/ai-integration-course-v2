@@ -31,6 +31,7 @@ import ConsentBanner from './components/ConsentBanner';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import AdminAddLesson from './pages/AdminAddLesson';
+import AdminRevenuePage from './pages/AdminRevenuePage';
 import PlanSelectorPage from './pages/PlanSelectorPage';
 import CheckoutStartPage from './pages/CheckoutStartPage';
 import BillingPage from './pages/BillingPage';
@@ -107,6 +108,8 @@ const App: React.FC = () => {
         <Route path="/billing" element={<BillingPage />} />
         {/* Admin page for adding lessons - hidden route */}
         <Route path="/admin/add-lesson" element={<AdminAddLesson />} />
+        {/* Protected first-party revenue dashboard — admin gate enforced server-side */}
+        <Route path="/admin/revenue" element={<AdminRevenuePage />} />
 
         {/* All other routes use Layout wrapper */}
         <Route element={<Layout />}>

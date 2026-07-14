@@ -99,6 +99,9 @@ export { attachCheckoutSessionAtomicV2, verifyProvisioningState } from './atomic
 // Fix 4: Stripe Reconciliation Cron — safety net for webhook failures (runs every 6 hours)
 export { reconcileStripePayments } from './cron/reconcileStripe';
 
+// First-party revenue & funnel dashboard (admin-gated) — MRR from Stripe
+export { getRevenueDashboardV2 } from './revenueDashboard';
+
 // ─── Phase 3: Advanced Ecosystem Modules ─────────────────────────────────────
 
 // Pinecone Vector DB RAG Lab — semantic search + embedding pipeline
