@@ -21,11 +21,12 @@
 
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { defineString } from 'firebase-functions/params';
 
 // ─── Config ─────────────────────────────────────────────────────────────────
-const PINECONE_API_KEY = defineString('PINECONE_API_KEY', { default: '' });
-const PINECONE_INDEX_HOST = defineString('PINECONE_INDEX_HOST', { default: '' });
+// Read from runtime env vars (set via console/gcloud), not defineString
+// params: params break non-interactive CI deploys when unset, and a dotenv
+// workaround would stop Firebase from preserving manually configured runtime
+// env vars on other functions (firebase-tools inferDetailsFromExisting).
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -64,8 +65,8 @@ async function pineconeRequest(
   method: 'POST' | 'GET',
   body?: Record<string, unknown>
 ): Promise<unknown> {
-  const host = PINECONE_INDEX_HOST.value();
-  const apiKey = PINECONE_API_KEY.value();
+  const host = process.env.PINECONE_INDEX_HOST ?? '';
+  const apiKey = process.env.PINECONE_API_KEY ?? '';
 
   if (!host || !apiKey) {
     throw new HttpsError('failed-precondition', 'Pinecone is not configured. Set PINECONE_API_KEY and PINECONE_INDEX_HOST.');

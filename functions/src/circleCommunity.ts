@@ -23,13 +23,13 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { getFirestore } from 'firebase-admin/firestore';
-import { defineString } from 'firebase-functions/params';
 import * as crypto from 'crypto';
 
 // ─── Config ─────────────────────────────────────────────────────────────────
-const CIRCLE_API_TOKEN = defineString('CIRCLE_API_TOKEN', { default: '' });
-const CIRCLE_COMMUNITY_ID = defineString('CIRCLE_COMMUNITY_ID', { default: '' });
-const CIRCLE_SSO_KEY = defineString('CIRCLE_SSO_KEY', { default: '' });
+// Read from runtime env vars (set via console/gcloud), not defineString
+// params: params break non-interactive CI deploys when unset, and a dotenv
+// workaround would stop Firebase from preserving manually configured runtime
+// env vars on other functions (firebase-tools inferDetailsFromExisting).
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -58,7 +58,7 @@ async function circleAPI(
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
   body?: Record<string, unknown>
 ): Promise<unknown> {
-  const token = CIRCLE_API_TOKEN.value();
+  const token = process.env.CIRCLE_API_TOKEN ?? '';
   if (!token) {
     throw new HttpsError('failed-precondition', 'Circle.so is not configured. Set CIRCLE_API_TOKEN.');
   }
@@ -90,7 +90,7 @@ function generateCircleSSOToken(user: {
   photoURL?: string;
   tier: string;
 }): string {
-  const ssoKey = CIRCLE_SSO_KEY.value();
+  const ssoKey = process.env.CIRCLE_SSO_KEY ?? '';
   if (!ssoKey) {
     throw new HttpsError('failed-precondition', 'Circle SSO key not configured.');
   }
@@ -141,7 +141,7 @@ export const circleSSO = onCall(
     const userData = userDoc.data() || {};
 
     const tier = userData.subscriptionTier || userData.tier || 'free';
-    const communityId = CIRCLE_COMMUNITY_ID.value();
+    const communityId = process.env.CIRCLE_COMMUNITY_ID ?? '';
 
     const ssoToken = generateCircleSSOToken({
       uid: request.auth.uid,
@@ -234,10 +234,10 @@ export const circleSyncMember = onDocumentUpdated(
     // Only sync if tier changed
     if (oldTier === newTier) return;
 
-    const token = CIRCLE_API_TOKEN.value();
+    const token = process.env.CIRCLE_API_TOKEN ?? '';
     if (!token) return; // Circle not configured, skip silently
 
-    const communityId = CIRCLE_COMMUNITY_ID.value();
+    const communityId = process.env.CIRCLE_COMMUNITY_ID ?? '';
     const email = after.email;
 
     if (!email || !communityId) return;
