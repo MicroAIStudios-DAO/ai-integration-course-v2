@@ -23,7 +23,7 @@
     "firebase-functions": "^7.2.5",
     "genkit": "^1.21.0",
     "node-fetch": "^2.6.13",
-    "nodemailer": "^8.0.5",
+    "nodemailer": "^9.0.3",
     "openai": "^4.28.4",
     "stripe": "^16.0.0"
   },
