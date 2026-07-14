@@ -98,9 +98,9 @@ const NewLandingPage: React.FC = () => {
 
         {/* Main Headline */}
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-8 max-w-5xl leading-[1.08] font-headings text-white">
-          The Systems Engineering Approach to{" "}
+          Build AI Workflows That{" "}
           <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-500 bg-clip-text text-transparent">
-            Artificial Intelligence Integration
+            Actually Work
           </span>
         </h1>
 
