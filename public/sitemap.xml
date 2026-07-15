@@ -124,6 +124,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_01_id/lessons/lesson_founders_01_content_architect</loc>
+    <lastmod>2026-03-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_01_id/lessons/lesson_1</loc>
     <lastmod>2026-02-19</lastmod>
     <changefreq>monthly</changefreq>
@@ -150,6 +156,12 @@
   <url>
     <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_01_id/lessons/lesson_5</loc>
     <lastmod>2026-03-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aiintegrationcourse.com/courses/course_01_id/modules/module_02_id/lessons/lesson_founders_02_informed_architect</loc>
+    <lastmod>2026-03-31</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

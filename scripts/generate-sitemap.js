@@ -49,6 +49,23 @@ const INDUSTRY_PAGE_SLUGS = [
   'e-commerce',
   'law-firms'
 ];
+// Public preview lessons are anonymously accessible (isFreeLesson() in
+// src/firebaseService.ts + firestore.rules lessonContent allowances) even
+// though their tier is not 'free'. Parse the ID set from its source of
+// truth so the sitemap can't drift from the app's access logic.
+const PUBLIC_PREVIEW_LESSON_IDS = (() => {
+  try {
+    const source = fs.readFileSync(
+      path.join(__dirname, '..', 'src', 'firebaseService.ts'),
+      'utf8'
+    );
+    const block = source.match(/PUBLIC_PREVIEW_LESSON_IDS = new Set\(\[([\s\S]*?)\]\)/);
+    if (!block) return new Set();
+    return new Set([...block[1].matchAll(/'([^']+)'/g)].map((m) => m[1]));
+  } catch {
+    return new Set();
+  }
+})();
 
 function shouldIncludePath(pathname) {
   return !EXCLUDED_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
@@ -157,10 +174,15 @@ async function generateSitemap() {
           const lessonId = lessonDoc.id;
           const lessonData = lessonDoc.data();
 
-          // Only free lessons belong in the sitemap: gated/premium lesson
-          // URLs require auth, so to crawlers they are soft-404s or shells.
-          const isFree = lessonData.tier === 'free' || lessonData.isFree;
-          if (!isFree) {
+          // Only publicly accessible lessons belong in the sitemap:
+          // gated/premium lesson URLs require auth, so to crawlers they are
+          // soft-404s or shells. Free-tier lessons and the public preview
+          // founders lessons are both anonymously readable.
+          const isPubliclyAccessible =
+            lessonData.tier === 'free' ||
+            lessonData.isFree ||
+            PUBLIC_PREVIEW_LESSON_IDS.has(lessonId);
+          if (!isPubliclyAccessible) {
             continue;
           }
 
