@@ -13,10 +13,10 @@ Disallow: /api/
 Disallow: /__/
 Disallow: /firebase/
 
-# Allow all course content to be indexed
-Allow: /courses/
-Allow: /modules/
-Allow: /lessons/
+# Gated course module/lesson routes are client-rendered, auth-gated shells
+# with nothing crawlable — keep crawlers out of them. The prerendered
+# /courses overview page itself stays crawlable.
+Disallow: /courses/*/modules/
 
 # Allow static assets
 Allow: /static/
