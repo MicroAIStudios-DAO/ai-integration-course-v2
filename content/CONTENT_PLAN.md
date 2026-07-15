@@ -32,7 +32,7 @@ before it is published.
 ## Cluster 3 — Agents & automation for builders
 | Slug | Status | Primary intent |
 |---|---|---|
-| ai-agents-for-small-business | 📋 planned | "AI agents for small business" |
+| ai-agents-for-small-business | ✅ published | "AI agents for small business" |
 | api-based-ai-automation-guide | 📋 planned | "API-based AI automation" |
 | firebase-and-ai-integration | 📋 planned | "Firebase AI integration" |
 
@@ -44,9 +44,8 @@ before it is published.
 | ai-integration-for-consultants | 📋 planned | "AI integration for consultants" |
 
 ## Priority order (what the cycle writes next)
-1. ai-agents-for-small-business
-2. persistent-ai-memory-patterns
-3. api-based-ai-automation-guide
-4. production-ai-agent-reliability-checklist
-5. ai-automation-roi
-6. ai-integration-for-founders
+1. persistent-ai-memory-patterns
+2. api-based-ai-automation-guide
+3. production-ai-agent-reliability-checklist
+4. ai-automation-roi
+5. ai-integration-for-founders
