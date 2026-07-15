@@ -21,7 +21,7 @@ export const blogPosts: BlogPost[] = [
     title: 'AI Workflow Error Handling Patterns: Retries, Fallbacks, and Resilience in Production',
     eyebrow: 'Guide',
     description:
-      'AI workflows fail in ways traditional software does not — silent wrong output, rate limits mid-chain, unsafe retries. Learn the four patterns that keep production AI systems running: retries with backoff, output validation, fallback chains, and idempotency.',
+      'AI workflows fail in ways traditional software does not. Learn the four patterns that keep production AI running: retries, validation, fallbacks, idempotency.',
     summary:
       'Most AI workflow failures look like success — a 200 with wrong JSON, a rate limit that kills a six-step chain at step three. Here are the four error-handling layers every production AI system needs.',
     keywords: [
@@ -45,7 +45,7 @@ export const blogPosts: BlogPost[] = [
     title: 'AI Integration Architecture: A Systems-Engineering Guide to Reliable AI Workflows',
     eyebrow: 'Guide',
     description:
-      'Reliable AI workflows come from systems engineering, not prompt tricks. Learn the five-layer architecture — contract, boundary, validation, resilience, evals — that keeps AI agents working after the demo.',
+      'Reliable AI workflows come from systems engineering, not prompt tricks. Learn the five-layer architecture that keeps AI agents working after the demo.',
     summary:
       'Most AI projects demo well and fail in production. The fix is architecture, not a better prompt. Here are the five layers that make AI workflows reliable, with a concrete support-agent example.',
     keywords: [
@@ -68,7 +68,7 @@ export const blogPosts: BlogPost[] = [
     title: 'RAG Implementation Guide: Retrieval-Augmented Generation That Works in Production',
     eyebrow: 'Guide',
     description:
-      'A practical guide to production RAG: chunking, embeddings, retrieval quality, grounded prompting, and evals — plus the failure modes that make RAG unreliable and how to fix them.',
+      'A practical guide to production RAG: chunking, embeddings, retrieval quality, grounded prompting, evals, and the failure modes that make RAG unreliable.',
     summary:
       'RAG grounds an LLM in your own data. Done well it is a grounded expert; done poorly it is a confident liar with extra steps. Here are the four decisions that determine RAG quality.',
     keywords: [
@@ -92,7 +92,7 @@ export const blogPosts: BlogPost[] = [
     title: 'Cursor vs Claude Code vs Gemini: How to Actually Ship Real Work with AI in 2026',
     eyebrow: 'Blog',
     description:
-      'Stop guessing which AI coding tool is best. Here\'s the practical 2026 breakdown of Cursor, Claude Code, and Gemini — plus the exact stack top developers are using to ship real work.',
+      'Stop guessing which AI coding tool is best. The practical 2026 breakdown of Cursor, Claude Code, and Gemini — and the stack developers use to ship real work.',
     summary:
       'The winners in 2026 aren\'t using one AI tool — they\'re running hybrid stacks. Here\'s the no-hype breakdown of Cursor, Claude Code, and Gemini, and how to combine them to ship real work faster.',
     keywords: [
@@ -119,7 +119,7 @@ export const blogPosts: BlogPost[] = [
     title: 'Workflow: The Complete Guide to Designing, Managing, and Optimizing Your Business Processes',
     eyebrow: 'Blog',
     description:
-      'A practical guide to workflow design, workflow management systems, process optimization, and the operating patterns teams use to reduce errors and improve throughput.',
+      'A practical guide to workflow design, workflow management systems, process optimization, and the patterns teams use to reduce errors and boost throughput.',
     summary:
       'Learn what workflows are, how they evolved, which workflow patterns matter in practice, and how to design cleaner operating systems for modern teams.',
     keywords: [
