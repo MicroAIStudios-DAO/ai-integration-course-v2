@@ -11,16 +11,16 @@ export const staticRoutes = [
     path: '/pricing',
     title: 'Pricing',
     description:
-      'Compare the Monthly, Annual, and Enterprise billing options for AI Integration Course. Free lessons stay open, and premium builds unlock immediately after purchase.',
+      'Compare Monthly, Annual, and Enterprise plans for AI Integration Course. Free lessons stay open; premium builds unlock immediately after purchase.',
     h1: 'Pricing',
     blurb:
       'Start with a 7-day $1 Pro trial — full curriculum, the Allie AI tutor, and the Forge sandbox. Free lessons stay open forever, and every paid plan carries a 14-day ship-or-refund guarantee.',
   },
   {
     path: '/about',
-    title: 'About Blaine Casey — AI Integration Course Instructor',
+    title: 'About Blaine Casey',
     description:
-      'Blaine Casey is an AI Solutions Architect and the instructor behind AI Integration Course. Learn about his verified industry experience, real client case studies, and the methodology behind practical AI automation training for marketing agencies, SaaS teams, and operators.',
+      'Blaine Casey is an AI Solutions Architect and the instructor behind AI Integration Course — practical AI automation training built on real client work.',
     h1: 'About Blaine Casey',
     blurb:
       'AI Solutions Architect and instructor of the AI Integration Course — practical AI automation training built on real client implementations for marketing agencies, SaaS teams, and operators.',
@@ -33,6 +33,9 @@ export const staticRoutes = [
     h1: 'Frequently Asked Questions',
     blurb:
       'Common questions about Gemini API integration, AI automation, non-coder workflows, the $1 Pro trial, and what you actually build inside the course.',
+    // Injects the same Q&A FAQPage.tsx renders (homepageFaqItems) as visible
+    // body content + FAQPage JSON-LD.
+    includeFaqs: true,
   },
   {
     path: '/contact',
@@ -57,7 +60,7 @@ export const staticRoutes = [
     path: '/library',
     title: 'AI Integration Library',
     description:
-      'Permanent guides for AI operators and developers: RAG for small business, function calling with Gemini, and model comparison workflows for automation teams.',
+      'Permanent guides for AI operators and developers: RAG for small business, function calling with Gemini, and model comparison for automation teams.',
     h1: 'AI Integration Library',
     blurb:
       'Permanent reference guides: RAG for small business, function calling with Gemini, and model comparison workflows for automation teams.',
@@ -66,7 +69,7 @@ export const staticRoutes = [
     path: '/solutions',
     title: 'AI Integration by Industry',
     description:
-      'Industry-specific AI integration pages for real estate, e-commerce, and law firms. See where AI automation creates operational leverage without breaking review and quality controls.',
+      'Industry-specific AI integration for real estate, e-commerce, and law firms — where automation creates leverage without breaking quality controls.',
     h1: 'AI Integration by Industry',
     blurb:
       'Where AI automation creates operational leverage in real estate, e-commerce, and law firms — without breaking review and quality controls.',
@@ -75,16 +78,52 @@ export const staticRoutes = [
     path: '/ai-workshops-san-diego',
     title: 'AI Workshops in San Diego',
     description:
-      'AI integration training for San Diego and Southern California teams that want practical automation workflows, pilot planning, and implementation-focused education.',
+      'AI integration training for San Diego and Southern California teams: practical automation workflows, pilot planning, and hands-on implementation.',
     h1: 'AI Workshops in San Diego',
     blurb:
       'Hands-on AI integration training for San Diego and Southern California teams: practical automation workflows, pilot planning, and implementation-focused education.',
   },
   {
-    path: '/courses',
-    title: 'AI Integration & Automation Mastery — Course Overview',
+    path: '/start-trial',
+    title: 'Start the $1 Pro Trial',
     description:
-      'A practical, build-first curriculum for founders, operators, and developers: prompt and API orchestration, production RAG, multi-agent architectures, and low-code automation.',
+      'Get 7 days of full access for $1 — complete curriculum, the Allie AI tutor, and the Forge sandbox. Cancel in two clicks; 14-day money-back guarantee.',
+    h1: 'Start the $1 Pro Trial',
+    blurb:
+      'Seven days of full access for $1 — complete curriculum, the Allie AI tutor, and the Forge sandbox. Cancel anytime in two clicks. Every paid plan includes a 14-day ship-or-refund guarantee.',
+  },
+  {
+    path: '/privacy',
+    title: 'Privacy Policy',
+    description:
+      'How AI Integration Course collects, uses, and protects your data, including account information, analytics, and payment processing.',
+    h1: 'Privacy Policy',
+    blurb:
+      'How AI Integration Course collects, uses, and protects your data, including account information, analytics, and payment processing.',
+  },
+  {
+    // Auth/utility pages: prerendered only to carry noindex so Bing drops
+    // them from the index; excluded from the sitemap (generate-sitemap.js).
+    path: '/login',
+    title: 'Log In',
+    description: 'Log in to your AI Integration Course account.',
+    h1: 'Log In',
+    blurb: 'Log in to your AI Integration Course account.',
+    noindex: true,
+  },
+  {
+    path: '/signup',
+    title: 'Sign Up',
+    description: 'Create your AI Integration Course account.',
+    h1: 'Sign Up',
+    blurb: 'Create your AI Integration Course account.',
+    noindex: true,
+  },
+  {
+    path: '/courses',
+    title: 'AI Integration & Automation Mastery',
+    description:
+      'The build-first AI curriculum: prompt engineering, API orchestration, production RAG, multi-agent systems, and low-code automation with n8n and Zapier.',
     h1: 'AI Integration & Automation Mastery',
     blurb:
       'The build-first curriculum: prompt engineering and API orchestration, retrieval-augmented generation, multi-agent architectures, low-code automation with n8n/Make/Zapier, and AI business strategy.',

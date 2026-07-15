@@ -18,23 +18,40 @@ export const REPO_ROOT = path.join(__dirname, '..');
 export const BASE_URL = 'https://aiintegrationcourse.com';
 export const SITE_NAME = 'AI Integration Course';
 
-export function loadBlogPosts() {
-  const source = readFileSync(
-    path.join(REPO_ROOT, 'src', 'content', 'blogPosts.ts'),
-    'utf8'
-  );
+function loadTsModule(relPath) {
+  const source = readFileSync(path.join(REPO_ROOT, ...relPath.split('/')), 'utf8');
   const { code } = transformSync(source, { loader: 'ts', format: 'cjs' });
   const mod = { exports: {} };
   const requireStub = (id) => {
     throw new Error(
-      `loadBlogPosts: src/content/blogPosts.ts must not import "${id}" (use literal values only).`
+      `loadTsModule: ${relPath} must not import "${id}" (use literal values only).`
     );
   };
   new Function('module', 'exports', 'require', code)(mod, mod.exports, requireStub);
-  if (!Array.isArray(mod.exports.blogPosts)) {
+  return mod.exports;
+}
+
+export function loadBlogPosts() {
+  const { blogPosts } = loadTsModule('src/content/blogPosts.ts');
+  if (!Array.isArray(blogPosts)) {
     throw new Error('blogPosts export not found in src/content/blogPosts.ts');
   }
-  return mod.exports.blogPosts;
+  return blogPosts;
+}
+
+// Library articles, industry pages, and the FAQ items visibly rendered on
+// /faq — same single-source-of-truth approach as blogPosts.
+export function loadMarketingPages() {
+  const { resourceLibraryItems, industryPages, homepageFaqItems } =
+    loadTsModule('src/content/marketingPages.ts');
+  if (!Array.isArray(resourceLibraryItems) || !Array.isArray(industryPages)) {
+    throw new Error('marketingPages exports not found in src/content/marketingPages.ts');
+  }
+  return {
+    resourceLibraryItems,
+    industryPages,
+    homepageFaqItems: homepageFaqItems ?? [],
+  };
 }
 
 export function readPostMarkdown(post) {

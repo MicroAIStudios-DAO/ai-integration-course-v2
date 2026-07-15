@@ -49,6 +49,23 @@ const INDUSTRY_PAGE_SLUGS = [
   'e-commerce',
   'law-firms'
 ];
+// Public preview lessons are anonymously accessible (isFreeLesson() in
+// src/firebaseService.ts + firestore.rules lessonContent allowances) even
+// though their tier is not 'free'. Parse the ID set from its source of
+// truth so the sitemap can't drift from the app's access logic.
+const PUBLIC_PREVIEW_LESSON_IDS = (() => {
+  try {
+    const source = fs.readFileSync(
+      path.join(__dirname, '..', 'src', 'firebaseService.ts'),
+      'utf8'
+    );
+    const block = source.match(/PUBLIC_PREVIEW_LESSON_IDS = new Set\(\[([\s\S]*?)\]\)/);
+    if (!block) return new Set();
+    return new Set([...block[1].matchAll(/'([^']+)'/g)].map((m) => m[1]));
+  } catch {
+    return new Set();
+  }
+})();
 
 function shouldIncludePath(pathname) {
   return !EXCLUDED_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
@@ -69,8 +86,10 @@ async function generateSitemap() {
     { path: '/library', priority: '0.8', changefreq: 'weekly' },
     { path: '/solutions', priority: '0.8', changefreq: 'weekly' },
     { path: '/ai-workshops-san-diego', priority: '0.7', changefreq: 'monthly' },
-    { path: '/login', priority: '0.5', changefreq: 'monthly' },
-    { path: '/signup', priority: '0.6', changefreq: 'monthly' },
+    // /login and /signup are intentionally excluded: they are noindexed
+    // auth/utility pages (see scripts/route-meta.mjs) with no search value.
+    { path: '/start-trial', priority: '0.9', changefreq: 'monthly' },
+    { path: '/privacy', priority: '0.3', changefreq: 'yearly' },
     { path: '/contact', priority: '0.6', changefreq: 'monthly' },
     { path: '/faq', priority: '0.6', changefreq: 'monthly' },
   ];
@@ -118,13 +137,15 @@ async function generateSitemap() {
       const courseId = courseDoc.id;
       const courseData = courseDoc.data();
       
-      // Add course page
+      // Add course page. lastmod only when a real timestamp exists — a
+      // new-Date fallback would falsely bump every URL on every build.
       if (shouldIncludePath(`/courses/${courseId}`)) {
+        const courseLastmod = courseData.updatedAt?.toDate?.()?.toISOString?.();
         urls.push({
           loc: `${BASE_URL}/courses/${courseId}`,
           priority: '0.8',
           changefreq: 'weekly',
-          lastmod: courseData.updatedAt?.toDate?.()?.toISOString?.() || new Date().toISOString()
+          ...(courseLastmod ? { lastmod: courseLastmod } : {})
         });
       }
       
@@ -152,17 +173,26 @@ async function generateSitemap() {
         for (const lessonDoc of lessonsSnapshot.docs) {
           const lessonId = lessonDoc.id;
           const lessonData = lessonDoc.data();
-          
-          // Only include free lessons in sitemap for public indexing
-          // Premium lessons are still indexed but with lower priority
-          const isFree = lessonData.tier === 'free' || lessonData.isFree;
+
+          // Only publicly accessible lessons belong in the sitemap:
+          // gated/premium lesson URLs require auth, so to crawlers they are
+          // soft-404s or shells. Free-tier lessons and the public preview
+          // founders lessons are both anonymously readable.
+          const isPubliclyAccessible =
+            lessonData.tier === 'free' ||
+            lessonData.isFree ||
+            PUBLIC_PREVIEW_LESSON_IDS.has(lessonId);
+          if (!isPubliclyAccessible) {
+            continue;
+          }
 
           if (shouldIncludePath(`/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`)) {
+            const lessonLastmod = lessonData.updatedAt?.toDate?.()?.toISOString?.();
             urls.push({
               loc: `${BASE_URL}/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`,
-              priority: isFree ? '0.7' : '0.5',
+              priority: '0.7',
               changefreq: 'monthly',
-              lastmod: lessonData.updatedAt?.toDate?.()?.toISOString?.() || new Date().toISOString()
+              ...(lessonLastmod ? { lastmod: lessonLastmod } : {})
             });
           }
         }

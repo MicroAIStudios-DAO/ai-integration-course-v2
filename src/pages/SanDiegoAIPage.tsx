@@ -7,7 +7,7 @@ const SanDiegoAIPage: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-white">
       <SEO
         title="AI Workshops in San Diego"
-        description="AI integration training for San Diego and Southern California teams that want practical automation workflows, pilot planning, and implementation-focused education."
+        description="AI integration training for San Diego and Southern California teams: practical automation workflows, pilot planning, and hands-on implementation."
         url="/ai-workshops-san-diego"
         keywords={['AI workshops San Diego', 'AI training Southern California', 'AI integration San Diego']}
         author="Blaine Casey"

@@ -100,7 +100,7 @@ export const resourceLibraryItems: ResourceArticle[] = [
     title: 'RAG for Small Business',
     eyebrow: 'Library Guide',
     description:
-      'Learn how retrieval-augmented generation helps small businesses answer questions from their own SOPs, product docs, and customer knowledge instead of relying on generic model memory.',
+      'How retrieval-augmented generation lets small businesses answer questions from their own SOPs, product docs, and customer knowledge.',
     summary:
       'RAG gives small teams a practical way to build AI that stays grounded in their own policies, pricing, and internal documentation.',
     audience: 'Business owners, operators, and developers building internal copilots or support assistants.',
@@ -143,7 +143,7 @@ export const resourceLibraryItems: ResourceArticle[] = [
     title: 'Function Calling with Gemini 1.5 Pro',
     eyebrow: 'Developer Guide',
     description:
-      'A practical guide to function calling with Gemini-style tool use: define structured actions, validate payloads, and connect model decisions to real business systems.',
+      'A practical guide to Gemini-style function calling: define structured actions, validate payloads, and connect model decisions to real systems.',
     summary:
       'Function calling turns a chat model from a text generator into a workflow orchestrator that can choose tools, pass arguments, and trigger business actions safely.',
     audience: 'Developers and technical operators wiring LLMs into CRMs, inboxes, spreadsheets, and internal APIs.',

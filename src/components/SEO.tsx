@@ -209,7 +209,9 @@ export const SEO: React.FC<SEOProps> = ({
 
       {/* ── Robots ──────────────────────────────────────────────────────── */}
       {noindex ? (
-        <meta name="robots" content="noindex, nofollow" />
+        // noindex, follow (not nofollow) — matches the prerendered meta so
+        // raw HTML and hydrated DOM agree, and link equity still flows.
+        <meta name="robots" content="noindex, follow" />
       ) : (
         <meta
           name="robots"
@@ -218,8 +220,9 @@ export const SEO: React.FC<SEOProps> = ({
       )}
 
       {/* ── GEO: Explicit signals for AI search engines ─────────────────── */}
-      <meta name="googlebot" content="index, follow" />
-      <meta name="bingbot" content="index, follow" />
+      {/* Must not contradict a noindex directive on auth/utility pages */}
+      {!noindex && <meta name="googlebot" content="index, follow" />}
+      {!noindex && <meta name="bingbot" content="index, follow" />}
       {/* Perplexity, ChatGPT, and Gemini crawlers respect these */}
       <meta name="ai-content-declaration" content="human-authored" />
       <meta name="content-type" content={type === 'article' ? 'blog-post' : 'webpage'} />

@@ -29,6 +29,7 @@ import {
   SITE_NAME,
   extractFAQs,
   loadBlogPosts,
+  loadMarketingPages,
   readPostMarkdown,
 } from './blog-data.mjs';
 import { homepage, staticRoutes } from './route-meta.mjs';
@@ -114,6 +115,30 @@ const websiteSchema = {
     'https://www.linkedin.com/company/ai-integration-course',
   ],
 };
+
+// Mirrors the WebSite publisher block in src/components/SEO.tsx; used on the
+// homepage alongside the hand-written Course schema in index.html.
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: SITE_NAME,
+  url: BASE_URL,
+  logo: { '@type': 'ImageObject', url: `${BASE_URL}/logo192.png` },
+  sameAs: [
+    'https://twitter.com/aiintegrationco',
+    'https://www.linkedin.com/company/ai-integration-course',
+  ],
+};
+
+const faqPageSchema = (faqs) => ({
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((faq) => ({
+    '@type': 'Question',
+    name: faq.question,
+    acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+  })),
+});
 
 const breadcrumbSchema = (items) => ({
   '@context': 'https://schema.org',
@@ -250,9 +275,89 @@ function prerenderPost(template, post) {
   return { faqCount: faqs.length, bytes: html.length };
 }
 
+// ─── Library articles & industry pages (src/content/marketingPages.ts) ──────
+
+// Body mirrors ResourceDetailPage.tsx / IndustrySolutionPage.tsx: eyebrow,
+// h1, description, audience, optional workflows list, then sections with
+// h2 + body + bullets. All copy comes verbatim from marketingPages.ts.
+function detailPageBody(basePath, crumbName, item) {
+  const parts = [
+    `<nav aria-label="Breadcrumb"><a href="/">Home</a> / <a href="${basePath}">${escapeHtml(crumbName)}</a> / ${escapeHtml(item.title)}</nav>`,
+    '<article>',
+    `<p>${escapeHtml(item.eyebrow)}</p>`,
+    `<h1>${escapeHtml(item.title)}</h1>`,
+    `<p>${escapeHtml(item.description)}</p>`,
+    `<p>Audience: ${escapeHtml(item.audience)}</p>`,
+  ];
+  if (Array.isArray(item.workflows) && item.workflows.length > 0) {
+    parts.push('<h2>Recommended first workflows</h2>', '<ul>');
+    for (const workflow of item.workflows) {
+      parts.push(`<li>${escapeHtml(workflow)}</li>`);
+    }
+    parts.push('</ul>');
+  }
+  for (const section of item.sections ?? []) {
+    parts.push(`<h2>${escapeHtml(section.heading)}</h2>`, `<p>${escapeHtml(section.body)}</p>`);
+    if (Array.isArray(section.bullets) && section.bullets.length > 0) {
+      parts.push('<ul>');
+      for (const bullet of section.bullets) {
+        parts.push(`<li>${escapeHtml(bullet)}</li>`);
+      }
+      parts.push('</ul>');
+    }
+  }
+  parts.push(
+    '</article>',
+    `<p><a href="/pricing">Explore the AI Integration Course — $1 Pro trial</a> &bull; <a href="${basePath}">Back to ${escapeHtml(crumbName)}</a></p>`
+  );
+  return parts.join('\n');
+}
+
+function prerenderDetailPage(template, { basePath, crumbName, item }) {
+  const routePath = `${basePath}/${item.slug}`;
+  const canonicalUrl = `${BASE_URL}${routePath}`;
+  let html = applyHeadMeta(template, {
+    title: item.title,
+    description: item.description,
+    canonicalUrl,
+    keywords: item.keywords,
+  });
+  html = replaceMetaContent(html, /<meta property="og:type"[^>]*>/, 'article');
+  html = stripJsonLd(html);
+  // Client SEO.tsx renders these routes with type="article" (BlogPosting);
+  // mirror the same core fields so raw HTML and hydrated DOM agree.
+  const schemas = jsonLdTags([
+    websiteSchema,
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: item.title,
+      description: item.description,
+      author: { '@type': 'Person', name: 'Blaine Casey', url: `${BASE_URL}/about` },
+      publisher: {
+        '@type': 'Organization',
+        name: SITE_NAME,
+        logo: { '@type': 'ImageObject', url: `${BASE_URL}/logo192.png` },
+      },
+      mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+      url: canonicalUrl,
+      inLanguage: 'en-US',
+      about: (item.keywords ?? []).slice(0, 5).map((k) => ({ '@type': 'Thing', name: k })),
+    },
+    breadcrumbSchema([
+      { name: 'Home', url: `${BASE_URL}/` },
+      { name: crumbName, url: `${BASE_URL}${basePath}` },
+      { name: item.title, url: canonicalUrl },
+    ]),
+  ]);
+  html = html.replace('</head>', `${schemas}\n  </head>`);
+  html = injectRoot(html, detailPageBody(basePath, crumbName, item), routePath);
+  writeRoute(routePath, html);
+}
+
 // ─── Static marketing routes ─────────────────────────────────────────────────
 
-function staticRouteBody(route, posts) {
+function staticRouteBody(route, posts, faqs) {
   const parts = [
     `<nav aria-label="Breadcrumb"><a href="/">Home</a> / ${escapeHtml(route.h1)}</nav>`,
     '<main>',
@@ -268,6 +373,13 @@ function staticRouteBody(route, posts) {
     }
     parts.push('</ul>');
   }
+  if (route.includeFaqs && faqs.length > 0) {
+    // Same Q&A FAQPage.tsx renders, so the FAQPage JSON-LD matches visible
+    // content in the raw HTML too.
+    for (const faq of faqs) {
+      parts.push(`<h2>${escapeHtml(faq.question)}</h2>`, `<p>${escapeHtml(faq.answer)}</p>`);
+    }
+  }
   parts.push(
     '</main>',
     `<p><a href="/pricing">Start the $1 Pro trial</a> &bull; <a href="/blogs">Read the blog</a> &bull; <a href="/">Home</a></p>`
@@ -275,7 +387,7 @@ function staticRouteBody(route, posts) {
   return parts.join('\n');
 }
 
-function prerenderStaticRoute(template, route, posts) {
+function prerenderStaticRoute(template, route, posts, faqs) {
   const canonicalUrl = `${BASE_URL}${route.path}`;
   let html = applyHeadMeta(template, {
     title: route.title,
@@ -283,15 +395,26 @@ function prerenderStaticRoute(template, route, posts) {
     canonicalUrl,
   });
   html = stripJsonLd(html); // homepage Course schema doesn't belong on subpages
-  const schemas = jsonLdTags([
-    websiteSchema,
-    breadcrumbSchema([
-      { name: 'Home', url: `${BASE_URL}/` },
-      { name: route.h1, url: canonicalUrl },
-    ]),
-  ]);
-  html = html.replace('</head>', `${schemas}\n  </head>`);
-  html = injectRoot(html, staticRouteBody(route, posts), route.path);
+  const headExtras = [];
+  if (route.noindex) {
+    // Auth/utility pages: keep them crawlable (follow) so Bing sees the
+    // directive, but out of the index. Must NOT be robots.txt-blocked.
+    headExtras.push('    <meta name="robots" content="noindex, follow" />');
+  } else {
+    const schemas = [
+      websiteSchema,
+      breadcrumbSchema([
+        { name: 'Home', url: `${BASE_URL}/` },
+        { name: route.h1, url: canonicalUrl },
+      ]),
+    ];
+    if (route.includeFaqs && faqs.length > 0) {
+      schemas.push(faqPageSchema(faqs));
+    }
+    headExtras.push(jsonLdTags(schemas));
+  }
+  html = html.replace('</head>', `${headExtras.join('\n')}\n  </head>`);
+  html = injectRoot(html, staticRouteBody(route, posts, faqs), route.path);
   writeRoute(route.path, html);
   return { bytes: html.length };
 }
@@ -305,6 +428,7 @@ function main() {
   }
   const template = readFileSync(TEMPLATE_PATH, 'utf8');
   const posts = loadBlogPosts();
+  const { resourceLibraryItems, industryPages, homepageFaqItems } = loadMarketingPages();
   let failures = 0;
 
   // 1. Clean SPA fallback for unmatched routes (the ** rewrite target).
@@ -332,7 +456,7 @@ function main() {
   // 3. Static marketing routes
   for (const route of staticRoutes) {
     try {
-      prerenderStaticRoute(template, route, posts);
+      prerenderStaticRoute(template, route, posts, homepageFaqItems);
       console.log(`✅ prerendered ${route.path}`);
     } catch (err) {
       failures += 1;
@@ -340,9 +464,33 @@ function main() {
     }
   }
 
-  // 4. Homepage: keep its hand-written meta + Course JSON-LD, add a
-  // crawler-visible h1 + intro. Must happen last — earlier steps read the
-  // pristine template.
+  // 4. Library articles and industry pages (content from marketingPages.ts)
+  const detailPages = [
+    ...resourceLibraryItems.map((item) => ({
+      basePath: '/library',
+      crumbName: 'Library',
+      item,
+    })),
+    ...industryPages.map((item) => ({
+      basePath: '/solutions',
+      crumbName: 'Solutions',
+      item,
+    })),
+  ];
+  for (const page of detailPages) {
+    const routePath = `${page.basePath}/${page.item.slug}`;
+    try {
+      prerenderDetailPage(template, page);
+      console.log(`✅ prerendered ${routePath}`);
+    } catch (err) {
+      failures += 1;
+      console.error(`❌ failed to prerender ${routePath}: ${err.message}`);
+    }
+  }
+
+  // 5. Homepage: keep its hand-written meta + Course JSON-LD, add
+  // Organization + WebSite JSON-LD and a crawler-visible h1 + intro. Must
+  // happen last — earlier steps read the pristine template.
   try {
     const homepageBody = [
       '<main>',
@@ -351,14 +499,19 @@ function main() {
       `<p><a href="/pricing">Start the $1 Pro trial</a> &bull; <a href="/courses">Course overview</a> &bull; <a href="/blogs">Blog</a> &bull; <a href="/faq">FAQ</a></p>`,
       '</main>',
     ].join('\n');
-    writeFileSync(TEMPLATE_PATH, injectRoot(template, homepageBody, '/'));
-    console.log('✅ prerendered / (homepage h1 + intro)');
+    let homepageHtml = template.replace(
+      '</head>',
+      `${jsonLdTags([organizationSchema, websiteSchema])}\n  </head>`
+    );
+    homepageHtml = injectRoot(homepageHtml, homepageBody, '/');
+    writeFileSync(TEMPLATE_PATH, homepageHtml);
+    console.log('✅ prerendered / (homepage h1 + Organization/WebSite schema)');
   } catch (err) {
     failures += 1;
     console.error(`❌ failed to prerender homepage: ${err.message}`);
   }
 
-  const total = posts.length + staticRoutes.length + 1;
+  const total = posts.length + staticRoutes.length + detailPages.length + 1;
   console.log(`prerender: ${total - failures}/${total} routes prerendered`);
   if (failures > 0) process.exit(1);
 }

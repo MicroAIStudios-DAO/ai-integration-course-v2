@@ -8,7 +8,7 @@ const ResourceLibraryPage: React.FC = () => {
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <SEO
         title="AI Integration Library"
-        description="Permanent guides for AI operators and developers: RAG for small business, function calling with Gemini, and model comparison workflows for automation teams."
+        description="Permanent guides for AI operators and developers: RAG for small business, function calling with Gemini, and model comparison for automation teams."
         url="/library"
         keywords={[
           'AI integration library',

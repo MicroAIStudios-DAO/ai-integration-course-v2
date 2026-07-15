@@ -16,6 +16,7 @@ import {
   startCheckoutForPlan,
   storePlanKey,
 } from "../../utils/checkout";
+import SEO from "../SEO";
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -167,6 +168,12 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50 py-12 px-4 sm:px-6 lg:px-8 font-body">
+      <SEO
+        title="Log In"
+        description="Log in to your AI Integration Course account."
+        url="/login"
+        noindex
+      />
       <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
       <div className="absolute -bottom-32 -left-24 h-80 w-80 rounded-full bg-indigo-200/40 blur-3xl" />
       <div className="max-w-md w-full bg-white/90 backdrop-blur p-8 sm:p-10 rounded-3xl shadow-xl border border-white/60">

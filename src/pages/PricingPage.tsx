@@ -73,7 +73,7 @@ const PricingPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
       <SEO
         title="Pricing"
-        description="Compare the Monthly, Annual, and Enterprise billing options for AI Integration Course. Free lessons stay open, and premium builds unlock immediately after purchase."
+        description="Compare Monthly, Annual, and Enterprise plans for AI Integration Course. Free lessons stay open; premium builds unlock immediately after purchase."
         url="/pricing"
         keywords={[
           'AI Integration Course pricing',
