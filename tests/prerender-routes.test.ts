@@ -11,8 +11,10 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const BUILD_DIR = path.join(__dirname, '..', 'build');
+const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
+const BUILD_DIR = path.join(TEST_DIR, '..', 'build');
 const BASE_URL = 'https://aiintegrationcourse.com';
 
 const INDEXABLE_ROUTES = [
