@@ -16,7 +16,7 @@ const STORAGE_KEY = 'cookie_consent';
 const GTM_ID = 'GTM-M8T3DKFQ';
 const GOOGLE_ADS_ID = 'AW-17956658756';
 const GA4_ID = 'G-15SDDF1S5S';
-const CLARITY_ID = 'vx54kcsqlx';
+const CLARITY_ID = 'xmssx6j9mq';
 // Public Ahrefs Web Analytics site identifier (rendered client-side for every
 // visitor — not a secret). Named without "key" to avoid secret-scanner false positives.
 const AHREFS_ANALYTICS_ID = 'I2l5sw2gsKNPJvnp9dQpkA';
