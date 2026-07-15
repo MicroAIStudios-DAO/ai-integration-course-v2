@@ -1,12 +1,21 @@
 #!/usr/bin/env node
-// Prerender blog articles to static HTML for AI crawlers (GPTBot,
-// PerplexityBot, ClaudeBot) and other non-JS user agents.
+// Prerender routes to static HTML for AI crawlers (GPTBot, PerplexityBot,
+// ClaudeBot) and other non-JS user agents.
 //
-// The site is a client-rendered SPA, so /blogs/<slug> is an empty shell until
-// React boots. This script runs as a postbuild step: for every post in
-// src/content/blogPosts.ts it renders the markdown to HTML, injects the full
-// article plus meta tags and JSON-LD (BlogPosting, FAQPage, BreadcrumbList)
-// into the built index.html template, and writes build/blogs/<slug>/index.html.
+// The site is a client-rendered SPA, so every route is an empty shell until
+// React boots. This script runs as a postbuild step and produces:
+//
+//   1. build/blogs/<slug>/index.html — full article HTML + per-post meta +
+//      BlogPosting/FAQPage/BreadcrumbList JSON-LD (from src/content/blogPosts.ts)
+//   2. build/<route>/index.html — static marketing pages (pricing, about,
+//      faq, ...) with per-route title/description/canonical and an h1+blurb
+//      body (from scripts/route-meta.mjs)
+//   3. build/index.html — homepage keeps its hand-written meta + Course
+//      JSON-LD, gains a crawler-visible h1 + intro in #root
+//   4. build/app-shell.html — the clean SPA fallback for unmatched routes
+//      (firebase.json rewrites point here); homepage canonical and JSON-LD
+//      are stripped so unknown routes don't claim homepage identity
+//
 // Firebase Hosting serves exact file matches before the SPA rewrite, so
 // crawlers get real content while browsers hydrate into the normal app
 // (ReactDOM.createRoot().render replaces the static #root content).
@@ -22,6 +31,7 @@ import {
   loadBlogPosts,
   readPostMarkdown,
 } from './blog-data.mjs';
+import { homepage, staticRoutes } from './route-meta.mjs';
 
 const BUILD_DIR = path.join(REPO_ROOT, 'build');
 const TEMPLATE_PATH = path.join(BUILD_DIR, 'index.html');
@@ -45,31 +55,93 @@ const replaceMetaContent = (html, selectorRe, value) =>
     match.replace(/content="[^"]*"/, `content="${escapeHtml(value)}"`)
   );
 
+const stripJsonLd = (html) =>
+  html.replace(/[ \t]*<script type="application\/ld\+json">[\s\S]*?<\/script>\n?/g, '');
+
+const stripCanonical = (html) => html.replace(/[ \t]*<link rel="canonical"[^>]*>\n?/, '');
+
+// Rewrites the shared head fields every prerendered page needs. og:type and
+// JSON-LD are page-kind specific, so callers handle those.
+function applyHeadMeta(html, { title, description, canonicalUrl, keywords, image }) {
+  const fullTitle = `${title} | ${SITE_NAME}`;
+  html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(fullTitle)}</title>`);
+  html = replaceMetaContent(html, /<meta name="description"[^>]*>/, description);
+  if (keywords) {
+    html = replaceMetaContent(html, /<meta name="keywords"[^>]*>/, keywords.join(', '));
+  }
+  html = html.replace(
+    /<link rel="canonical" href="[^"]*"/,
+    `<link rel="canonical" href="${canonicalUrl}"`
+  );
+  html = replaceMetaContent(html, /<meta property="og:url"[^>]*>/, canonicalUrl);
+  html = replaceMetaContent(html, /<meta property="og:title"[^>]*>/, fullTitle);
+  html = replaceMetaContent(html, /<meta property="og:description"[^>]*>/, description);
+  html = replaceMetaContent(html, /<meta name="twitter:title"[^>]*>/, fullTitle);
+  html = replaceMetaContent(html, /<meta name="twitter:description"[^>]*>/, description);
+  if (image) {
+    html = replaceMetaContent(html, /<meta property="og:image"[^>]*>/, image);
+    html = replaceMetaContent(html, /<meta name="twitter:image"[^>]*>/, image);
+  }
+  return html;
+}
+
+function injectRoot(html, bodyHtml, context) {
+  const rootRe = /<div id="root">\s*<\/div>/;
+  if (!rootRe.test(html)) {
+    throw new Error(`Could not find empty <div id="root"> while prerendering ${context}`);
+  }
+  return html.replace(rootRe, `<div id="root">${bodyHtml}</div>`);
+}
+
+function writeRoute(routePath, html) {
+  const outDir = path.join(BUILD_DIR, ...routePath.split('/').filter(Boolean));
+  mkdirSync(outDir, { recursive: true });
+  writeFileSync(path.join(outDir, 'index.html'), html);
+}
+
+const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: SITE_NAME,
+  url: BASE_URL,
+  publisher: {
+    '@type': 'Organization',
+    name: SITE_NAME,
+    logo: { '@type': 'ImageObject', url: `${BASE_URL}/logo192.png` },
+  },
+  sameAs: [
+    'https://twitter.com/aiintegrationco',
+    'https://www.linkedin.com/company/ai-integration-course',
+  ],
+};
+
+const breadcrumbSchema = (items) => ({
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: items.map((item, idx) => ({
+    '@type': 'ListItem',
+    position: idx + 1,
+    name: item.name,
+    item: item.url,
+  })),
+});
+
+const jsonLdTags = (schemas) =>
+  schemas
+    .map((s) => `    <script type="application/ld+json">${JSON.stringify(s)}</script>`)
+    .join('\n');
+
+// ─── Blog articles ───────────────────────────────────────────────────────────
+
 // JSON-LD shapes mirror src/components/SEO.tsx so the prerendered structured
 // data matches what the SPA emits after hydration.
-function buildJsonLd(post, faqs) {
+function blogJsonLd(post, faqs) {
   const fullUrl = `${BASE_URL}/blogs/${post.slug}`;
   const fullImage = post.heroImage.startsWith('http')
     ? post.heroImage
     : `${BASE_URL}${post.heroImage}`;
 
-  const schemas = [];
-
-  schemas.push({
-    '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    name: SITE_NAME,
-    url: BASE_URL,
-    publisher: {
-      '@type': 'Organization',
-      name: SITE_NAME,
-      logo: { '@type': 'ImageObject', url: `${BASE_URL}/logo192.png` },
-    },
-    sameAs: [
-      'https://twitter.com/aiintegrationco',
-      'https://www.linkedin.com/company/ai-integration-course',
-    ],
-  });
+  const schemas = [websiteSchema];
 
   schemas.push({
     '@context': 'https://schema.org',
@@ -117,22 +189,18 @@ function buildJsonLd(post, faqs) {
     });
   }
 
-  schemas.push({
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: `${BASE_URL}/` },
-      { '@type': 'ListItem', position: 2, name: 'Blog', item: `${BASE_URL}/blogs` },
-      { '@type': 'ListItem', position: 3, name: post.title, item: fullUrl },
-    ],
-  });
+  schemas.push(
+    breadcrumbSchema([
+      { name: 'Home', url: `${BASE_URL}/` },
+      { name: 'Blog', url: `${BASE_URL}/blogs` },
+      { name: post.title, url: fullUrl },
+    ])
+  );
 
-  return schemas
-    .map((s) => `    <script type="application/ld+json">${JSON.stringify(s)}</script>`)
-    .join('\n');
+  return jsonLdTags(schemas);
 }
 
-function buildStaticBody(post, articleHtml) {
+function blogBody(post, articleHtml) {
   // Minimal semantic markup — crawlers read this; browsers replace it the
   // moment React hydrates, so no styling is needed.
   return [
@@ -157,70 +225,103 @@ function prerenderPost(template, post) {
   const fullImage = post.heroImage.startsWith('http')
     ? post.heroImage
     : `${BASE_URL}${post.heroImage}`;
-  const fullTitle = `${post.title} | ${SITE_NAME}`;
 
-  let html = template;
-
-  html = html.replace(
-    /<title>[\s\S]*?<\/title>/,
-    `<title>${escapeHtml(fullTitle)}</title>`
-  );
-  html = replaceMetaContent(html, /<meta name="description"[^>]*>/, post.description);
-  html = replaceMetaContent(html, /<meta name="keywords"[^>]*>/, post.keywords.join(', '));
+  let html = applyHeadMeta(template, {
+    title: post.title,
+    description: post.description,
+    canonicalUrl: fullUrl,
+    keywords: post.keywords,
+    image: fullImage,
+  });
   html = replaceMetaContent(html, /<meta name="author"[^>]*>/, post.author);
-  html = html.replace(
-    /<link rel="canonical" href="[^"]*"/,
-    `<link rel="canonical" href="${fullUrl}"`
-  );
   html = replaceMetaContent(html, /<meta property="og:type"[^>]*>/, 'article');
-  html = replaceMetaContent(html, /<meta property="og:url"[^>]*>/, fullUrl);
-  html = replaceMetaContent(html, /<meta property="og:title"[^>]*>/, fullTitle);
-  html = replaceMetaContent(html, /<meta property="og:description"[^>]*>/, post.description);
-  html = replaceMetaContent(html, /<meta property="og:image"[^>]*>/, fullImage);
-  html = replaceMetaContent(html, /<meta name="twitter:title"[^>]*>/, fullTitle);
-  html = replaceMetaContent(html, /<meta name="twitter:description"[^>]*>/, post.description);
-  html = replaceMetaContent(html, /<meta name="twitter:image"[^>]*>/, fullImage);
-
-  // Drop the homepage's JSON-LD (Course schema) — wrong entity for an article.
-  html = html.replace(
-    /[ \t]*<script type="application\/ld\+json">[\s\S]*?<\/script>\n?/g,
-    ''
-  );
+  html = stripJsonLd(html); // homepage Course schema — wrong entity for an article
 
   const articleMeta = [
     `    <meta property="article:published_time" content="${escapeHtml(post.publishedTime)}" />`,
     `    <meta property="article:modified_time" content="${escapeHtml(post.modifiedTime || post.publishedTime)}" />`,
     `    <meta property="article:author" content="${escapeHtml(post.author)}" />`,
-    buildJsonLd(post, faqs),
+    blogJsonLd(post, faqs),
   ].join('\n');
   html = html.replace('</head>', `${articleMeta}\n  </head>`);
 
-  const rootRe = /<div id="root">\s*<\/div>/;
-  if (!rootRe.test(html)) {
-    throw new Error('Could not find empty <div id="root"> in build/index.html');
-  }
-  html = html.replace(rootRe, `<div id="root">${buildStaticBody(post, articleHtml)}</div>`);
-
-  const outDir = path.join(BUILD_DIR, 'blogs', post.slug);
-  mkdirSync(outDir, { recursive: true });
-  writeFileSync(path.join(outDir, 'index.html'), html);
-  return { slug: post.slug, faqCount: faqs.length, bytes: html.length };
+  html = injectRoot(html, blogBody(post, articleHtml), `/blogs/${post.slug}`);
+  writeRoute(`/blogs/${post.slug}`, html);
+  return { faqCount: faqs.length, bytes: html.length };
 }
+
+// ─── Static marketing routes ─────────────────────────────────────────────────
+
+function staticRouteBody(route, posts) {
+  const parts = [
+    `<nav aria-label="Breadcrumb"><a href="/">Home</a> / ${escapeHtml(route.h1)}</nav>`,
+    '<main>',
+    `<h1>${escapeHtml(route.h1)}</h1>`,
+    `<p>${escapeHtml(route.blurb)}</p>`,
+  ];
+  if (route.listBlogPosts) {
+    parts.push('<ul>');
+    for (const post of posts) {
+      parts.push(
+        `<li><a href="/blogs/${post.slug}">${escapeHtml(post.title)}</a> — ${escapeHtml(post.description)}</li>`
+      );
+    }
+    parts.push('</ul>');
+  }
+  parts.push(
+    '</main>',
+    `<p><a href="/pricing">Start the $1 Pro trial</a> &bull; <a href="/blogs">Read the blog</a> &bull; <a href="/">Home</a></p>`
+  );
+  return parts.join('\n');
+}
+
+function prerenderStaticRoute(template, route, posts) {
+  const canonicalUrl = `${BASE_URL}${route.path}`;
+  let html = applyHeadMeta(template, {
+    title: route.title,
+    description: route.description,
+    canonicalUrl,
+  });
+  html = stripJsonLd(html); // homepage Course schema doesn't belong on subpages
+  const schemas = jsonLdTags([
+    websiteSchema,
+    breadcrumbSchema([
+      { name: 'Home', url: `${BASE_URL}/` },
+      { name: route.h1, url: canonicalUrl },
+    ]),
+  ]);
+  html = html.replace('</head>', `${schemas}\n  </head>`);
+  html = injectRoot(html, staticRouteBody(route, posts), route.path);
+  writeRoute(route.path, html);
+  return { bytes: html.length };
+}
+
+// ─── Main ────────────────────────────────────────────────────────────────────
 
 function main() {
   if (!existsSync(TEMPLATE_PATH)) {
-    console.error(`prerender-blogs: ${TEMPLATE_PATH} not found — run vite build first.`);
+    console.error(`prerender: ${TEMPLATE_PATH} not found — run vite build first.`);
     process.exit(1);
   }
   const template = readFileSync(TEMPLATE_PATH, 'utf8');
   const posts = loadBlogPosts();
   let failures = 0;
 
+  // 1. Clean SPA fallback for unmatched routes (the ** rewrite target).
+  // Strip homepage canonical + JSON-LD so arbitrary routes don't claim
+  // homepage identity; React sets correct meta after hydration.
+  writeFileSync(
+    path.join(BUILD_DIR, 'app-shell.html'),
+    stripCanonical(stripJsonLd(template))
+  );
+  console.log('✅ app-shell.html written (SPA fallback)');
+
+  // 2. Blog articles
   for (const post of posts) {
     try {
       const result = prerenderPost(template, post);
       console.log(
-        `✅ prerendered /blogs/${result.slug} (${(result.bytes / 1024).toFixed(1)} KB, ${result.faqCount} FAQs)`
+        `✅ prerendered /blogs/${post.slug} (${(result.bytes / 1024).toFixed(1)} KB, ${result.faqCount} FAQs)`
       );
     } catch (err) {
       failures += 1;
@@ -228,7 +329,37 @@ function main() {
     }
   }
 
-  console.log(`prerender-blogs: ${posts.length - failures}/${posts.length} articles prerendered`);
+  // 3. Static marketing routes
+  for (const route of staticRoutes) {
+    try {
+      prerenderStaticRoute(template, route, posts);
+      console.log(`✅ prerendered ${route.path}`);
+    } catch (err) {
+      failures += 1;
+      console.error(`❌ failed to prerender ${route.path}: ${err.message}`);
+    }
+  }
+
+  // 4. Homepage: keep its hand-written meta + Course JSON-LD, add a
+  // crawler-visible h1 + intro. Must happen last — earlier steps read the
+  // pristine template.
+  try {
+    const homepageBody = [
+      '<main>',
+      `<h1>${escapeHtml(homepage.h1)}</h1>`,
+      `<p>${escapeHtml(homepage.blurb)}</p>`,
+      `<p><a href="/pricing">Start the $1 Pro trial</a> &bull; <a href="/courses">Course overview</a> &bull; <a href="/blogs">Blog</a> &bull; <a href="/faq">FAQ</a></p>`,
+      '</main>',
+    ].join('\n');
+    writeFileSync(TEMPLATE_PATH, injectRoot(template, homepageBody, '/'));
+    console.log('✅ prerendered / (homepage h1 + intro)');
+  } catch (err) {
+    failures += 1;
+    console.error(`❌ failed to prerender homepage: ${err.message}`);
+  }
+
+  const total = posts.length + staticRoutes.length + 1;
+  console.log(`prerender: ${total - failures}/${total} routes prerendered`);
   if (failures > 0) process.exit(1);
 }
 

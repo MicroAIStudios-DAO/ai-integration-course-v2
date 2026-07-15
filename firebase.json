@@ -30,6 +30,7 @@
     "hosting": {
         "target": "main",
         "public": "build",
+        "trailingSlash": false,
         "ignore": [
             "firebase.json",
             "**/.*",
@@ -65,7 +66,7 @@
             },
             {
                 "source": "**",
-                "destination": "/index.html"
+                "destination": "/app-shell.html"
             }
         ],
         "headers": [
