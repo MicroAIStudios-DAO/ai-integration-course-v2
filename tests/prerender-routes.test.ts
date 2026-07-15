@@ -28,6 +28,7 @@ const INDEXABLE_ROUTES = [
   '/solutions',
   '/solutions/real-estate',
   '/ai-workshops-san-diego',
+  '/roadmap',
   '/start-trial',
   '/privacy',
   '/courses',

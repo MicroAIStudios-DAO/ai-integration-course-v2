@@ -84,6 +84,15 @@ export const staticRoutes = [
       'Hands-on AI integration training for San Diego and Southern California teams: practical automation workflows, pilot planning, and implementation-focused education.',
   },
   {
+    path: '/roadmap',
+    title: 'Free AI Integration Roadmap',
+    description:
+      'Answer four quick questions and get a personalized AI integration roadmap: the track that fits you, the first agent to build, and a day-by-day week one.',
+    h1: 'Get your personalized AI integration roadmap',
+    blurb:
+      'Answer four quick questions and get a concrete plan: which track fits you, the exact first agent to build, and a day-by-day week one — the systems-first way, not prompt tips. Free, no card, about 2 minutes.',
+  },
+  {
     path: '/start-trial',
     title: 'Start the $1 Pro Trial',
     description:
