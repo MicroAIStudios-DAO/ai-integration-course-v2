@@ -84,7 +84,9 @@ describe.skipIf(!hasBuild)('prerendered routes (build/)', () => {
   });
 
   it.each(NOINDEX_ROUTES)('%s carries noindex, follow', (route) => {
-    const html = readFileSync(routeFile(route), 'utf8');
+    const file = routeFile(route);
+    expect(existsSync(file), `${file} missing — prerender did not cover ${route}`).toBe(true);
+    const html = readFileSync(file, 'utf8');
     expect(html).toContain('<meta name="robots" content="noindex, follow"');
   });
 
