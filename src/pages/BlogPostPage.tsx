@@ -14,6 +14,11 @@ const formatDate = (value: string): string =>
     day: 'numeric',
   });
 
+// The hero card already renders post.title as the page's single <h1>; a
+// leading "# Title" in the markdown would produce a duplicate H1.
+// Mirrored in scripts/blog-data.mjs for the prerendered pages.
+const stripLeadingH1 = (markdown: string): string => markdown.replace(/^#\s+[^\n]*\n+/, '');
+
 const normalizeQuotedMarkdownExport = (markdown: string): string => {
   const lines = markdown.replace(/\r\n/g, '\n').split('\n');
   const nonEmptyLines = lines.filter((line) => line.trim().length > 0);
@@ -111,7 +116,7 @@ const BlogPostPage: React.FC = () => {
         }
         const rawMarkdown = await response.text();
         if (!isActive) return;
-        setMarkdown(normalizeQuotedMarkdownExport(rawMarkdown));
+        setMarkdown(stripLeadingH1(normalizeQuotedMarkdownExport(rawMarkdown)));
       } catch (err: any) {
         if (!isActive) return;
         setError(err?.message || 'Failed to load article.');

@@ -32,6 +32,10 @@ const INDEXABLE_ROUTES = [
   '/privacy',
   '/courses',
   '/blogs/workflow-complete-guide',
+  '/blogs/ai-integration-architecture-reliable-workflows',
+  '/blogs/rag-implementation-guide-production',
+  '/blogs/cursor-vs-claude-code-vs-gemini-2026',
+  '/blogs/ai-workflow-error-handling-patterns',
 ];
 
 const NOINDEX_ROUTES = ['/login', '/signup'];
@@ -52,6 +56,15 @@ describe.skipIf(!hasBuild)('prerendered routes (build/)', () => {
 
     const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1]?.trim();
     expect(h1, `${route}: H1 missing or empty`).toBeTruthy();
+    const h1Count = (html.match(/<h1[\s>]/g) ?? []).length;
+    expect(h1Count, `${route}: page has ${h1Count} H1 tags (must be exactly 1)`).toBe(1);
+    const descLen =
+      (html.match(/<meta name="description" content="([^"]*)"/)?.[1] ?? '').length;
+    expect(
+      descLen,
+      `${route}: meta description is ${descLen} chars (must be 25-160)`
+    ).toBeGreaterThanOrEqual(25);
+    expect(descLen, `${route}: meta description is ${descLen} chars (must be 25-160)`).toBeLessThanOrEqual(160);
 
     expect(html, `${route}: title is still the homepage default`).not.toContain(
       '<title>Advanced AI Integration & Systems Engineering | AI Integration Course</title>'

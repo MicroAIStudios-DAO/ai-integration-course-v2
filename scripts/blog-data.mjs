@@ -59,7 +59,14 @@ export function readPostMarkdown(post) {
     path.join(REPO_ROOT, 'public', post.markdownPath.replace(/^\//, '')),
     'utf8'
   );
-  return normalizeQuotedMarkdownExport(raw);
+  return stripLeadingH1(normalizeQuotedMarkdownExport(raw));
+}
+
+// The article header (prerendered and in BlogPostPage's hero) already renders
+// post.title as the page's single <h1>; a leading "# Title" in the markdown
+// would produce a duplicate. Mirrored in src/pages/BlogPostPage.tsx.
+export function stripLeadingH1(markdown) {
+  return markdown.replace(/^#\s+[^\n]*\n+/, '');
 }
 
 export function normalizeQuotedMarkdownExport(markdown) {
