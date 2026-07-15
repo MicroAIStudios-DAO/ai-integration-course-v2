@@ -158,6 +158,7 @@ const SignupPage: React.FC = () => {
           "AI automation course enrollment",
         ]}
         author="Blaine Casey"
+        noindex
       />
       <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
       <div className="absolute -bottom-32 -left-24 h-80 w-80 rounded-full bg-indigo-200/40 blur-3xl" />

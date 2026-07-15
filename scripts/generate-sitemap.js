@@ -120,13 +120,15 @@ async function generateSitemap() {
       const courseId = courseDoc.id;
       const courseData = courseDoc.data();
       
-      // Add course page
+      // Add course page. lastmod only when a real timestamp exists — a
+      // new-Date fallback would falsely bump every URL on every build.
       if (shouldIncludePath(`/courses/${courseId}`)) {
+        const courseLastmod = courseData.updatedAt?.toDate?.()?.toISOString?.();
         urls.push({
           loc: `${BASE_URL}/courses/${courseId}`,
           priority: '0.8',
           changefreq: 'weekly',
-          lastmod: courseData.updatedAt?.toDate?.()?.toISOString?.() || new Date().toISOString()
+          ...(courseLastmod ? { lastmod: courseLastmod } : {})
         });
       }
       
@@ -154,17 +156,21 @@ async function generateSitemap() {
         for (const lessonDoc of lessonsSnapshot.docs) {
           const lessonId = lessonDoc.id;
           const lessonData = lessonDoc.data();
-          
-          // Only include free lessons in sitemap for public indexing
-          // Premium lessons are still indexed but with lower priority
+
+          // Only free lessons belong in the sitemap: gated/premium lesson
+          // URLs require auth, so to crawlers they are soft-404s or shells.
           const isFree = lessonData.tier === 'free' || lessonData.isFree;
+          if (!isFree) {
+            continue;
+          }
 
           if (shouldIncludePath(`/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`)) {
+            const lessonLastmod = lessonData.updatedAt?.toDate?.()?.toISOString?.();
             urls.push({
               loc: `${BASE_URL}/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`,
-              priority: isFree ? '0.7' : '0.5',
+              priority: '0.7',
               changefreq: 'monthly',
-              lastmod: lessonData.updatedAt?.toDate?.()?.toISOString?.() || new Date().toISOString()
+              ...(lessonLastmod ? { lastmod: lessonLastmod } : {})
             });
           }
         }

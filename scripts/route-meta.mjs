@@ -33,6 +33,9 @@ export const staticRoutes = [
     h1: 'Frequently Asked Questions',
     blurb:
       'Common questions about Gemini API integration, AI automation, non-coder workflows, the $1 Pro trial, and what you actually build inside the course.',
+    // Injects the same Q&A FAQPage.tsx renders (homepageFaqItems) as visible
+    // body content + FAQPage JSON-LD.
+    includeFaqs: true,
   },
   {
     path: '/contact',
