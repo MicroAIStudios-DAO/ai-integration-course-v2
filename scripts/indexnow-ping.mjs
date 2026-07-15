@@ -17,7 +17,10 @@ import { REPO_ROOT } from './blog-data.mjs';
 
 const INDEXNOW_KEY = '5a47563e80625dc7c26b5f97d43eeb93';
 const HOST = 'aiintegrationcourse.com';
-const ENDPOINT = 'https://api.indexnow.org/indexnow';
+// Bing's own endpoint (not the api.indexnow.org aggregator): submissions
+// still propagate to all IndexNow engines, but hitting Bing directly makes
+// them attributable in the Bing Webmaster Tools IndexNow dashboard.
+const ENDPOINT = 'https://www.bing.com/indexnow';
 
 function loadSitemapUrls() {
   const candidates = [

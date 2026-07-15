@@ -1,30 +1,23 @@
 #!/usr/bin/env node
 /**
  * Sitemap Generator for AI Integration Course
- * 
- * Generates a dynamic sitemap.xml by fetching course data from Firestore
- * 
+ *
+ * Generates sitemap.xml from the public, indexable routes: static marketing
+ * pages, blog articles (auto-discovered from public/blogs/*.md), library
+ * guides, and industry pages. Course/lesson SPA routes are intentionally
+ * excluded — see the note inside generateSitemap().
+ *
  * Usage:
  *   node scripts/generate-sitemap.js
- *   
+ *
  * This script should be run:
- * - Before each deployment
- * - As part of CI/CD pipeline
- * - Periodically via cron job
+ * - Whenever public routes are added or removed
+ * - Before each deployment (output is committed at public/sitemap.xml)
  */
 
-const admin = require('firebase-admin');
 const fs = require('fs');
 const path = require('path');
 
-// Initialize Firebase Admin (uses GOOGLE_APPLICATION_CREDENTIALS env var)
-if (!admin.apps.length) {
-  admin.initializeApp({
-    projectId: 'ai-integra-course-v2'
-  });
-}
-
-const db = admin.firestore();
 const BASE_URL = 'https://aiintegrationcourse.com';
 const EXCLUDED_PATH_PREFIXES = ['/app/'];
 const RESOURCE_PAGE_SLUGS = [
@@ -49,23 +42,6 @@ const INDUSTRY_PAGE_SLUGS = [
   'e-commerce',
   'law-firms'
 ];
-// Public preview lessons are anonymously accessible (isFreeLesson() in
-// src/firebaseService.ts + firestore.rules lessonContent allowances) even
-// though their tier is not 'free'. Parse the ID set from its source of
-// truth so the sitemap can't drift from the app's access logic.
-const PUBLIC_PREVIEW_LESSON_IDS = (() => {
-  try {
-    const source = fs.readFileSync(
-      path.join(__dirname, '..', 'src', 'firebaseService.ts'),
-      'utf8'
-    );
-    const block = source.match(/PUBLIC_PREVIEW_LESSON_IDS = new Set\(\[([\s\S]*?)\]\)/);
-    if (!block) return new Set();
-    return new Set([...block[1].matchAll(/'([^']+)'/g)].map((m) => m[1]));
-  } catch {
-    return new Set();
-  }
-})();
 
 function shouldIncludePath(pathname) {
   return !EXCLUDED_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
@@ -129,80 +105,16 @@ async function generateSitemap() {
     });
   });
   
-  // Fetch courses from Firestore
-  try {
-    const coursesSnapshot = await db.collection('courses').get();
-    
-    for (const courseDoc of coursesSnapshot.docs) {
-      const courseId = courseDoc.id;
-      const courseData = courseDoc.data();
-      
-      // Add course page. lastmod only when a real timestamp exists — a
-      // new-Date fallback would falsely bump every URL on every build.
-      if (shouldIncludePath(`/courses/${courseId}`)) {
-        const courseLastmod = courseData.updatedAt?.toDate?.()?.toISOString?.();
-        urls.push({
-          loc: `${BASE_URL}/courses/${courseId}`,
-          priority: '0.8',
-          changefreq: 'weekly',
-          ...(courseLastmod ? { lastmod: courseLastmod } : {})
-        });
-      }
-      
-      // Fetch modules
-      const modulesSnapshot = await db
-        .collection('courses')
-        .doc(courseId)
-        .collection('modules')
-        .orderBy('order')
-        .get();
-      
-      for (const moduleDoc of modulesSnapshot.docs) {
-        const moduleId = moduleDoc.id;
-        
-        // Fetch lessons
-        const lessonsSnapshot = await db
-          .collection('courses')
-          .doc(courseId)
-          .collection('modules')
-          .doc(moduleId)
-          .collection('lessons')
-          .orderBy('order')
-          .get();
-        
-        for (const lessonDoc of lessonsSnapshot.docs) {
-          const lessonId = lessonDoc.id;
-          const lessonData = lessonDoc.data();
+  // Course and lesson detail routes (/courses/<id>, .../lessons/<id>) are
+  // deliberately NOT included. They are client-rendered SPA routes: crawlers
+  // receive the empty app shell (no title/canonical/H1) regardless of the
+  // lesson's data-level access tier — live verification showed every such
+  // URL, including the anonymously-readable founders preview lessons,
+  // serving the identical shell. Listing them creates soft-404 sitemap
+  // entries and pollutes the IndexNow submission set (which submits exactly
+  // this sitemap). Re-add them only if/when those routes get prerendered
+  // with real content.
 
-          // Only publicly accessible lessons belong in the sitemap:
-          // gated/premium lesson URLs require auth, so to crawlers they are
-          // soft-404s or shells. Free-tier lessons and the public preview
-          // founders lessons are both anonymously readable.
-          const isPubliclyAccessible =
-            lessonData.tier === 'free' ||
-            lessonData.isFree ||
-            PUBLIC_PREVIEW_LESSON_IDS.has(lessonId);
-          if (!isPubliclyAccessible) {
-            continue;
-          }
-
-          if (shouldIncludePath(`/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`)) {
-            const lessonLastmod = lessonData.updatedAt?.toDate?.()?.toISOString?.();
-            urls.push({
-              loc: `${BASE_URL}/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`,
-              priority: '0.7',
-              changefreq: 'monthly',
-              ...(lessonLastmod ? { lastmod: lessonLastmod } : {})
-            });
-          }
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Error fetching Firestore data:', error);
-    console.log('Continuing with static pages only...');
-  }
-  
   // Generate XML
   const xml = generateXML(urls);
   
