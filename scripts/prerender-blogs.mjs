@@ -283,14 +283,23 @@ function prerenderStaticRoute(template, route, posts) {
     canonicalUrl,
   });
   html = stripJsonLd(html); // homepage Course schema doesn't belong on subpages
-  const schemas = jsonLdTags([
-    websiteSchema,
-    breadcrumbSchema([
-      { name: 'Home', url: `${BASE_URL}/` },
-      { name: route.h1, url: canonicalUrl },
-    ]),
-  ]);
-  html = html.replace('</head>', `${schemas}\n  </head>`);
+  const headExtras = [];
+  if (route.noindex) {
+    // Auth/utility pages: keep them crawlable (follow) so Bing sees the
+    // directive, but out of the index. Must NOT be robots.txt-blocked.
+    headExtras.push('    <meta name="robots" content="noindex, follow" />');
+  } else {
+    headExtras.push(
+      jsonLdTags([
+        websiteSchema,
+        breadcrumbSchema([
+          { name: 'Home', url: `${BASE_URL}/` },
+          { name: route.h1, url: canonicalUrl },
+        ]),
+      ])
+    );
+  }
+  html = html.replace('</head>', `${headExtras.join('\n')}\n  </head>`);
   html = injectRoot(html, staticRouteBody(route, posts), route.path);
   writeRoute(route.path, html);
   return { bytes: html.length };

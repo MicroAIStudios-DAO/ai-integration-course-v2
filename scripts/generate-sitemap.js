@@ -69,8 +69,10 @@ async function generateSitemap() {
     { path: '/library', priority: '0.8', changefreq: 'weekly' },
     { path: '/solutions', priority: '0.8', changefreq: 'weekly' },
     { path: '/ai-workshops-san-diego', priority: '0.7', changefreq: 'monthly' },
-    { path: '/login', priority: '0.5', changefreq: 'monthly' },
-    { path: '/signup', priority: '0.6', changefreq: 'monthly' },
+    // /login and /signup are intentionally excluded: they are noindexed
+    // auth/utility pages (see scripts/route-meta.mjs) with no search value.
+    { path: '/start-trial', priority: '0.9', changefreq: 'monthly' },
+    { path: '/privacy', priority: '0.3', changefreq: 'yearly' },
     { path: '/contact', priority: '0.6', changefreq: 'monthly' },
     { path: '/faq', priority: '0.6', changefreq: 'monthly' },
   ];

@@ -81,6 +81,42 @@ export const staticRoutes = [
       'Hands-on AI integration training for San Diego and Southern California teams: practical automation workflows, pilot planning, and implementation-focused education.',
   },
   {
+    path: '/start-trial',
+    title: 'Start the $1 Pro Trial',
+    description:
+      '7 days of full access for $1: the complete AI integration curriculum, the Allie AI tutor, and the Forge sandbox. Cancel in two clicks, with a 14-day money-back guarantee on every paid plan.',
+    h1: 'Start the $1 Pro Trial',
+    blurb:
+      'Seven days of full access for $1 — complete curriculum, the Allie AI tutor, and the Forge sandbox. Cancel anytime in two clicks. Every paid plan includes a 14-day ship-or-refund guarantee.',
+  },
+  {
+    path: '/privacy',
+    title: 'Privacy Policy',
+    description:
+      'How AI Integration Course collects, uses, and protects your data, including account information, analytics, and payment processing.',
+    h1: 'Privacy Policy',
+    blurb:
+      'How AI Integration Course collects, uses, and protects your data, including account information, analytics, and payment processing.',
+  },
+  {
+    // Auth/utility pages: prerendered only to carry noindex so Bing drops
+    // them from the index; excluded from the sitemap (generate-sitemap.js).
+    path: '/login',
+    title: 'Log In',
+    description: 'Log in to your AI Integration Course account.',
+    h1: 'Log In',
+    blurb: 'Log in to your AI Integration Course account.',
+    noindex: true,
+  },
+  {
+    path: '/signup',
+    title: 'Sign Up',
+    description: 'Create your AI Integration Course account.',
+    h1: 'Sign Up',
+    blurb: 'Create your AI Integration Course account.',
+    noindex: true,
+  },
+  {
     path: '/courses',
     title: 'AI Integration & Automation Mastery — Course Overview',
     description:

@@ -7,9 +7,6 @@ Allow: /
 # Sitemap location
 Sitemap: https://aiintegrationcourse.com/sitemap.xml
 
-# Crawl-delay for responsible crawling
-Crawl-delay: 1
-
 # Disallow admin and private routes
 Disallow: /admin
 Disallow: /api/
