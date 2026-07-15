@@ -5,34 +5,52 @@ roadmap / lead magnet but never started the $1 Pro trial.
 
 ---
 
-## Current wiring gap (do this first)
+## Prerequisites (the flow must NOT launch without both)
 
 Roadmap activations are stored in Firestore in the `leads` collection via `submitActivationV2`
 (`functions/src/activation.ts`), with a fallback write to `lead_magnet_signups` via
 `submitLeadMagnetV2` (`functions/src/leadMagnet.ts`). **Neither path currently sends the
 profile to Klaviyo**, so the Klaviyo list/flow can't be auto-populated yet.
 The Klaviyo account has only the three default lists and no configured flows.
-Two options, in order of preference:
 
-1. **API sync (recommended):** extend `submitLeadMagnetV2` to call Klaviyo's
+**Prerequisite A — entry sync (gets leads into the flow):**
+
+1. **API sync (recommended):** extend both write paths (`submitActivationV2`
+   and `submitLeadMagnetV2`) to call Klaviyo's
    `POST /api/profile-subscription-bulk-create-jobs` (subscribe) with a new
    list **"Roadmap Leads"**, passing `leadMagnetId` and `source` as profile
    properties. New signups then enter the flow automatically.
-2. **Manual bridge (works today):** export emails from the
-   `lead_magnet_signups` collection and CSV-import into a "Roadmap Leads"
+2. **Manual bridge (works today):** export emails from the `leads` and
+   `lead_magnet_signups` collections and CSV-import into a "Roadmap Leads"
    list. Repeat weekly until the API sync ships.
 
-Also needed for the exit condition: a **"Started Trial"** metric. Fire a
-Klaviyo event from the Stripe `checkout.session.completed` webhook handler (`stripeWebhookV2` in
-`functions/src/stripe.ts`) when the $1 trial subscription is created.
-Until that exists, use the fallback exit filter below.
+**Prerequisite B — trial-conversion sync (gets converts OUT of the flow):**
+
+Extend the Stripe `checkout.session.completed` webhook handler
+(`stripeWebhookV2` in `functions/src/stripe.ts`) so that, in addition to its
+existing Firestore `users/{uid}` update, it also pushes the conversion to
+Klaviyo when the $1 trial subscription is created:
+
+- `POST /api/events` with metric **"Started Trial"** for the profile, and
+- set profile property `subscription_status` in the same call's profile
+  payload (belt-and-suspenders for segment building later).
+
+**This one is a hard launch blocker, not a nice-to-have.** Checkout
+completion currently only touches Firestore — Klaviyo never learns about
+the conversion, so there is no data source for any exit filter (an earlier
+draft suggested falling back to a `subscriptionStatus` profile property,
+but nothing writes that property to Klaviyo). Without Prerequisite B,
+converts would keep receiving Emails 2–3 as post-purchase sales pitches
+for the trial they already bought. Do not turn the flow on until this sync
+is deployed and a test conversion shows the "Started Trial" event on the
+Klaviyo profile.
 
 ## Flow configuration
 
 | Setting | Value |
 |---|---|
 | Trigger | Added to List → **Roadmap Leads** |
-| Flow filter | `Started Trial` zero times since starting this flow *(fallback until the metric exists: profile property `subscriptionStatus` is not set)* |
+| Flow filter | `Started Trial` zero times since starting this flow (requires Prerequisite B — no fallback exists) |
 | Exit | Person is removed when they start the trial (flow filter re-checked before each send) |
 | Smart Sending | OFF for Email 1 (it must arrive immediately), ON for Emails 2–3 |
 | UTM | `utm_source=klaviyo&utm_medium=email&utm_campaign=roadmap_nurture` |
