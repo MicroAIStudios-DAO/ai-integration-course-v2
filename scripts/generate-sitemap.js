@@ -64,6 +64,7 @@ async function generateSitemap() {
     { path: '/ai-workshops-san-diego', priority: '0.7', changefreq: 'monthly' },
     // /login and /signup are intentionally excluded: they are noindexed
     // auth/utility pages (see scripts/route-meta.mjs) with no search value.
+    { path: '/roadmap', priority: '0.8', changefreq: 'monthly' },
     { path: '/start-trial', priority: '0.9', changefreq: 'monthly' },
     { path: '/privacy', priority: '0.3', changefreq: 'yearly' },
     { path: '/contact', priority: '0.6', changefreq: 'monthly' },

@@ -10,6 +10,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import SEO from '../components/SEO';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../config/firebase';
 import { getStoredAttribution } from '../utils/attribution';
@@ -109,6 +110,11 @@ const RoadmapActivationPage: React.FC = () => {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', padding: '32px 16px', fontFamily: 'system-ui, sans-serif' }}>
+      <SEO
+        title="Free AI Integration Roadmap"
+        description="Answer four quick questions and get a personalized AI integration roadmap: the track that fits you, the first agent to build, and a day-by-day week one."
+        url="/roadmap"
+      />
       <div style={{ maxWidth: 560, margin: '0 auto' }}>
         {/* progress */}
         {step >= 1 && step <= 5 && (
