@@ -23,8 +23,8 @@ Two options, in order of preference:
    list. Repeat weekly until the API sync ships.
 
 Also needed for the exit condition: a **"Started Trial"** metric. Fire a
-Klaviyo event from the Stripe checkout-completed webhook
-(`functions/src/stripe.ts`) when the $1 trial subscription is created.
+Klaviyo event from the Stripe `checkout.session.completed` webhook handler (`stripeWebhookV2` in
+`functions/src/stripe.ts`) when the $1 trial subscription is created.
 Until that exists, use the fallback exit filter below.
 
 ## Flow configuration
