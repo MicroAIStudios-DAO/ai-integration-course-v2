@@ -40,7 +40,9 @@ Until that exists, use the fallback exit filter below.
 Timing: **Email 1** immediately on trigger · **Email 2** wait 2 days ·
 **Email 3** wait 3 more days (day 5).
 
-All CTAs link to: `https://aiintegrationcourse.com/checkout/start?plan=pro_trial`
+CTA destinations (wire these to the buttons/links in Klaviyo):
+- Roadmap: https://aiintegrationcourse.com/roadmap
+- $1 Pro Trial: https://aiintegrationcourse.com/checkout/start?plan=pro_trial
 
 ---
 
