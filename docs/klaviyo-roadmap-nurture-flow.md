@@ -7,10 +7,11 @@ roadmap / lead magnet but never started the $1 Pro trial.
 
 ## Current wiring gap (do this first)
 
-Roadmap and lead-magnet signups are stored in Firestore
-(`lead_magnet_signups` via `submitLeadMagnetV2` in
-`functions/src/leadMagnet.ts`) — **they are never sent to Klaviyo**. The
-Klaviyo account has only the three default lists and no configured flows.
+Roadmap activations are stored in Firestore in the `leads` collection via `submitActivationV2`
+(`functions/src/activation.ts`), with a fallback write to `lead_magnet_signups` via
+`submitLeadMagnetV2` (`functions/src/leadMagnet.ts`). **Neither path currently sends the
+profile to Klaviyo**, so the Klaviyo list/flow can't be auto-populated yet.
+The Klaviyo account has only the three default lists and no configured flows.
 Two options, in order of preference:
 
 1. **API sync (recommended):** extend `submitLeadMagnetV2` to call Klaviyo's
