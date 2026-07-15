@@ -8,7 +8,7 @@ const IndustrySolutionsPage: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-white">
       <SEO
         title="AI Integration by Industry"
-        description="Industry-specific AI integration pages for real estate, e-commerce, and law firms. See where AI automation creates operational leverage without breaking review and quality controls."
+        description="Industry-specific AI integration for real estate, e-commerce, and law firms — where automation creates leverage without breaking quality controls."
         url="/solutions"
         keywords={['AI integration by industry', 'AI for real estate', 'AI for e-commerce', 'AI for law firms']}
       />

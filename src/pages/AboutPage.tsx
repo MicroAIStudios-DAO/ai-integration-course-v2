@@ -31,8 +31,8 @@ const AboutPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <SEO
-        title="About Blaine Casey — AI Integration Course Instructor"
-        description="Blaine Casey is an AI Solutions Architect and the instructor behind AI Integration Course. Learn about his verified industry experience, real client case studies, and the methodology behind practical AI automation training for marketing agencies, SaaS teams, and operators."
+        title="About Blaine Casey"
+        description="Blaine Casey is an AI Solutions Architect and the instructor behind AI Integration Course — practical AI automation training built on real client work."
         url="/about"
         keywords={[
           'Blaine Casey AI instructor',
