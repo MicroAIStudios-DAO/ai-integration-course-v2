@@ -115,6 +115,7 @@ const LessonPage: React.FC = () => {
           // Try to get lesson content from multiple sources
           let contentToDisplay = "";
           let secureVideoUrl: string | null = null;
+          let secureStoragePath: string | null = null;
           const shouldReadLessonContent =
             isPublicPreviewLesson(currentLesson) || !isFreeLesson(currentLesson);
 
@@ -126,6 +127,7 @@ const LessonPage: React.FC = () => {
               const secureDoc = await getSecureLessonDoc(courseId, moduleId, lessonId);
               contentToDisplay = secureDoc?.content || "";
               secureVideoUrl = secureDoc?.videoUrl || null;
+              secureStoragePath = secureDoc?.storagePath || null;
             } catch (secureContentError) {
               console.warn("Could not fetch gated lesson content:", secureContentError);
             }
@@ -134,10 +136,11 @@ const LessonPage: React.FC = () => {
           if (!contentToDisplay && currentLesson.content) {
             contentToDisplay = currentLesson.content;
           }
-          // Priority 3: Content from Firebase Storage
-          else if (!contentToDisplay && currentLesson.storagePath) {
+          // Priority 3: Content from Firebase Storage (gated lessons carry
+          // their storagePath in lessonContent; free lessons on the doc)
+          else if (!contentToDisplay && (secureStoragePath || currentLesson.storagePath)) {
             try {
-              const mdUrl = await getLessonMarkdownUrl(currentLesson.storagePath);
+              const mdUrl = await getLessonMarkdownUrl(secureStoragePath || currentLesson.storagePath!);
               const response = await fetch(mdUrl);
               if (response.ok) {
                 contentToDisplay = await response.text();
