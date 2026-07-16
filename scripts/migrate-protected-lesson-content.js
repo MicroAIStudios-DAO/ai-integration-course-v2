@@ -47,8 +47,11 @@ async function main() {
         // premium video links must live in tier-gated lessonContent.
         const videoUrl = typeof lesson.videoUrl === 'string' ? lesson.videoUrl.trim() : '';
         const youtubeUrl = typeof lesson.youtubeUrl === 'string' ? lesson.youtubeUrl.trim() : '';
+        // storagePath is a content pointer too: with it, any signed-in user
+        // could fetch the premium markdown from Storage directly.
+        const storagePath = typeof lesson.storagePath === 'string' ? lesson.storagePath.trim() : '';
 
-        if (isFree || (!inlineContent && !videoUrl && !youtubeUrl)) {
+        if (isFree || (!inlineContent && !videoUrl && !youtubeUrl && !storagePath)) {
           continue;
         }
 
@@ -65,6 +68,7 @@ async function main() {
             ...(inlineContent ? { content: inlineContent } : {}),
             ...(videoUrl ? { videoUrl } : {}),
             ...(youtubeUrl ? { youtubeUrl } : {}),
+            ...(storagePath ? { storagePath } : {}),
             updatedAt: SERVER_TIMESTAMP,
           },
           { merge: true }
@@ -77,6 +81,7 @@ async function main() {
             html: DELETE_FIELD,
             videoUrl: DELETE_FIELD,
             youtubeUrl: DELETE_FIELD,
+            storagePath: DELETE_FIELD,
             updatedAt: SERVER_TIMESTAMP,
           },
           { merge: true }
