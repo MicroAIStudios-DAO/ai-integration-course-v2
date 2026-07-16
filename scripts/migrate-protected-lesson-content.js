@@ -42,8 +42,13 @@ async function main() {
         const inlineContent = [lesson.content, lesson.md, lesson.html]
           .map((value) => (typeof value === 'string' ? value.trim() : ''))
           .find(Boolean);
+        // Media URLs are gated too: lesson docs are world-readable metadata
+        // (the catalog collection query must work for anonymous visitors), so
+        // premium video links must live in tier-gated lessonContent.
+        const videoUrl = typeof lesson.videoUrl === 'string' ? lesson.videoUrl.trim() : '';
+        const youtubeUrl = typeof lesson.youtubeUrl === 'string' ? lesson.youtubeUrl.trim() : '';
 
-        if (isFree || !inlineContent) {
+        if (isFree || (!inlineContent && !videoUrl && !youtubeUrl)) {
           continue;
         }
 
@@ -57,7 +62,9 @@ async function main() {
             moduleId: moduleDoc.id,
             lessonId: lessonDoc.id,
             tier: lesson.tier || 'premium',
-            content: inlineContent,
+            ...(inlineContent ? { content: inlineContent } : {}),
+            ...(videoUrl ? { videoUrl } : {}),
+            ...(youtubeUrl ? { youtubeUrl } : {}),
             updatedAt: SERVER_TIMESTAMP,
           },
           { merge: true }
@@ -68,6 +75,8 @@ async function main() {
             content: DELETE_FIELD,
             md: DELETE_FIELD,
             html: DELETE_FIELD,
+            videoUrl: DELETE_FIELD,
+            youtubeUrl: DELETE_FIELD,
             updatedAt: SERVER_TIMESTAMP,
           },
           { merge: true }

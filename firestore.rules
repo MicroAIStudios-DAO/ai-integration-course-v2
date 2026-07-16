@@ -205,25 +205,22 @@ service cloud.firestore {
         // Only admins can write modules
         allow write: if isAdmin();
         
-        // Lessons subcollection - TIER GATING ENFORCED SERVER-SIDE
-        // SECURITY FIX (VULN-01): Removed open `allow read: if true` that exposed
-        // all premium/paid lesson content (including full markdown and video URLs)
-        // to unauthenticated REST API callers. Access is now gated by lesson tier.
+        // Lessons subcollection — METADATA ONLY, world-readable.
+        //
+        // VULN-01 history: premium bodies/video URLs used to live inline on
+        // these docs, so reads were tier-gated. But Firestore rules are not
+        // filters — the tier-gated rule denied the catalog's collection query
+        // (getCourses) outright for anonymous/free users, breaking the lesson
+        // dropdown site-wide. Rules also cannot hide individual fields.
+        //
+        // The fix: scripts/migrate-protected-lesson-content.js moves gated
+        // content/md/html/videoUrl/youtubeUrl into /lessonContent (tier-gated
+        // below); lesson docs keep only metadata (title, order, tier,
+        // durationMinutes, storagePath — Storage downloads are gated by
+        // storage.rules). Do NOT write premium bodies or media URLs onto
+        // lesson docs; put them in /lessonContent.
         match /lessons/{lessonId} {
-          // Lesson metadata (title, order, durationMinutes, tier flag) is readable
-          // by anyone so the course outline/syllabus can render for marketing.
-          // Full content fields (content, videoUrl) are only returned when the
-          // caller satisfies the tier requirement below.
-          allow read: if
-            // Free lessons: always readable (marketing + enrolled free users)
-            isFreeLesson(resource.data) ||
-            // Founders-tier lessons: founding members, beta testers with premium
-            (resource.data.tier == 'founders' && canReadFoundersContent()) ||
-            // Premium lessons: any authenticated user with an active subscription
-            // or trial period
-            (resource.data.tier != 'founders' && hasPremiumAccess()) ||
-            // Admins can always read everything
-            isAdmin();
+          allow read: if true;
 
           // Only admins can write lessons
           allow write: if isAdmin();

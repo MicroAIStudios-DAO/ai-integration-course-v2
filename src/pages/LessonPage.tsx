@@ -6,7 +6,7 @@ import remarkGfm from "remark-gfm";
 import {
   getCourseById,
   getLessonMarkdownUrl,
-  getSecureLessonContent,
+  getSecureLessonDoc,
   getUserCourseProgress,
   getUserProfile,
   isFoundersLesson,
@@ -113,13 +113,18 @@ const LessonPage: React.FC = () => {
         if (canAccess) {
           // Try to get lesson content from multiple sources
           let contentToDisplay = "";
+          let secureVideoUrl: string | null = null;
           const shouldReadLessonContent =
             isPublicPreviewLesson(currentLesson) || !isFreeLesson(currentLesson);
-          
-          // Public preview lessons still live in lessonContent, so load them here too.
+
+          // Public preview lessons still live in lessonContent, so load them
+          // here too. Gated media URLs also live there — the lesson docs in
+          // the course tree are world-readable metadata only.
           if (shouldReadLessonContent) {
             try {
-              contentToDisplay = await getSecureLessonContent(courseId, moduleId, lessonId) || "";
+              const secureDoc = await getSecureLessonDoc(courseId, moduleId, lessonId);
+              contentToDisplay = secureDoc?.content || "";
+              secureVideoUrl = secureDoc?.videoUrl || null;
             } catch (secureContentError) {
               console.warn("Could not fetch gated lesson content:", secureContentError);
             }
@@ -166,7 +171,7 @@ The detailed content for this lesson is being prepared. Please check back soon o
           }
           
           setMarkdownContent(contentToDisplay);
-          setVideoUrlToPlay(currentLesson.videoUrl);
+          setVideoUrlToPlay(currentLesson.videoUrl || secureVideoUrl || undefined);
 
           // Track lesson_start event
           trackLessonStart(
