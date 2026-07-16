@@ -2,6 +2,8 @@
 
 A comprehensive platform for learning about AI integration and investment strategies in the age of artificial intelligence.
 
+> 📚 **Looking for a specific guide?** See the [Documentation Index](./docs/README.md) for a categorized map of all docs (setup, deployment, Firebase, GCloud, AI tutor, growth, and more). Superseded point-in-time notes now live in [`docs/archive/`](./docs/archive/README.md).
+
 ## 🚀 Quick Start for Production Deployment
 
 **Ready to deploy?** This repository is production-ready!
