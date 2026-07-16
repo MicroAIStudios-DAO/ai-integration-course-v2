@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import ReactPlayer from "react-player";
@@ -28,6 +28,7 @@ import { BRAND } from "../config/brand";
 import "../styles/lesson-content.css"; // Import textbook-style CSS
 import { trackLessonStart, trackLessonComplete, trackLesson1Completed } from "../utils/analytics";
 import { MarkdownPre } from "../components/common/CopyableCodeBlock";
+import LessonSponsorSlot from "../components/LessonSponsorSlot";
 
 const LessonPage: React.FC = () => {
   const { courseId, moduleId, lessonId } = useParams<{ courseId: string; moduleId: string; lessonId: string }>();
@@ -277,11 +278,35 @@ The detailed content for this lesson is being prepared. Please check back soon o
       ? window.location.pathname
       : `/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`;
   const coursePageUrl = `${origin}/courses`;
+  const tutorRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
+  const [alliePillOpen, setAlliePillOpen] = useState(false);
+
+  // Reading progress bar (lesson theme)
+  useEffect(() => {
+    const onScroll = () => {
+      const h = document.documentElement;
+      const max = h.scrollHeight - h.clientHeight;
+      if (progressRef.current) {
+        progressRef.current.style.width = max > 0 ? `${(h.scrollTop / max) * 100}%` : '0%';
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const lessonPageUrl = `${origin}${pagePath}`;
   const lessonDescription = lesson?.description || course?.description || "Lesson content inside the AI Integration Course.";
 
   return (
     <div className="textbook-page">
+      <div className="lesson-sky" aria-hidden="true">
+        <div className="glow glow-a" />
+        <div className="glow glow-b" />
+        <div className="glow glow-c" />
+      </div>
+      <div className="lesson-progress" ref={progressRef} />
       <SEO
         title={lesson ? `${lesson.title} Lesson` : "Course Lesson"}
         description={lessonDescription}
@@ -409,7 +434,7 @@ The detailed content for this lesson is being prepared. Please check back soon o
               )}
 
               {/* Action Buttons */}
-              <div className="flex space-x-4 mt-8 pt-6 border-t border-gray-200">
+              <div className="lesson-actions flex space-x-4 mt-8 pt-6 border-t">
                 {currentUser && !isLessonCompleted() && (
                   <button
                     onClick={handleMarkComplete}
@@ -428,7 +453,8 @@ The detailed content for this lesson is being prepared. Please check back soon o
             </div>
 
             {/* AI Tutor Section */}
-            <div className="lg:sticky lg:top-24 h-fit bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100">
+            <div ref={tutorRef} className="lg:sticky lg:top-24 h-fit">
+              <div className="lesson-tutor-card">
               <div className="flex items-center mb-4">
                 <AnimatedAvatar />
                 <h3 className="text-xl font-headings font-semibold ml-4 text-gray-800">AI Tutor</h3>
@@ -441,6 +467,8 @@ The detailed content for this lesson is being prepared. Please check back soon o
                 premium={!isFreeLesson(lesson)}
                 hasAccess={isAllowed}
               />
+              </div>
+              <LessonSponsorSlot lessonTitle={lesson?.title} />
             </div>
           </div>
 
@@ -487,6 +515,29 @@ The detailed content for this lesson is being prepared. Please check back soon o
           )}
 
         </div>
+      </div>
+
+      {/* Ask Allie retracting pill — expands on hover/focus/tap; Ask scrolls to the tutor */}
+      <div
+        className={`allie-pill ${alliePillOpen ? 'open' : ''}`}
+        role="search"
+        onClick={() => setAlliePillOpen(true)}
+      >
+        <span className="pulse" aria-hidden="true" />
+        <input
+          type="text"
+          placeholder="Ask Allie about this lesson…"
+          aria-label="Ask Allie about this lesson"
+        />
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            tutorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }}
+        >
+          Ask&nbsp;Allie
+        </button>
       </div>
     </div>
   );
