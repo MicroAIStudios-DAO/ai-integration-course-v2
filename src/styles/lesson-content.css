@@ -1,7 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════════════
    LESSON PAGE THEME — "Liquid Glass" (locked 2026-07-16, owner-approved)
-   Scope: ONLY LessonPage.tsx (.textbook-page root). Every other page keeps
-   its existing look — do not import this stylesheet anywhere else.
+   Scope: the learning experience ONLY — LessonPage.tsx (.textbook-page)
+   and CourseOverviewPage.tsx (/courses), both rooted on .lg-page. Every
+   other page keeps its existing look — do not import this elsewhere.
 
    Locked spec:
    - Deep blue ground #0a0f1c, faint 4rem grid, 3 drifting brand glows
@@ -14,7 +15,7 @@
    Brand palette export: docs/brand/lesson-gradient-palette.md
    ═══════════════════════════════════════════════════════════════════════ */
 
-.textbook-page {
+.lg-page {
   /* ── Locked tokens ── */
   --lg-ground: #0a0f1c;
   --lg-glow-amber: rgba(245, 158, 11, 0.16);
@@ -50,9 +51,13 @@
   color: var(--lg-ink);
   font-family: 'Open Sans', 'Segoe UI', system-ui, sans-serif;
   text-shadow: var(--lg-halo-body);
-  padding: 1.5rem 0 5rem;
   overflow-x: clip;
 }
+
+.textbook-page { padding: 1.5rem 0 5rem; }
+
+/* Headings pop uniformly across the learning experience */
+.lg-page h1, .lg-page h2, .lg-page h3 { text-shadow: var(--lg-halo-head); }
 
 /* ── Drifting brand glows (behind everything) ─────────────────────────── */
 .lesson-sky { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
@@ -88,20 +93,34 @@
 .textbook-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem;
   font-size: 0.85rem; color: var(--lg-muted); font-variant-numeric: tabular-nums; }
 
-/* ── The glass panel (main reading surface) ───────────────────────────── */
-.textbook-content {
+/* ── The glass material (lesson reading surface + generic panels) ─────── */
+.textbook-content, .lg-glass-panel {
   background: var(--lg-glass);
   border: 1px solid var(--lg-glass-border);
-  border-radius: 1.25rem;
   box-shadow: var(--lg-shadow), var(--lg-glass-inset);
   backdrop-filter: blur(22px) saturate(1.35);
   -webkit-backdrop-filter: blur(22px) saturate(1.35);
+}
+.textbook-content {
+  border-radius: 1.25rem;
   padding: clamp(1.5rem, 4vw, 2.75rem);
 }
 /* Older GPUs / no backdrop-filter: fall back to a more opaque panel */
 @supports not (backdrop-filter: blur(1px)) {
-  .textbook-content { background: rgba(13, 20, 36, 0.94); }
+  .textbook-content, .lg-glass-panel { background: rgba(13, 20, 36, 0.94); }
 }
+
+/* Darker individual surfaces (module cards, cross-sell, selects) */
+.lg-card-surface {
+  background: var(--lg-card);
+  border: 1px solid var(--lg-card-border);
+}
+.lg-select {
+  background: var(--lg-card) !important;
+  border: 1px solid var(--lg-card-border) !important;
+  color: var(--lg-ink) !important;
+}
+.lg-select option { background: #0d1424; color: var(--lg-ink); }
 
 .textbook-content .breadcrumbs { color: var(--lg-muted) !important; }
 .textbook-content .breadcrumbs a { color: var(--lg-cyan) !important; text-decoration: none; }

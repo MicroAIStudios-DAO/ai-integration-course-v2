@@ -300,7 +300,7 @@ The detailed content for this lesson is being prepared. Please check back soon o
   const lessonDescription = lesson?.description || course?.description || "Lesson content inside the AI Integration Course.";
 
   return (
-    <div className="textbook-page">
+    <div className="textbook-page lg-page">
       <div className="lesson-sky" aria-hidden="true">
         <div className="glow glow-a" />
         <div className="glow glow-b" />
