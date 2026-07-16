@@ -17,6 +17,30 @@ export interface BlogPost {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: 'ai-agents-for-small-business',
+    title: 'AI Agents for Small Business: A Practical Builder\'s Guide',
+    eyebrow: 'Guide',
+    description:
+      'AI agents for small business are not chatbots — they are autonomous loops that call tools, chain steps, and integrate with your existing systems. Here is how to build them reliably.',
+    summary:
+      'The value of AI agents for small business comes from integration, not intelligence: connecting model reasoning to your APIs, databases, and workflows. This guide covers the agent loop, five real use cases, and the failure modes that kill demos in production.',
+    keywords: [
+      'AI agents for small business',
+      'how to build an AI agent',
+      'AI automation for small business',
+      'production AI agent',
+      'AI agent use cases',
+      'small business AI integration',
+      'AI tools for small business owners',
+    ],
+    readingTime: '8 min read',
+    publishedTime: '2026-07-15T09:00:00-07:00',
+    modifiedTime: '2026-07-15T09:00:00-07:00',
+    author: 'Blaine Casey',
+    markdownPath: '/blogs/ai-agents-for-small-business.md',
+    heroImage: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&q=80',
+  },
+  {
     slug: 'ai-workflow-error-handling-patterns',
     title: 'AI Workflow Error Handling Patterns: Retries, Fallbacks, and Resilience in Production',
     eyebrow: 'Guide',
