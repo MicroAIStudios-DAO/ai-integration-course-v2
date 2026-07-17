@@ -17,6 +17,31 @@ export interface BlogPost {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: 'persistent-ai-memory-patterns',
+    title: 'Persistent AI Memory Patterns: Giving Your Agents a Reliable Long-Term Memory',
+    eyebrow: 'Guide',
+    description:
+      'LLMs forget everything between calls. Persistent AI memory is the engineering layer that fixes this — conversation buffers, semantic memory, entity stores, and episodic logs. Here is when to use each.',
+    summary:
+      'Persistent AI memory is not a feature you toggle on — it is a set of storage and retrieval patterns you design. This guide covers the four main patterns (conversation buffer, semantic memory, entity store, episodic log), how to combine them, and the reliability mistakes that break memory in production.',
+    keywords: [
+      'persistent AI memory',
+      'AI agent memory',
+      'LLM memory patterns',
+      'semantic memory AI',
+      'AI conversation memory',
+      'long-term AI memory',
+      'AI agent state management',
+      'vector store memory',
+    ],
+    readingTime: '10 min read',
+    publishedTime: '2026-07-17T09:00:00-07:00',
+    modifiedTime: '2026-07-17T09:00:00-07:00',
+    author: 'Blaine Casey',
+    markdownPath: '/blogs/persistent-ai-memory-patterns.md',
+    heroImage: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80',
+  },
+  {
     slug: 'ai-agents-for-small-business',
     title: 'AI Agents for Small Business: A Practical Builder\'s Guide',
     eyebrow: 'Guide',
