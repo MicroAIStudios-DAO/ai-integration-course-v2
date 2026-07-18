@@ -25,6 +25,30 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
+// SECURITY FIX (VULN-03 pattern): This endpoint verifies a Firebase Auth token
+// and forwards it (via X-Student-UID) to the ProofGuard backend, so it must not
+// echo a wildcard `Access-Control-Allow-Origin: *`. A wildcard on an
+// authenticated endpoint lets any third-party site drive cross-origin requests
+// on behalf of a logged-in user (CSRF / attestation abuse). Mirror the explicit
+// origin allowlist already used by tutor.ts / tutorEngine.ts.
+const ALLOWED_ORIGINS = [
+  "https://aiintegrationcourse.com",
+  "https://www.aiintegrationcourse.com",
+  // Local development origins
+  "http://localhost:3000",
+  "http://localhost:5000",
+];
+
+function applyCors(req: functions.https.Request, res: any): void {
+  const origin = req.headers.origin;
+  if (typeof origin === "string" && ALLOWED_ORIGINS.includes(origin)) {
+    res.set("Access-Control-Allow-Origin", origin);
+  }
+  res.set("Vary", "Origin");
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+}
+
 interface AttestationRequest {
   agentDefinition: any; // Flowise export JSON
   complianceTarget: string; // e.g., 'IMDA/AICM'
@@ -48,10 +72,8 @@ interface AttestationResult {
 }
 
 export const proofguardAttest = functions.https.onRequest(async (req, res) => {
-  // CORS headers
-  res.set("Access-Control-Allow-Origin", "*");
-  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  // CORS headers (explicit origin allowlist — no wildcard on an authenticated endpoint)
+  applyCors(req, res);
 
   if (req.method === "OPTIONS") {
     res.status(204).send("");
