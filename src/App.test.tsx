@@ -100,7 +100,9 @@ vi.mock('./pages/PaidTrafficLandingPage', () => ({
   default: () => <main>Mock Paid Traffic Landing Page</main>
 }));
 
-test('renders app root route', () => {
+// Route components are code-split with React.lazy, so the initial render shows
+// the Suspense fallback. Await the resolved chunk with findByText.
+test('renders app root route', async () => {
   render(
     <HelmetProvider>
       <AuthProvider>
@@ -108,10 +110,10 @@ test('renders app root route', () => {
       </AuthProvider>
     </HelmetProvider>
   );
-  expect(screen.getByText(/Mock Paid Traffic Landing Page/i)).toBeInTheDocument();
+  expect(await screen.findByText(/Mock Paid Traffic Landing Page/i)).toBeInTheDocument();
 });
 
-test('renders router without crashing', () => {
+test('renders router without crashing', async () => {
   render(
     <HelmetProvider>
       <AuthProvider>
@@ -119,7 +121,7 @@ test('renders router without crashing', () => {
       </AuthProvider>
     </HelmetProvider>
   );
-  expect(screen.getByText(/Mock Paid Traffic Landing Page/i)).toBeInTheDocument();
+  expect(await screen.findByText(/Mock Paid Traffic Landing Page/i)).toBeInTheDocument();
 });
 
 
