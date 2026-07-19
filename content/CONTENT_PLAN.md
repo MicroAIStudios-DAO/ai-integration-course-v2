@@ -27,7 +27,7 @@ before it is published.
 |---|---|---|
 | rag-implementation-guide-production | ✅ published | "RAG implementation", "how to build a RAG system" |
 | rag-chunking-strategies | 📋 planned | "RAG chunking strategy" |
-| persistent-ai-memory-patterns | 📋 planned | "persistent AI memory" |
+| persistent-ai-memory-patterns | ✅ published | "persistent AI memory" |
 
 ## Cluster 3 — Agents & automation for builders
 | Slug | Status | Primary intent |
@@ -44,8 +44,7 @@ before it is published.
 | ai-integration-for-consultants | 📋 planned | "AI integration for consultants" |
 
 ## Priority order (what the cycle writes next)
-1. persistent-ai-memory-patterns
-2. api-based-ai-automation-guide
-3. production-ai-agent-reliability-checklist
-4. ai-automation-roi
-5. ai-integration-for-founders
+1. api-based-ai-automation-guide
+2. production-ai-agent-reliability-checklist
+3. ai-automation-roi
+4. ai-integration-for-founders
