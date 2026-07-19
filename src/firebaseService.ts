@@ -12,6 +12,11 @@ type LessonAccessSubject = Pick<Lesson, 'id' | 'tier' | 'isFree'> | null | undef
 type LessonContentDoc = {
   content?: string;
   markdown?: string;
+  // Gated media moved out of the world-readable lesson docs (see
+  // scripts/migrate-protected-lesson-content.js)
+  videoUrl?: string;
+  youtubeUrl?: string;
+  storagePath?: string;
 };
 
 const PUBLIC_PREVIEW_LESSON_IDS = new Set([
@@ -126,6 +131,19 @@ export const getSecureLessonContent = async (
   moduleId: string,
   lessonId: string
 ): Promise<string | null> => {
+  const secureDoc = await getSecureLessonDoc(courseId, moduleId, lessonId);
+  return secureDoc?.content ?? null;
+};
+
+// Gated lessons keep their body AND media URLs in the tier-gated
+// lessonContent collection; the lesson docs in the course tree are
+// world-readable metadata only (so the catalog collection query works
+// for anonymous visitors).
+export const getSecureLessonDoc = async (
+  courseId: string,
+  moduleId: string,
+  lessonId: string
+): Promise<{ content: string | null; videoUrl: string | null; storagePath: string | null } | null> => {
   const contentRef = doc(db, 'lessonContent', getLessonContentDocumentId(courseId, moduleId, lessonId));
   const contentSnap = await getDoc(contentRef);
   if (!contentSnap.exists()) {
@@ -133,7 +151,11 @@ export const getSecureLessonContent = async (
   }
 
   const data = contentSnap.data() as LessonContentDoc;
-  return data.content || data.markdown || null;
+  return {
+    content: data.content || data.markdown || null,
+    videoUrl: data.videoUrl || data.youtubeUrl || null,
+    storagePath: data.storagePath || null,
+  };
 };
 
 export const isPublicPreviewLesson = (lesson: LessonAccessSubject): boolean =>

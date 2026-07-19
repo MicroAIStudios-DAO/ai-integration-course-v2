@@ -1,7 +1,22 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    
+
+    // Paid-access gate, mirroring firestore.rules hasPremiumAccess()/isAdmin()
+    // via cross-service lookup. A missing users doc denies (fail closed).
+    function paidUser() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data;
+    }
+    function hasPaidAccess() {
+      return request.auth != null && (
+        paidUser().role == 'admin' ||
+        paidUser().premium == true ||
+        paidUser().foundingMember == true ||
+        paidUser().subscriptionStatus == 'active' ||
+        paidUser().subscriptionStatus == 'trialing'
+      );
+    }
+
     // Public read for course content (images, videos, etc.)
     match /course_content/{allPaths=**} {
       allow read: if true;
@@ -14,13 +29,15 @@ service firebase.storage {
       allow write: if false;
     }
 
-    // Lesson markdown: free for module 1 lessons 1-5, otherwise auth-only
+    // Lesson markdown: free-tier files stay public; everything else requires
+    // PAID access (not just any signed-in account) — a leaked storagePath
+    // must not let a free account download premium markdown.
     match /lessons-md/courses/course_01_id/modules/module_01_id/lessons/{lessonFile} {
-      allow read: if lessonFile.matches('lesson_(1|2|3|4|5)\\.md') || request.auth != null;
+      allow read: if lessonFile.matches('lesson_(1|2|3|4|5)\\.md') || hasPaidAccess();
       allow write: if false;
     }
     match /lessons-md/{allPaths=**} {
-      allow read: if request.auth != null;
+      allow read: if hasPaidAccess();
       allow write: if false;
     }
     

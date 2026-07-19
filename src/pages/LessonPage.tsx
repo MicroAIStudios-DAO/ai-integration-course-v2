@@ -6,7 +6,7 @@ import remarkGfm from "remark-gfm";
 import {
   getCourseById,
   getLessonMarkdownUrl,
-  getSecureLessonContent,
+  getSecureLessonDoc,
   getUserCourseProgress,
   getUserProfile,
   isFoundersLesson,
@@ -113,13 +113,20 @@ const LessonPage: React.FC = () => {
         if (canAccess) {
           // Try to get lesson content from multiple sources
           let contentToDisplay = "";
+          let secureVideoUrl: string | null = null;
+          let secureStoragePath: string | null = null;
           const shouldReadLessonContent =
             isPublicPreviewLesson(currentLesson) || !isFreeLesson(currentLesson);
-          
-          // Public preview lessons still live in lessonContent, so load them here too.
+
+          // Public preview lessons still live in lessonContent, so load them
+          // here too. Gated media URLs also live there — the lesson docs in
+          // the course tree are world-readable metadata only.
           if (shouldReadLessonContent) {
             try {
-              contentToDisplay = await getSecureLessonContent(courseId, moduleId, lessonId) || "";
+              const secureDoc = await getSecureLessonDoc(courseId, moduleId, lessonId);
+              contentToDisplay = secureDoc?.content || "";
+              secureVideoUrl = secureDoc?.videoUrl || null;
+              secureStoragePath = secureDoc?.storagePath || null;
             } catch (secureContentError) {
               console.warn("Could not fetch gated lesson content:", secureContentError);
             }
@@ -128,10 +135,11 @@ const LessonPage: React.FC = () => {
           if (!contentToDisplay && currentLesson.content) {
             contentToDisplay = currentLesson.content;
           }
-          // Priority 3: Content from Firebase Storage
-          else if (!contentToDisplay && currentLesson.storagePath) {
+          // Priority 3: Content from Firebase Storage (gated lessons carry
+          // their storagePath in lessonContent; free lessons on the doc)
+          else if (!contentToDisplay && (secureStoragePath || currentLesson.storagePath)) {
             try {
-              const mdUrl = await getLessonMarkdownUrl(currentLesson.storagePath);
+              const mdUrl = await getLessonMarkdownUrl(secureStoragePath || currentLesson.storagePath!);
               const response = await fetch(mdUrl);
               if (response.ok) {
                 contentToDisplay = await response.text();
@@ -166,7 +174,7 @@ The detailed content for this lesson is being prepared. Please check back soon o
           }
           
           setMarkdownContent(contentToDisplay);
-          setVideoUrlToPlay(currentLesson.videoUrl);
+          setVideoUrlToPlay(currentLesson.videoUrl || secureVideoUrl || undefined);
 
           // Track lesson_start event
           trackLessonStart(
