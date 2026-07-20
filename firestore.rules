@@ -222,8 +222,9 @@ service cloud.firestore {
         match /lessons/{lessonId} {
           allow read: if true;
 
-          // Only admins can write lessons
-          allow write: if isAdmin();
+          // Only admins can write lessons (metadata-only; bodies/media must live in /lessonContent)
+          allow write: if isAdmin() &&
+            !request.resource.data.keys().hasAny(['content', 'markdown', 'md', 'html', 'videoUrl', 'youtubeUrl', 'videoId']);
         }
       }
     }
