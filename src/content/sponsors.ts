@@ -31,7 +31,7 @@ export const lessonSponsors: LessonSponsor[] = [
 export const getSponsorForLesson = (lessonTitle?: string): LessonSponsor | null => {
   const title = (lessonTitle || '').toLowerCase();
   const matched = lessonSponsors.find((s) =>
-    !s.toolKeywords || s.toolKeywords.some((kw) => title.includes(kw))
+    !s.toolKeywords || s.toolKeywords.some((kw) => title.includes(kw.toLowerCase()))
   );
   return matched ?? null;
 };
