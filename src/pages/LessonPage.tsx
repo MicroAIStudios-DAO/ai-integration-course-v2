@@ -287,16 +287,29 @@ The detailed content for this lesson is being prepared. Please check back soon o
 
   // Reading progress bar (lesson theme)
   useEffect(() => {
-    const onScroll = () => {
+    let rafId = 0;
+
+    const update = () => {
+      rafId = 0;
       const h = document.documentElement;
       const max = h.scrollHeight - h.clientHeight;
       if (progressRef.current) {
         progressRef.current.style.width = max > 0 ? `${(h.scrollTop / max) * 100}%` : '0%';
       }
     };
+
+    const onScroll = () => {
+      if (rafId) return;
+      rafId = window.requestAnimationFrame(update);
+    };
+
     window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
+    update();
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (rafId) window.cancelAnimationFrame(rafId);
+    };
   }, []);
 
   const lessonPageUrl = `${origin}${pagePath}`;
