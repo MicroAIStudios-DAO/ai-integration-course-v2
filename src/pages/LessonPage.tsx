@@ -532,12 +532,27 @@ The detailed content for this lesson is being prepared. Please check back soon o
         </div>
       </div>
 
-      {/* Ask Allie retracting pill — expands on hover/focus/tap; Ask scrolls to the tutor */}
+      {/* Ask Allie retracting pill — tap to open, close via X, Ask scrolls to the tutor */}
       <div
         className={`allie-pill ${alliePillOpen ? 'open' : ''}`}
         role="search"
-        onClick={() => setAlliePillOpen(true)}
+        onClick={() => {
+          if (!alliePillOpen) setAlliePillOpen(true);
+        }}
       >
+        {alliePillOpen && (
+          <button
+            type="button"
+            className="allie-pill-close"
+            aria-label="Close Ask Allie"
+            onClick={(e) => {
+              e.stopPropagation();
+              setAlliePillOpen(false);
+            }}
+          >
+            ×
+          </button>
+        )}
         <span className="pulse" aria-hidden="true" />
         <input
           type="text"
