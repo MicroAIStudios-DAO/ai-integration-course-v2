@@ -49,9 +49,10 @@ service firebase.storage {
                    && request.resource.contentType.matches('image/.*');
     }
     
-    // Premium content - only authenticated users
+    // Premium content — paid access only (any signed-in account is not
+    // enough; that would let free users read premium assets directly).
     match /premium/{allPaths=**} {
-      allow read: if request.auth != null;
+      allow read: if hasPaidAccess();
       allow write: if false; // Only admin SDK can write
     }
     

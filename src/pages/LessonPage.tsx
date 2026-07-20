@@ -46,7 +46,37 @@ const LessonPage: React.FC = () => {
   const [isAllowed, setIsAllowed] = useState(false);
   const [userProgress, setUserProgress] = useState<UserCourseProgress | null>(null);
   const [videoUrlToPlay, setVideoUrlToPlay] = useState<string | undefined>(undefined);
+  const tutorRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
+  const [alliePillOpen, setAlliePillOpen] = useState(false);
   // no master access state
+
+  // Reading progress bar (lesson theme)
+  useEffect(() => {
+    let rafId = 0;
+
+    const update = () => {
+      rafId = 0;
+      const h = document.documentElement;
+      const max = h.scrollHeight - h.clientHeight;
+      if (progressRef.current) {
+        progressRef.current.style.width = max > 0 ? `${(h.scrollTop / max) * 100}%` : '0%';
+      }
+    };
+
+    const onScroll = () => {
+      if (rafId) return;
+      rafId = window.requestAnimationFrame(update);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    update();
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (rafId) window.cancelAnimationFrame(rafId);
+    };
+  }, []);
 
   const isFirstCourseLesson = useMemo(() => {
     if (!course || !lesson || !moduleId) return false;
@@ -281,37 +311,6 @@ The detailed content for this lesson is being prepared. Please check back soon o
       ? window.location.pathname
       : `/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`;
   const coursePageUrl = `${origin}/courses`;
-  const tutorRef = useRef<HTMLDivElement>(null);
-  const progressRef = useRef<HTMLDivElement>(null);
-  const [alliePillOpen, setAlliePillOpen] = useState(false);
-
-  // Reading progress bar (lesson theme)
-  useEffect(() => {
-    let rafId = 0;
-
-    const update = () => {
-      rafId = 0;
-      const h = document.documentElement;
-      const max = h.scrollHeight - h.clientHeight;
-      if (progressRef.current) {
-        progressRef.current.style.width = max > 0 ? `${(h.scrollTop / max) * 100}%` : '0%';
-      }
-    };
-
-    const onScroll = () => {
-      if (rafId) return;
-      rafId = window.requestAnimationFrame(update);
-    };
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    update();
-
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      if (rafId) window.cancelAnimationFrame(rafId);
-    };
-  }, []);
-
   const lessonPageUrl = `${origin}${pagePath}`;
   const lessonDescription = lesson?.description || course?.description || "Lesson content inside the AI Integration Course.";
 

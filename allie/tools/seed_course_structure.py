@@ -159,15 +159,34 @@ def main() -> int:
             storage_path = f"{bucket}/lessons-md/courses/{course_id}/modules/{module['id']}/lessons/{lesson_id}.md"
             title = get_title_from_storage(storage_path)
             is_free = tier == 'free'
+            relative_storage_path = f"lessons-md/courses/{course_id}/modules/{module['id']}/lessons/{lesson_id}.md"
 
-            lesson_ref = module_ref.collection('lessons').document(lesson_id)
-            lesson_ref.set({
+            # Lesson docs are world-readable metadata (firestore.rules). A
+            # storagePath on a gated lesson doc would hand any signed-in user
+            # the direct Storage location of premium markdown, so gated paths
+            # live in tier-gated /lessonContent instead (and we delete any
+            # previously-seeded storagePath from the public doc).
+            lesson_doc = {
                 'title': title,
                 'order': order,
                 'tier': tier,
                 'isFree': is_free,
-                'storagePath': f"lessons-md/courses/{course_id}/modules/{module['id']}/lessons/{lesson_id}.md",
-            }, merge=True)
+                'storagePath': relative_storage_path if is_free else firestore.DELETE_FIELD,
+            }
+
+            lesson_ref = module_ref.collection('lessons').document(lesson_id)
+            lesson_ref.set(lesson_doc, merge=True)
+
+            if not is_free:
+                # Same doc-id scheme as src/firebaseService.ts getLessonContentDocumentId
+                content_id = f"{course_id}__{module['id']}__{lesson_id}"
+                db.collection('lessonContent').document(content_id).set({
+                    'courseId': course_id,
+                    'moduleId': module['id'],
+                    'lessonId': lesson_id,
+                    'tier': tier,
+                    'storagePath': relative_storage_path,
+                }, merge=True)
             print(f"[seed]   {lesson_id}: {title} ({tier})")
 
     print('\nDone seeding course structure!')
