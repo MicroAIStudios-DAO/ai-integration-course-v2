@@ -42,8 +42,18 @@ async function main() {
         const inlineContent = [lesson.content, lesson.md, lesson.html]
           .map((value) => (typeof value === 'string' ? value.trim() : ''))
           .find(Boolean);
+        // Media URLs are gated too: lesson docs are world-readable metadata
+        // (the catalog collection query must work for anonymous visitors), so
+        // premium video links must live in tier-gated lessonContent.
+        const videoUrl = typeof lesson.videoUrl === 'string' ? lesson.videoUrl.trim() : '';
+        const youtubeUrl = typeof lesson.youtubeUrl === 'string' ? lesson.youtubeUrl.trim() : '';
+        const videoId = typeof lesson.videoId === 'string' ? lesson.videoId.trim() : '';
+        const youtubeValue = youtubeUrl || videoId;
+        // storagePath is a content pointer too: with it, any signed-in user
+        // could fetch the premium markdown from Storage directly.
+        const storagePath = typeof lesson.storagePath === 'string' ? lesson.storagePath.trim() : '';
 
-        if (isFree || !inlineContent) {
+        if (isFree || (!inlineContent && !videoUrl && !youtubeValue && !storagePath)) {
           continue;
         }
 
@@ -57,7 +67,10 @@ async function main() {
             moduleId: moduleDoc.id,
             lessonId: lessonDoc.id,
             tier: lesson.tier || 'premium',
-            content: inlineContent,
+            ...(inlineContent ? { content: inlineContent } : {}),
+            ...(videoUrl ? { videoUrl } : {}),
+            ...(youtubeValue ? { youtubeUrl: youtubeValue } : {}),
+            ...(storagePath ? { storagePath } : {}),
             updatedAt: SERVER_TIMESTAMP,
           },
           { merge: true }
@@ -68,6 +81,10 @@ async function main() {
             content: DELETE_FIELD,
             md: DELETE_FIELD,
             html: DELETE_FIELD,
+            videoUrl: DELETE_FIELD,
+            youtubeUrl: DELETE_FIELD,
+            videoId: DELETE_FIELD,
+            storagePath: DELETE_FIELD,
             updatedAt: SERVER_TIMESTAMP,
           },
           { merge: true }

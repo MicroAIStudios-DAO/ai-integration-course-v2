@@ -1,303 +1,338 @@
-/* Textbook-style lesson content styling */
+/* ═══════════════════════════════════════════════════════════════════════
+   LESSON PAGE THEME — "Liquid Glass" (locked 2026-07-16, owner-approved)
+   Scope: the learning experience ONLY — LessonPage.tsx (.textbook-page)
+   and CourseOverviewPage.tsx (/courses), both rooted on .lg-page. Every
+   other page keeps its existing look — do not import this elsewhere.
+
+   Locked spec:
+   - Deep blue ground #0a0f1c, faint 4rem grid, 3 drifting brand glows
+     (amber / cyan / magenta) — frozen under prefers-reduced-motion
+   - Subtle blue liquid glass: navy base (62%) + faint white sheen,
+     22px blur, 1.35 saturation, 10% top inner rim
+   - Darker individual cards (tables/quotes/code/tutor) for contrast
+   - Montserrat 800 headings + Open Sans body, 45° drop shadows
+     (headings 2px 2px 3px @45%, body 1px 1px 2px @30%)
+   Brand palette export: docs/brand/lesson-gradient-palette.md
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.lg-page {
+  /* ── Locked tokens ── */
+  --lg-ground: #0a0f1c;
+  --lg-glow-amber: rgba(245, 158, 11, 0.16);
+  --lg-glow-cyan: rgba(34, 211, 238, 0.13);
+  --lg-glow-magenta: rgba(217, 70, 239, 0.13);
+  --lg-grid: rgba(255, 255, 255, 0.014);
+  --lg-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015)), rgba(13, 20, 36, 0.62);
+  --lg-glass-border: rgba(255, 255, 255, 0.11);
+  --lg-glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.10), inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+  --lg-card: rgba(9, 14, 26, 0.55);           /* darker individual portions */
+  --lg-card-border: rgba(148, 163, 184, 0.16);
+  --lg-ink: #e9eef7;
+  --lg-ink-soft: #c3cddd;
+  --lg-muted: #8fa0b8;
+  --lg-amber: #fbbf24;
+  --lg-amber-strong: #f59e0b;
+  --lg-cyan: #22d3ee;
+  --lg-magenta: #e879f9;
+  --lg-yellow: #fde047;
+  --lg-row-line: rgba(148, 163, 184, 0.12);
+  --lg-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.65);
+  --lg-pill: rgba(9, 14, 26, 0.96);
+  --lg-halo-head: 2px 2px 3px rgba(0, 0, 0, 0.45);
+  --lg-halo-body: 1px 1px 2px rgba(0, 0, 0, 0.3);
+
+  position: relative;
+  min-height: 100vh;
+  background-color: var(--lg-ground);
+  background-image:
+    linear-gradient(to right, var(--lg-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--lg-grid) 1px, transparent 1px);
+  background-size: 4rem 4rem;
+  color: var(--lg-ink);
+  font-family: 'Open Sans', 'Segoe UI', system-ui, sans-serif;
+  text-shadow: var(--lg-halo-body);
+  overflow-x: clip;
+}
+
+.textbook-page { padding: 1.5rem 0 5rem; }
+
+/* Headings pop uniformly across the learning experience */
+.lg-page h1, .lg-page h2, .lg-page h3 { text-shadow: var(--lg-halo-head); }
+
+/* ── Drifting brand glows (behind everything) ─────────────────────────── */
+.lesson-sky { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.lesson-sky .glow { position: absolute; border-radius: 50%; filter: blur(90px); }
+.lesson-sky .glow-a { width: 620px; height: 620px; top: -180px; right: 4%; background: var(--lg-glow-amber); animation: lg-drift-a 70s ease-in-out infinite alternate; }
+.lesson-sky .glow-b { width: 520px; height: 520px; bottom: 8%; left: -140px; background: var(--lg-glow-cyan); animation: lg-drift-b 90s ease-in-out infinite alternate; }
+.lesson-sky .glow-c { width: 420px; height: 420px; top: 42%; right: -120px; background: var(--lg-glow-magenta); animation: lg-drift-c 80s ease-in-out infinite alternate; }
+@keyframes lg-drift-a { to { transform: translate(-140px, 120px) scale(1.15); } }
+@keyframes lg-drift-b { to { transform: translate(160px, -90px) scale(1.1); } }
+@keyframes lg-drift-c { to { transform: translate(-80px, -140px) scale(1.2); } }
+@media (prefers-reduced-motion: reduce) { .lesson-sky .glow { animation: none; } }
+
+/* ── Reading progress bar ─────────────────────────────────────────────── */
+.lesson-progress { position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+  background: linear-gradient(90deg, var(--lg-amber-strong), var(--lg-cyan));
+  z-index: 60; }
+
+/* ── Frame ────────────────────────────────────────────────────────────── */
+.textbook-container { position: relative; max-width: 76rem; margin: 0 auto; padding: 0 1.25rem; }
+
+.textbook-header { margin: 0 0 1.5rem; }
+.textbook-header h1 {
+  font-family: 'Montserrat', 'Segoe UI', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(1.8rem, 4.2vw, 2.5rem);
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  color: #fff;
+  text-shadow: var(--lg-halo-head);
+  text-wrap: balance;
+  margin: 0 0 0.75rem;
+}
+.textbook-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem;
+  font-size: 0.85rem; color: var(--lg-muted); font-variant-numeric: tabular-nums; }
+
+/* ── The glass material (lesson reading surface + generic panels) ─────── */
+.textbook-content, .lg-glass-panel {
+  background: var(--lg-glass);
+  border: 1px solid var(--lg-glass-border);
+  box-shadow: var(--lg-shadow), var(--lg-glass-inset);
+  backdrop-filter: blur(22px) saturate(1.35);
+  -webkit-backdrop-filter: blur(22px) saturate(1.35);
+}
+.textbook-content {
+  border-radius: 1.25rem;
+  padding: clamp(1.5rem, 4vw, 2.75rem);
+}
+/* Older GPUs / no backdrop-filter: fall back to a more opaque panel */
+@supports not (backdrop-filter: blur(1px)) {
+  .textbook-content, .lg-glass-panel { background: rgba(13, 20, 36, 0.94); }
+}
+
+/* Darker individual surfaces (module cards, cross-sell, selects) */
+.lg-card-surface {
+  background: var(--lg-card);
+  border: 1px solid var(--lg-card-border);
+}
+.lg-select {
+  background: var(--lg-card) !important;
+  border: 1px solid var(--lg-card-border) !important;
+  color: var(--lg-ink) !important;
+}
+.lg-select option { background: #0d1424; color: var(--lg-ink); }
+
+.textbook-content .breadcrumbs { color: var(--lg-muted) !important; }
+.textbook-content .breadcrumbs a { color: var(--lg-cyan) !important; text-decoration: none; }
+.textbook-content .breadcrumbs a:hover { text-decoration: underline; }
+
+/* ── Markdown body ────────────────────────────────────────────────────── */
 .lesson-content {
-  --lesson-font-body: 'Garamond', 'Georgia', 'Times New Roman', serif;
-  --lesson-font-mono: 'Monaco', 'Menlo', monospace;
-  --lesson-copy-size: clamp(1rem, 0.96rem + 0.18vw, 1.0625rem);
-  --lesson-heading-1: clamp(1.9rem, 1.7rem + 0.7vw, 2.2rem);
-  --lesson-heading-2: clamp(1.45rem, 1.35rem + 0.35vw, 1.65rem);
-  --lesson-heading-3: clamp(1.2rem, 1.12rem + 0.2vw, 1.32rem);
-  width: 89.3%;
-  max-width: none;
-  margin: 0 auto;
-  background: rgba(255, 251, 245, 0.92);
-  border-radius: 12px;
-  border: 1px solid rgba(120, 93, 59, 0.12);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.85),
-    0 12px 30px rgba(63, 39, 18, 0.08);
-  padding: 40px;
-  font-family: var(--lesson-font-body);
-  font-size: var(--lesson-copy-size);
-  font-weight: 400;
-  line-height: 1.8;
-  color: #2d3748;
+  font-size: 1.06rem;
+  line-height: 1.7;
+  color: var(--lg-ink-soft);
+  max-width: 70ch;
   text-wrap: pretty;
 }
-
-.lesson-content h1 {
-  font-size: var(--lesson-heading-1);
-  font-weight: 600;
-  color: #1a202c;
-  margin-bottom: 1.5rem;
-  border-bottom: 3px solid #4299e1;
-  padding-bottom: 0.5rem;
-  font-family: var(--lesson-font-body);
-  line-height: 1.2;
-}
-
-.lesson-content h2 {
-  font-size: var(--lesson-heading-2);
-  font-weight: 600;
-  color: #2d3748;
-  margin-top: 2.5rem;
-  margin-bottom: 1rem;
-  font-family: var(--lesson-font-body);
+.lesson-content h1,
+.lesson-content h2,
+.lesson-content h3,
+.lesson-content h4 {
+  font-family: 'Montserrat', 'Segoe UI', system-ui, sans-serif;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: var(--lg-halo-head);
+  letter-spacing: -0.01em;
   line-height: 1.25;
+  text-wrap: balance;
 }
+.lesson-content h1 { font-size: 1.7rem; margin: 2.4rem 0 0.8rem; }
+.lesson-content h2 { font-size: 1.42rem; margin: 2.4rem 0 0.7rem; }
+.lesson-content h3 { font-size: 1.15rem; margin: 1.9rem 0 0.5rem; }
+.lesson-content h4 { font-size: 1rem; margin: 1.5rem 0 0.4rem; color: var(--lg-ink); }
+.lesson-content h1:first-child, .lesson-content h2:first-child { margin-top: 0; }
 
-.lesson-content h3 {
-  font-size: var(--lesson-heading-3);
-  font-weight: 600;
-  color: #4a5568;
-  margin-top: 2rem;
-  margin-bottom: 0.75rem;
-  font-family: var(--lesson-font-body);
-  line-height: 1.3;
-}
+.lesson-content p { margin: 1rem 0; }
+.lesson-content strong { color: #fff; font-weight: 700; }
+.lesson-content em { color: var(--lg-ink); }
+.lesson-content a { color: var(--lg-cyan); text-decoration: underline; text-underline-offset: 3px; }
+.lesson-content a:hover { color: #7ee7f7; }
 
-.lesson-content p,
-.lesson-content li,
-.lesson-content blockquote,
-.lesson-content table,
-.lesson-content th,
-.lesson-content td {
-  margin-bottom: 1.5rem;
-  font-size: inherit;
-  font-family: var(--lesson-font-body);
-}
+.lesson-content ul, .lesson-content ol { margin: 1rem 0; padding-left: 1.5rem; }
+.lesson-content li { margin: 0.45rem 0; }
+.lesson-content li::marker { color: var(--lg-amber); }
 
-.lesson-content ul, .lesson-content ol {
-  margin-bottom: 1.5rem;
-  padding-left: 2rem;
-}
-
-.lesson-content li {
-  margin-bottom: 0.5rem;
-}
-
+/* Darker individual portions: quotes, code, tables — contrast vs glass */
 .lesson-content blockquote {
-  border-left: 4px solid #4299e1;
-  background: #f7fafc;
-  padding: 1rem 1.5rem;
   margin: 1.5rem 0;
-  font-style: italic;
-  border-radius: 0 8px 8px 0;
+  padding: 0.9rem 1.15rem;
+  border-left: 3px solid var(--lg-cyan);
+  border-radius: 0.6rem;
+  background: var(--lg-card);
+  color: var(--lg-ink-soft);
 }
+.lesson-content blockquote p { margin: 0.35rem 0; }
 
 .lesson-content code {
-  background: #edf2f7;
-  padding: 0.2rem 0.4rem;
-  border-radius: 4px;
-  font-family: var(--lesson-font-mono);
-  font-size: 0.9rem;
+  background: var(--lg-card);
+  border: 1px solid var(--lg-card-border);
+  border-radius: 0.35rem;
+  padding: 0.12rem 0.42rem;
+  font-size: 0.92em;
+  color: var(--lg-yellow);
+  text-shadow: none;
 }
-
 .lesson-content pre {
-  background: #2d3748;
-  color: #e2e8f0;
-  padding: 1.5rem;
-  border-radius: 8px;
+  background: var(--lg-card);
+  border: 1px solid var(--lg-card-border);
+  border-radius: 0.9rem;
+  padding: 1.1rem 1.25rem;
   overflow-x: auto;
-  margin: 1.5rem 0;
+  margin: 1.4rem 0;
 }
-
-.lesson-content pre code {
-  background: none;
-  padding: 0;
-  color: inherit;
-}
+.lesson-content pre code { background: transparent; border: 0; padding: 0; color: var(--lg-ink); }
 
 .lesson-content table {
   width: 100%;
   border-collapse: collapse;
-  margin: 1.75rem 0;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  margin: 1.4rem 0;
+  font-size: 0.95rem;
+  background: var(--lg-card);
+  border: 1px solid var(--lg-card-border);
+  border-radius: 0.9rem;
   overflow: hidden;
+  font-variant-numeric: tabular-nums;
 }
-
-.lesson-content th,
-.lesson-content td {
-  margin-bottom: 0;
-  padding: 0.85rem 1rem;
-  border-bottom: 1px solid #e2e8f0;
-  text-align: left;
-  vertical-align: top;
-}
-
 .lesson-content th {
+  text-align: left;
+  font-family: 'Montserrat', 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.72rem;
   font-weight: 700;
-  color: #1a202c;
-  background: #f8fafc;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--lg-muted);
+  padding: 0.8rem 1.1rem;
+  border-bottom: 1px solid var(--lg-glass-border);
 }
+.lesson-content td { padding: 0.8rem 1.1rem; border-bottom: 1px solid var(--lg-row-line); color: var(--lg-ink-soft); }
+.lesson-content tr:last-child td { border-bottom: 0; }
 
-.lesson-content tr:last-child td {
-  border-bottom: none;
-}
+.lesson-content hr { border: 0; border-top: 1px solid var(--lg-row-line); margin: 2.2rem 0; }
 
+.lesson-content img { max-width: 100%; border-radius: 0.75rem; }
+
+/* ── Video ────────────────────────────────────────────────────────────── */
 .lesson-video {
   position: relative;
-  width: 100%;
-  padding-top: 56.25%;
-  border-radius: 16px;
-  overflow: hidden;
-  background: #0f172a;
-  box-shadow: 0 20px 35px rgba(15, 23, 42, 0.2);
-}
-
-.lesson-video .react-player {
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-
-/* Normalize embedded videos inside markdown to match the top lesson player size */
-.lesson-content iframe,
-.lesson-content video {
-  display: block;
-  width: 100%;
   aspect-ratio: 16 / 9;
-  height: auto;
-  margin: 1.5rem auto;
-  border-radius: 12px;
-}
-
-.lesson-content hr {
-  border: none;
-  height: 2px;
-  background: linear-gradient(to right, transparent, #cbd5e0, transparent);
-  margin: 2.5rem 0;
-}
-
-.lesson-content strong {
-  font-weight: 700;
-  color: #1a202c;
-}
-
-.lesson-content em {
-  font-style: italic;
-  color: #4a5568;
-}
-
-.lesson-content a {
-  color: #4299e1;
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
-  transition: border-color 0.2s;
-}
-
-.lesson-content a:hover {
-  border-bottom-color: #4299e1;
-}
-
-/* Textbook page styling */
-.textbook-page {
-  background:
-    radial-gradient(circle at top, rgba(255, 255, 255, 0.35), transparent 28rem),
-    linear-gradient(135deg, #d8d1c4 0%, #ece4d8 45%, #d7cec2 100%);
-  min-height: 100vh;
-  padding: 2rem 1rem;
-}
-
-.textbook-container {
-  width: 80vw;
-  max-width: none;
-  margin: 0 auto;
-  background: rgba(255, 247, 239, 0.72);
-  border-radius: 16px;
-  border: 1px solid rgba(110, 84, 52, 0.14);
-  box-shadow: 
-    0 20px 50px rgba(49, 30, 12, 0.14),
-    0 2px 8px rgba(0, 0, 0, 0.06);
-  backdrop-filter: blur(8px);
+  border-radius: 1rem;
   overflow: hidden;
+  border: 1px solid var(--lg-glass-border);
+  background: var(--lg-card);
+  box-shadow: var(--lg-shadow);
 }
+.lesson-video .react-player { position: absolute; inset: 0; }
+.lesson-content iframe, .lesson-content video { max-width: 100%; border-radius: 0.9rem; }
 
-.textbook-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 2rem;
-  text-align: center;
+/* ── Tutor sidebar card (dark card on glass) ──────────────────────────── */
+.lesson-tutor-card {
+  background: var(--lg-card);
+  border: 1px solid var(--lg-card-border);
+  border-radius: 1rem;
+  padding: 1.4rem;
+  box-shadow: var(--lg-glass-inset);
 }
+.lesson-tutor-card h3 { font-family: 'Montserrat', system-ui, sans-serif; font-weight: 800;
+  color: #fff; text-shadow: var(--lg-halo-head); }
+.lesson-tutor-card p { color: var(--lg-ink-soft); }
 
-.textbook-header h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  margin: 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.textbook-meta {
-  display: flex;
-  justify-content: center;
-  gap: 2rem;
+/* ── Sponsor slot (reserved ad space; house state when unsold) ────────── */
+.lesson-sponsor {
   margin-top: 1rem;
-  font-size: 0.9rem;
-  opacity: 0.9;
+  border: 1px dashed var(--lg-card-border);
+  border-radius: 1rem;
+  padding: 1.1rem 1.2rem;
+  background: transparent;
 }
-
-.textbook-content {
-  background:
-    linear-gradient(180deg, rgba(255, 251, 245, 0.82), rgba(250, 242, 233, 0.7));
-  padding: 3rem;
+.lesson-sponsor.sold {
+  border-style: solid;
+  background: var(--lg-card);
+  box-shadow: var(--lg-glass-inset);
 }
-
-/* Mobile responsiveness */
-@media (max-width: 768px) {
-  .lesson-content {
-    padding: 20px;
-    margin: 0 10px;
-    font-size: 1rem;
-  }
-  
-  .lesson-content h1 {
-    font-size: 1.65rem;
-  }
-  
-  .lesson-content h2 {
-    font-size: 1.35rem;
-  }
-  
-  .lesson-content h3 {
-    font-size: 1.15rem;
-  }
-
-  .lesson-content p,
-  .lesson-content li,
-  .lesson-content blockquote,
-  .lesson-content td,
-  .lesson-content th {
-    font-size: inherit;
-  }
-
-  .lesson-content th,
-  .lesson-content td {
-    padding: 0.75rem;
-  }
-  
-  .textbook-content {
-    padding: 1.5rem;
-  }
-  
-  .textbook-meta {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
+.lesson-sponsor .lab {
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--lg-magenta);
 }
+.lesson-sponsor h4 { margin: 0.5rem 0 0.25rem; font-family: 'Montserrat', system-ui, sans-serif;
+  font-weight: 700; font-size: 0.95rem; color: var(--lg-ink); }
+.lesson-sponsor p { margin: 0; font-size: 0.83rem; line-height: 1.55; color: var(--lg-muted); }
+.lesson-sponsor a.cta { display: block; margin-top: 0.85rem; text-align: center; text-decoration: none;
+  border-radius: 0.65rem; padding: 0.55rem 0.9rem;
+  font: 700 0.85rem 'Montserrat', system-ui, sans-serif;
+  background: linear-gradient(120deg, var(--lg-amber-strong), var(--lg-amber));
+  color: #171001; text-shadow: none; }
 
-/* Print styles for textbook appearance */
+/* ── Ask Allie retracting pill (floats bottom-right; expands on
+     hover/focus/tap, closes from X button) ─────────────────────────────── */
+.allie-pill {
+  position: fixed; right: clamp(0.75rem, 3vw, 2.25rem); bottom: 1.4rem; z-index: 50;
+  display: flex; align-items: center;
+  background: var(--lg-pill);
+  border: 1px solid var(--lg-glass-border);
+  border-radius: 999px;
+  padding: 0.4rem 0.45rem 0.4rem 0.95rem;
+  box-shadow: var(--lg-shadow);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  transition: padding 0.35s ease;
+  cursor: pointer;
+}
+.allie-pill-close {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.2rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: 700 0.8rem/1 'Montserrat', system-ui, sans-serif;
+  color: #f8fafc;
+  background: rgba(10, 15, 28, 0.9);
+  cursor: pointer;
+}
+.allie-pill .pulse { flex: none; width: 0.65rem; height: 0.65rem; border-radius: 50%;
+  background: var(--lg-magenta); box-shadow: 0 0 0 4px rgba(232, 121, 249, 0.22); margin-right: 0.6rem; }
+.allie-pill input {
+  width: 0; opacity: 0; padding: 0; margin: 0; border: 0; min-width: 0;
+  background: transparent; color: var(--lg-ink);
+  font: 400 0.95rem 'Open Sans', system-ui, sans-serif;
+  transition: width 0.35s ease, opacity 0.25s ease, margin 0.35s ease;
+}
+.allie-pill input:focus { outline: none; }
+.allie-pill input::placeholder { color: var(--lg-muted); }
+.allie-pill:hover input, .allie-pill:focus-within input, .allie-pill.open input {
+  width: min(17rem, 48vw); opacity: 1; margin-right: 0.75rem;
+}
+.allie-pill button {
+  flex: none; border: 0; border-radius: 999px; padding: 0.55rem 1.2rem; cursor: pointer;
+  background: linear-gradient(120deg, var(--lg-amber-strong), var(--lg-amber));
+  color: #171001; font: 700 0.82rem 'Montserrat', system-ui, sans-serif; letter-spacing: 0.05em;
+  text-shadow: none;
+}
+.allie-pill button:focus-visible, .allie-pill input:focus-visible { outline: 2px solid var(--lg-cyan); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .allie-pill, .allie-pill input { transition: none; } }
+
+/* ── Overrides for pieces styled inline in LessonPage ─────────────────── */
+.textbook-content .lesson-actions { border-top: 1px solid var(--lg-row-line) !important; }
+
+/* ── Print: flatten to clean paper ────────────────────────────────────── */
 @media print {
-  .textbook-page {
-    background: white;
-  }
-  
-  .textbook-container {
-    box-shadow: none;
-    border: 1px solid #e2e8f0;
-  }
-  
-  .lesson-content {
-    box-shadow: none;
-  }
+  .textbook-page { background: #fff; color: #1a202c; text-shadow: none; }
+  .lesson-sky, .allie-pill, .lesson-progress, .lesson-sponsor { display: none !important; }
+  .textbook-content { background: #fff; border: 1px solid #e2e8f0; box-shadow: none; backdrop-filter: none; }
+  .textbook-header h1, .lesson-content h1, .lesson-content h2, .lesson-content h3 { color: #111; text-shadow: none; }
+  .lesson-content { color: #2d3748; }
 }

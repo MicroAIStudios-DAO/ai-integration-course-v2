@@ -21,6 +21,7 @@
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
+import { getStorage } from 'firebase-admin/storage';
 import {
   LessonMetadata,
   UserAccessProfile,
@@ -243,7 +244,29 @@ async function executeGetLessonContent(
     tier: data.tier || (data.isFree ? 'free' : 'premium'),
   };
   if (entitled) {
-    payload.content = data.markdownContent || data.content || '(No content stored for this lesson)';
+    // Gated bodies live in the tier-gated lessonContent collection (the
+    // migration strips them off the world-readable lesson docs) — read
+    // there first, then legacy inline fields, then Storage markdown.
+    let body = '';
+    const pathParts = found.ref.path.split('/');
+    if (pathParts.length === 6) {
+      const contentId = `${pathParts[1]}__${pathParts[3]}__${pathParts[5]}`;
+      const contentSnap = await db.collection('lessonContent').doc(contentId).get();
+      const contentData = contentSnap.exists ? contentSnap.data() || {} : {};
+      body = (contentData.content || contentData.markdown || '').toString();
+      if (!body) {
+        const storagePath = (contentData.storagePath || data.storagePath || '').toString();
+        if (storagePath) {
+          try {
+            const [buf] = await getStorage().bucket().file(storagePath).download();
+            body = buf.toString('utf-8');
+          } catch (err) {
+            console.warn(`mcp get_lesson_content: storage read failed for ${storagePath}:`, err);
+          }
+        }
+      }
+    }
+    payload.content = body || data.markdownContent || data.content || '(No content stored for this lesson)';
   } else {
     payload.content = null;
     payload.locked = true;

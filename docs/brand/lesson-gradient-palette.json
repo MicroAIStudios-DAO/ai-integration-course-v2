@@ -1,0 +1,40 @@
+{
+  "name": "AI Integration Course — Lesson Liquid Glass",
+  "locked": "2026-07-16",
+  "scope": "lesson pages only",
+  "core": {
+    "ground": "#0A0F1C",
+    "ink": "#E9EEF7",
+    "inkSoft": "#C3CDDD",
+    "muted": "#8FA0B8"
+  },
+  "accents": {
+    "amber": "#FBBF24",
+    "amberStrong": "#F59E0B",
+    "cyan": "#22D3EE",
+    "magenta": "#E879F9",
+    "yellow": "#FDE047"
+  },
+  "gradients": {
+    "cta": "linear-gradient(120deg, #F59E0B, #FBBF24)",
+    "progress": "linear-gradient(90deg, #F59E0B, #22D3EE)",
+    "glassSheen": "linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.015))"
+  },
+  "glows": {
+    "amber": "rgba(245,158,11,0.16)",
+    "cyan": "rgba(34,211,238,0.13)",
+    "magenta": "rgba(217,70,239,0.13)"
+  },
+  "glass": {
+    "base": "rgba(13,20,36,0.62)",
+    "border": "rgba(255,255,255,0.11)",
+    "innerRim": "inset 0 1px 0 rgba(255,255,255,0.10)",
+    "backdrop": "blur(22px) saturate(1.35)",
+    "darkCard": "rgba(9,14,26,0.55)",
+    "darkCardBorder": "rgba(148,163,184,0.16)"
+  },
+  "typography": {
+    "headings": { "family": "Montserrat", "weight": 800, "shadow": "2px 2px 3px rgba(0,0,0,0.45)" },
+    "body": { "family": "Open Sans", "size": "1.06rem", "lineHeight": 1.7, "shadow": "1px 1px 2px rgba(0,0,0,0.3)" }
+  }
+}
