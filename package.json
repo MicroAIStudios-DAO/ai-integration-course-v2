@@ -33,7 +33,7 @@
     "start": "vite",
     "dev": "vite",
     "build": "vite build",
-    "postbuild": "node scripts/prerender-blogs.mjs && node scripts/generate-llms-guides.mjs",
+    "postbuild": "node scripts/strip-gated-content.mjs && node scripts/prerender-blogs.mjs && node scripts/generate-llms-guides.mjs",
     "build:production": "NODE_ENV=production npm run build",
     "test": "vitest run",
     "clean": "rm -rf build node_modules functions/node_modules functions/lib .firebase",

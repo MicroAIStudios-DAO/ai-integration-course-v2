@@ -1,5 +1,6 @@
 import admin from 'firebase-admin';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { isAdminProfile, UserAccessProfile } from './accessControl';
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -8,9 +9,24 @@ if (!admin.apps.length) {
 const buildLessonContentId = (courseId: string, moduleId: string, lessonId: string): string =>
   `${courseId}__${moduleId}__${lessonId}`;
 
+// These callables run with the Admin SDK, which bypasses firestore.rules —
+// without this gate ANY caller could write course/lesson docs.
+const requireAdmin = async (auth: { uid?: string } | undefined): Promise<void> => {
+  if (!auth?.uid) {
+    throw new HttpsError('unauthenticated', 'Sign in required');
+  }
+  const snap = await admin.firestore().collection('users').doc(auth.uid).get();
+  const profile = snap.exists ? (snap.data() as UserAccessProfile) : null;
+  if (!isAdminProfile(profile)) {
+    throw new HttpsError('permission-denied', 'Admin access required');
+  }
+};
+
 export const addLessonToFirestoreV2 = onCall(
   { region: 'us-central1' },
   async (request) => {
+    await requireAdmin(request.auth);
+
     const { courseId, moduleId, lesson } = request.data || {};
 
     if (!courseId || !moduleId || !lesson) {
@@ -78,7 +94,9 @@ export const addLessonToFirestoreV2 = onCall(
 
 export const listCoursesAndModulesV2 = onCall(
   { region: 'us-central1' },
-  async () => {
+  async (request) => {
+    await requireAdmin(request.auth);
+
     try {
       const coursesSnap = await admin.firestore().collection('courses').get();
       const result: any[] = [];

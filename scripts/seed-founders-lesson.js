@@ -118,6 +118,10 @@ async function main() {
     );
     const batch = db.batch();
 
+    // Founders lessons are gated: media URLs must NOT sit on the
+    // world-readable lesson doc (it is `allow read: if true` in
+    // firestore.rules) — they live in tier-gated lessonContent, and any
+    // previously seeded videoUrl on the doc is deleted.
     batch.set(
       lessonRef,
       {
@@ -125,7 +129,7 @@ async function main() {
         order: lesson.order,
         isFree: false,
         tier: 'founders',
-        videoUrl: lesson.videoUrl || null,
+        videoUrl: admin.firestore.FieldValue.delete(),
         durationMinutes: lesson.durationMinutes,
         description: lesson.description,
         isFoundersLesson: true,
@@ -137,7 +141,7 @@ async function main() {
       { merge: true }
     );
 
-    if (content) {
+    if (content || lesson.videoUrl) {
       batch.set(
         contentRef,
         {
@@ -145,7 +149,8 @@ async function main() {
           moduleId: moduleRef.id,
           lessonId: lesson.lessonId,
           tier: 'founders',
-          content,
+          ...(content ? { content } : {}),
+          ...(lesson.videoUrl ? { videoUrl: lesson.videoUrl } : {}),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         },
         { merge: true }
