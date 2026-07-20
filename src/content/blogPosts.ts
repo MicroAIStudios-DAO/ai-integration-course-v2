@@ -17,6 +17,31 @@ export interface BlogPost {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: 'api-based-ai-automation-guide',
+    title: 'API-Based AI Automation: A Builder\'s Guide to Connecting Models to Real Systems',
+    eyebrow: 'Guide',
+    description:
+      'API-based AI automation connects a hosted language model to your existing APIs and tools, enabling multi-step workflows that run unattended. This guide covers the trigger-model-tool-validate pattern, tool definition design, and the reliability decisions that separate a prototype from a production system.',
+    summary:
+      'API-based AI automation is not a single API call — it is a loop: trigger, model call, tool execution, output validation, and repeat. This guide explains the core pattern, how to write tool definitions the model will use correctly, common workflow shapes, and the error-handling decisions that keep automation running in production.',
+    keywords: [
+      'API-based AI automation',
+      'AI automation API',
+      'how to automate with AI',
+      'AI workflow automation',
+      'AI tool calling',
+      'LLM API integration',
+      'production AI automation',
+      'AI agent API integration',
+    ],
+    readingTime: '10 min read',
+    publishedTime: '2026-07-20T09:00:00-07:00',
+    modifiedTime: '2026-07-20T09:00:00-07:00',
+    author: 'Blaine Casey',
+    markdownPath: '/blogs/api-based-ai-automation-guide.md',
+    heroImage: 'https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=1200&q=80',
+  },
+  {
     slug: 'persistent-ai-memory-patterns',
     title: 'Persistent AI Memory Patterns: Giving Your Agents a Reliable Long-Term Memory',
     eyebrow: 'Guide',
