@@ -1,0 +1,71 @@
+name: Deploy Firebase Functions
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'functions/**'
+      - 'firebase.json'
+      - '.github/workflows/deploy-functions.yml'
+  workflow_dispatch: # Allow manual trigger from GitHub UI
+
+env:
+  FIREBASE_PROJECT: ai-integra-course-v2
+
+jobs:
+  deploy-functions:
+    name: Build & Deploy Cloud Functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Install function dependencies
+        working-directory: functions
+        run: npm ci
+
+      - name: TypeScript compile
+        working-directory: functions
+        run: npx tsc
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Deploy functions
+        run: |
+          firebase deploy --only functions \
+            --project ${{ env.FIREBASE_PROJECT }} \
+            --force \
+            --non-interactive
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
+
+      - name: Deployment summary
+        if: success()
+        run: |
+          echo "## ✅ Functions Deployed Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Project:** ${{ env.FIREBASE_PROJECT }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### New Phase 3 Functions:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`pineconeQuery\`, \`pineconeIngest\`, \`pineconeCompare\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`mcpListTools\`, \`mcpCallTool\`, \`mcpEndpoint\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`circleSSO\`, \`circleGetSpaces\`, \`circleSyncMember\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`complianceCheck\`, \`complianceReport\`, \`complianceFrameworks\`" >> $GITHUB_STEP_SUMMARY
