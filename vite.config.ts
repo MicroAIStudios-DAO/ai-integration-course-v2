@@ -27,18 +27,21 @@ export default defineConfig({
     sourcemap,
     rollupOptions: {
       output: {
+        // Only pin dependencies that every route needs at boot. Anything else is
+        // left to Rollup's automatic splitting so a library used by a single
+        // lazily-loaded route ships in that route's chunk instead of the initial
+        // payload. Matching on the package directory (not a bare substring) keeps
+        // e.g. react-markdown out of react-core.
         manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('firebase')) {
-              return 'firebase';
-            }
-            if (id.includes('react')) {
-              return 'react-core';
-            }
-            if (id.includes('stripe')) {
-              return 'stripe';
-            }
-            return 'vendor';
+          if (!id.includes('node_modules')) return;
+          if (/node_modules\/(react|react-dom|react-router|react-router-dom|scheduler)\//.test(id)) {
+            return 'react-core';
+          }
+          if (/node_modules\/(@firebase|firebase)\//.test(id)) {
+            return 'firebase';
+          }
+          if (/node_modules\/@?stripe\//.test(id)) {
+            return 'stripe';
           }
         },
       },
