@@ -45,6 +45,7 @@ import PineconeLabPage from './pages/PineconeLabPage';
 import MCPLabPage from './pages/MCPLabPage';
 import CommunityPage from './pages/CommunityPage';
 import ComplianceLabPage from './pages/ComplianceLabPage';
+import LearningDashboardPage from './pages/LearningDashboardPage';
 import { initGA4, trackPageView } from './utils/analytics';
 import { captureAttribution } from './utils/attribution';
 import ExitIntentModal from './components/ExitIntentModal';
@@ -139,6 +140,7 @@ const App: React.FC = () => {
           <Route path="/certification" element={<CertificationPage />} />
           <Route path="/diagnostic" element={<IntakeDiagnostic />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/learn" element={<LearningDashboardPage />} />
           <Route path="/lab/:labId" element={<GovernanceLabPage />} />
           <Route path="/lab/pinecone" element={<PineconeLabPage />} />
           <Route path="/lab/mcp" element={<MCPLabPage />} />

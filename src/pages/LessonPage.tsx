@@ -29,6 +29,7 @@ import "../styles/lesson-content.css"; // Import textbook-style CSS
 import { trackLessonStart, trackLessonComplete, trackLesson1Completed } from "../utils/analytics";
 import { MarkdownPre } from "../components/common/CopyableCodeBlock";
 import LessonSponsorSlot from "../components/LessonSponsorSlot";
+import NextLessonButton from "../components/onboarding/NextLessonButton";
 
 const LessonPage: React.FC = () => {
   const { courseId, moduleId, lessonId } = useParams<{ courseId: string; moduleId: string; lessonId: string }>();
@@ -449,7 +450,7 @@ The detailed content for this lesson is being prepared. Please check back soon o
               )}
 
               {/* Action Buttons */}
-              <div className="lesson-actions flex space-x-4 mt-8 pt-6 border-t">
+              <div className="lesson-actions flex flex-wrap gap-3 mt-8 pt-6 border-t">
                 {currentUser && !isLessonCompleted() && (
                   <button
                     onClick={handleMarkComplete}
@@ -457,6 +458,9 @@ The detailed content for this lesson is being prepared. Please check back soon o
                   >
                     Mark as Complete
                   </button>
+                )}
+                {currentUser && isLessonCompleted() && courseId && (
+                  <NextLessonButton courseId={courseId} />
                 )}
                 <button 
                   onClick={() => navigate(-1)} 

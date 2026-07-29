@@ -133,9 +133,9 @@ const LoginPage: React.FC = () => {
               userData.subscriptionStatus === 'active' ||
               userData.subscriptionStatus === 'trialing';
             if (alreadyHasAccess) {
-              // Member is already paid — clear any stale plan intent and go to courses
+              // Member is already paid — clear any stale plan intent and go to learning dashboard
               clearStoredPlanKey();
-              navigate("/courses", { replace: true });
+              navigate("/learn", { replace: true });
               return;
             }
           }
@@ -152,7 +152,7 @@ const LoginPage: React.FC = () => {
         return;
       }
 
-      navigate("/courses");
+      navigate("/learn");
     } catch (loginError: any) {
       setError(loginError?.message || "Failed to log in. Please check your credentials.");
     } finally {
