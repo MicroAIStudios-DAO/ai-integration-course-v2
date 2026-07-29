@@ -33,7 +33,7 @@ before it is published.
 | Slug | Status | Primary intent |
 |---|---|---|
 | ai-agents-for-small-business | ✅ published | "AI agents for small business" |
-| api-based-ai-automation-guide | 📋 planned | "API-based AI automation" |
+| api-based-ai-automation-guide | ✅ published | "API-based AI automation" |
 | firebase-and-ai-integration | 📋 planned | "Firebase AI integration" |
 
 ## Cluster 4 — Decision / ROI (founders & consultants — secondary ICP)
@@ -44,7 +44,6 @@ before it is published.
 | ai-integration-for-consultants | 📋 planned | "AI integration for consultants" |
 
 ## Priority order (what the cycle writes next)
-1. api-based-ai-automation-guide
-2. production-ai-agent-reliability-checklist
-3. ai-automation-roi
-4. ai-integration-for-founders
+1. production-ai-agent-reliability-checklist
+2. ai-automation-roi
+3. ai-integration-for-founders
