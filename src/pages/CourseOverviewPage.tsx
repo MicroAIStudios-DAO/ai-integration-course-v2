@@ -5,6 +5,7 @@ import { Course, Module, Lesson, UserCourseProgress } from '../types/course';
 import { useAuth } from '../context/AuthContext';
 import CourseSchema from '../components/seo/CourseSchema';
 import SEO from '../components/SEO';
+import '../styles/lesson-content.css';
 import { BRAND } from '../config/brand';
 
 const UNTITLED_TITLE_PATTERN = /^untitled lesson$/i;
@@ -207,7 +208,7 @@ const CourseOverviewPage: React.FC = () => {
   const coursePageUrl = `${origin}/courses`;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100">
+    <div className="lg-page pb-16">
       <SEO
         title={course.title}
         description={course.description}
@@ -252,16 +253,17 @@ const CourseOverviewPage: React.FC = () => {
         />
       )}
       <div className="relative overflow-hidden">
-        <div className="absolute inset-0 opacity-40">
-          <div className="absolute -top-32 left-10 h-80 w-80 rounded-full bg-cyan-500/20 blur-3xl" />
-          <div className="absolute top-20 right-0 h-96 w-96 rounded-full bg-indigo-500/20 blur-3xl" />
+        <div className="lesson-sky" aria-hidden="true">
+          <div className="glow glow-a" />
+          <div className="glow glow-b" />
+          <div className="glow glow-c" />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 py-14 flex gap-8">
 
           {/* Sticky Table of Contents sidebar */}
           {modulesWithDisplayLessons.length > 0 && (
             <aside className="hidden lg:block w-64 flex-shrink-0">
-              <div className="sticky top-6 rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur p-5">
+              <div className="lg-glass-panel sticky top-6 rounded-2xl p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300 mb-4">Table of Contents</p>
                 <nav className="space-y-1">
                   {modulesWithDisplayLessons.map((module) => (
@@ -279,7 +281,7 @@ const CourseOverviewPage: React.FC = () => {
           )}
 
           <div className="flex-1 min-w-0">
-          <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 md:p-12 shadow-2xl">
+          <div className="lg-glass-panel rounded-3xl p-8 md:p-12">
             <div className="mb-10">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/10 text-cyan-200 px-4 py-1 text-xs font-headings font-semibold uppercase tracking-[0.2em]">
                 Course Overview
@@ -298,7 +300,7 @@ const CourseOverviewPage: React.FC = () => {
                 Jump to a lesson
               </label>
               <select
-                className="mt-3 px-4 py-3 border border-white/10 rounded-xl w-full md:w-2/3 bg-slate-900/70 text-slate-100 shadow-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                className="lg-select mt-3 px-4 py-3 rounded-xl w-full md:w-2/3 shadow-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
                 defaultValue=""
                 onChange={(e) => {
                   const value = e.target.value;
@@ -330,7 +332,7 @@ const CourseOverviewPage: React.FC = () => {
             {modulesWithDisplayLessons.map((module: DisplayModule) => {
               const isExpanded = expandedModules.has(module.id);
               return (
-              <div key={module.id} id={`module-${module.id}`} className="mb-6 w-[98%] mx-auto border border-white/10 rounded-2xl bg-white/5 shadow-xl overflow-hidden">
+              <div key={module.id} id={`module-${module.id}`} className="lg-card-surface mb-6 w-[98%] mx-auto rounded-2xl shadow-xl overflow-hidden">
                 {/* Accordion Header */}
                 <button
                   type="button"
@@ -374,15 +376,15 @@ const CourseOverviewPage: React.FC = () => {
                       className={`w-[98%] mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-4 rounded-xl transition-all duration-200 ease-in-out cursor-pointer 
                                   ${(!lessonIsFree && (!currentUser)) 
                                     ? 'bg-white/5 text-slate-300 hover:bg-white/10'
-                                    : 'bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 hover:from-cyan-500/20 hover:to-indigo-500/20 text-white'}
-                                  ${lessonIsFree ? 'border border-emerald-400/30' : foundersLesson ? 'border border-amber-400/30' : 'border border-white/10'}
+                                    : 'bg-gradient-to-r from-cyan-500/10 to-fuchsia-500/10 hover:from-cyan-500/20 hover:to-fuchsia-500/20 text-white'}
+                                  ${lessonIsFree ? 'border border-cyan-400/30' : foundersLesson ? 'border border-amber-400/30' : 'border border-white/10'}
                                   ${isLessonCompleted(lesson.id) ? 'opacity-70' : ''}
                                 `}
                     >
                       <div className="flex items-center">
                         <span className="mr-3 text-cyan-300">
                           {isLessonCompleted(lesson.id) ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-emerald-400" viewBox="0 0 20 20" fill="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-cyan-300" viewBox="0 0 20 20" fill="currentColor">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
                           ) : (
@@ -397,7 +399,7 @@ const CourseOverviewPage: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-3">
                         {lessonIsFree && (
-                          <span className="text-xs bg-emerald-400/20 text-emerald-200 px-2 py-1 rounded-full font-sans">Free</span>
+                          <span className="text-xs bg-cyan-400/20 text-cyan-200 px-2 py-1 rounded-full font-sans">Free</span>
                         )}
                         {foundersLesson && !lessonIsFree && (
                           <span className="text-xs bg-amber-400/20 text-amber-100 px-2 py-1 rounded-full font-sans">Founders</span>
@@ -431,7 +433,7 @@ const CourseOverviewPage: React.FC = () => {
         </div>
 
         {/* CROSS-SELL: Synconis Labs Ecosystem */}
-        <div className="mt-12 rounded-2xl border border-white/10 bg-gradient-to-r from-slate-800/60 via-indigo-900/30 to-slate-800/60 p-6 md:p-8">
+        <div className="lg-card-surface mt-12 rounded-2xl p-6 md:p-8">
           <p className="text-xs uppercase tracking-[0.2em] text-cyan-400 mb-2">From the {BRAND.ventureName} Ecosystem</p>
           <h3 className="text-xl font-bold text-white mb-2">Ready to Deploy What You've Learned?</h3>
           <p className="text-sm text-slate-400 mb-6">The course teaches the skills. These tools let you ship them at scale.</p>

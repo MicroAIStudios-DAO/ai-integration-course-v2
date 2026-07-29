@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import ReactPlayer from "react-player";
@@ -6,7 +6,7 @@ import remarkGfm from "remark-gfm";
 import {
   getCourseById,
   getLessonMarkdownUrl,
-  getSecureLessonContent,
+  getSecureLessonDoc,
   getUserCourseProgress,
   getUserProfile,
   isFoundersLesson,
@@ -28,6 +28,7 @@ import { BRAND } from "../config/brand";
 import "../styles/lesson-content.css"; // Import textbook-style CSS
 import { trackLessonStart, trackLessonComplete, trackLesson1Completed } from "../utils/analytics";
 import { MarkdownPre } from "../components/common/CopyableCodeBlock";
+import LessonSponsorSlot from "../components/LessonSponsorSlot";
 
 const LessonPage: React.FC = () => {
   const { courseId, moduleId, lessonId } = useParams<{ courseId: string; moduleId: string; lessonId: string }>();
@@ -45,7 +46,37 @@ const LessonPage: React.FC = () => {
   const [isAllowed, setIsAllowed] = useState(false);
   const [userProgress, setUserProgress] = useState<UserCourseProgress | null>(null);
   const [videoUrlToPlay, setVideoUrlToPlay] = useState<string | undefined>(undefined);
+  const tutorRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
+  const [alliePillOpen, setAlliePillOpen] = useState(false);
   // no master access state
+
+  // Reading progress bar (lesson theme)
+  useEffect(() => {
+    let rafId = 0;
+
+    const update = () => {
+      rafId = 0;
+      const h = document.documentElement;
+      const max = h.scrollHeight - h.clientHeight;
+      if (progressRef.current) {
+        progressRef.current.style.width = max > 0 ? `${(h.scrollTop / max) * 100}%` : '0%';
+      }
+    };
+
+    const onScroll = () => {
+      if (rafId) return;
+      rafId = window.requestAnimationFrame(update);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    update();
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (rafId) window.cancelAnimationFrame(rafId);
+    };
+  }, []);
 
   const isFirstCourseLesson = useMemo(() => {
     if (!course || !lesson || !moduleId) return false;
@@ -113,13 +144,20 @@ const LessonPage: React.FC = () => {
         if (canAccess) {
           // Try to get lesson content from multiple sources
           let contentToDisplay = "";
+          let secureVideoUrl: string | null = null;
+          let secureStoragePath: string | null = null;
           const shouldReadLessonContent =
             isPublicPreviewLesson(currentLesson) || !isFreeLesson(currentLesson);
-          
-          // Public preview lessons still live in lessonContent, so load them here too.
+
+          // Public preview lessons still live in lessonContent, so load them
+          // here too. Gated media URLs also live there — the lesson docs in
+          // the course tree are world-readable metadata only.
           if (shouldReadLessonContent) {
             try {
-              contentToDisplay = await getSecureLessonContent(courseId, moduleId, lessonId) || "";
+              const secureDoc = await getSecureLessonDoc(courseId, moduleId, lessonId);
+              contentToDisplay = secureDoc?.content || "";
+              secureVideoUrl = secureDoc?.videoUrl || null;
+              secureStoragePath = secureDoc?.storagePath || null;
             } catch (secureContentError) {
               console.warn("Could not fetch gated lesson content:", secureContentError);
             }
@@ -128,10 +166,11 @@ const LessonPage: React.FC = () => {
           if (!contentToDisplay && currentLesson.content) {
             contentToDisplay = currentLesson.content;
           }
-          // Priority 3: Content from Firebase Storage
-          else if (!contentToDisplay && currentLesson.storagePath) {
+          // Priority 3: Content from Firebase Storage (gated lessons carry
+          // their storagePath in lessonContent; free lessons on the doc)
+          else if (!contentToDisplay && (secureStoragePath || currentLesson.storagePath)) {
             try {
-              const mdUrl = await getLessonMarkdownUrl(currentLesson.storagePath);
+              const mdUrl = await getLessonMarkdownUrl(secureStoragePath || currentLesson.storagePath!);
               const response = await fetch(mdUrl);
               if (response.ok) {
                 contentToDisplay = await response.text();
@@ -166,7 +205,7 @@ The detailed content for this lesson is being prepared. Please check back soon o
           }
           
           setMarkdownContent(contentToDisplay);
-          setVideoUrlToPlay(currentLesson.videoUrl);
+          setVideoUrlToPlay(currentLesson.videoUrl || secureVideoUrl || undefined);
 
           // Track lesson_start event
           trackLessonStart(
@@ -276,7 +315,13 @@ The detailed content for this lesson is being prepared. Please check back soon o
   const lessonDescription = lesson?.description || course?.description || "Lesson content inside the AI Integration Course.";
 
   return (
-    <div className="textbook-page">
+    <div className="textbook-page lg-page">
+      <div className="lesson-sky" aria-hidden="true">
+        <div className="glow glow-a" />
+        <div className="glow glow-b" />
+        <div className="glow glow-c" />
+      </div>
+      <div className="lesson-progress" ref={progressRef} />
       <SEO
         title={lesson ? `${lesson.title} Lesson` : "Course Lesson"}
         description={lessonDescription}
@@ -404,7 +449,7 @@ The detailed content for this lesson is being prepared. Please check back soon o
               )}
 
               {/* Action Buttons */}
-              <div className="flex space-x-4 mt-8 pt-6 border-t border-gray-200">
+              <div className="lesson-actions flex space-x-4 mt-8 pt-6 border-t">
                 {currentUser && !isLessonCompleted() && (
                   <button
                     onClick={handleMarkComplete}
@@ -423,7 +468,8 @@ The detailed content for this lesson is being prepared. Please check back soon o
             </div>
 
             {/* AI Tutor Section */}
-            <div className="lg:sticky lg:top-24 h-fit bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100">
+            <div ref={tutorRef} className="lg:sticky lg:top-24 h-fit">
+              <div className="lesson-tutor-card">
               <div className="flex items-center mb-4">
                 <AnimatedAvatar />
                 <h3 className="text-xl font-headings font-semibold ml-4 text-gray-800">AI Tutor</h3>
@@ -436,6 +482,8 @@ The detailed content for this lesson is being prepared. Please check back soon o
                 premium={!isFreeLesson(lesson)}
                 hasAccess={isAllowed}
               />
+              </div>
+              <LessonSponsorSlot lessonTitle={lesson?.title} />
             </div>
           </div>
 
@@ -482,6 +530,44 @@ The detailed content for this lesson is being prepared. Please check back soon o
           )}
 
         </div>
+      </div>
+
+      {/* Ask Allie retracting pill — tap to open, close via X, Ask scrolls to the tutor */}
+      <div
+        className={`allie-pill ${alliePillOpen ? 'open' : ''}`}
+        role="search"
+        onClick={() => {
+          if (!alliePillOpen) setAlliePillOpen(true);
+        }}
+      >
+        {alliePillOpen && (
+          <button
+            type="button"
+            className="allie-pill-close"
+            aria-label="Close Ask Allie"
+            onClick={(e) => {
+              e.stopPropagation();
+              setAlliePillOpen(false);
+            }}
+          >
+            ×
+          </button>
+        )}
+        <span className="pulse" aria-hidden="true" />
+        <input
+          type="text"
+          placeholder="Ask Allie about this lesson…"
+          aria-label="Ask Allie about this lesson"
+        />
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            tutorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }}
+        >
+          Ask&nbsp;Allie
+        </button>
       </div>
     </div>
   );

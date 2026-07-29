@@ -13,6 +13,10 @@ Disallow: /api/
 Disallow: /__/
 Disallow: /firebase/
 
+# Lesson markdown sources are stripped from the build (scripts/strip-gated-content.mjs);
+# keep crawlers away from the path as defense-in-depth.
+Disallow: /course_content/lessons/
+
 # Gated course module/lesson routes are client-rendered, auth-gated shells
 # with nothing crawlable — keep crawlers out of them. The prerendered
 # /courses overview page itself stays crawlable.

@@ -1,140 +1,136 @@
 # Lesson Content Management Guide
 
-## How to Add Lesson Content
+## The security model (read this first)
 
-The AI Integration Course now supports multiple ways to add lesson content. Here's how to add content to your lessons:
+Lesson docs at `courses/{courseId}/modules/{moduleId}/lessons/{lessonId}` are
+**world-readable catalog metadata** — anyone, signed in or not, can read every
+field on them (this keeps the course outline working for anonymous visitors).
+Because of that, `firestore.rules` **rejects any lesson-doc write containing**
+`content`, `markdown`, `md`, `html`, `videoUrl`, `youtubeUrl`, or `videoId`.
 
-### Method 1: Direct Content in Firestore (Recommended)
+Gated material lives in the **`lessonContent/{courseId}__{moduleId}__{lessonId}`**
+collection instead, whose reads are tier-gated (free / founders / premium).
+Storage markdown under `lessons-md/**` is likewise gated by `storage.rules`
+(paid access only, except the five free module-1 files).
 
-1. **Go to Firebase Console**: https://console.firebase.google.com
-2. **Select your project**: AI-INTEGRA-COURSE-V2
-3. **Navigate to Firestore Database**
-4. **Find your lesson**: `courses/{courseId}/modules/{moduleId}/lessons/{lessonId}`
-5. **Add a `content` field** with your lesson text in Markdown format
+Rules of thumb:
 
-Example content structure:
-```markdown
-# Investment Strategies: VC, Public Markets, ETFs
+- **Free lessons** (`tier: 'free'` / `isFree: true`): `storagePath` and
+  `videoUrl` may live on the lesson doc — free content must work for anonymous
+  visitors, who cannot read `lessonContent`.
+- **Premium / founders lessons**: body (`content`), `videoUrl`, `youtubeUrl`,
+  and `storagePath` go in `lessonContent` only. Never on the lesson doc.
+- If you find gated fields on a lesson doc, run
+  `node scripts/migrate-protected-lesson-content.js` to move them.
 
-## Introduction
-Welcome to this comprehensive lesson on investment strategies in the AI sector.
+## How to add lesson content
 
-## Learning Objectives
-By the end of this lesson, you will:
-- Understand different investment vehicles for AI companies
-- Learn how to evaluate AI investment opportunities
-- Discover strategies for portfolio diversification
+### Method 1: The admin callable (recommended)
 
-## Venture Capital (VC) Investments
-Venture capital represents one of the most direct ways to invest in early-stage AI companies...
+Call `addLessonToFirestoreV2` (admin-only) with the lesson payload. It routes
+fields to the right place automatically: metadata to the lesson doc, and — for
+protected lessons — `content`/`storagePath`/`videoUrl` to `lessonContent`.
 
-## Public Markets
-Public market investments offer liquidity and transparency...
+### Method 2: Storage markdown + seeder scripts
 
-## Exchange-Traded Funds (ETFs)
-ETFs provide diversified exposure to the AI sector...
+1. Put the markdown source under `public/course_content/lessons/` (these files
+   are stripped from the hosted build by `scripts/strip-gated-content.mjs` —
+   they are upload sources, not web assets).
+2. Upload to Storage: `python scripts/upload_lessons_to_storage.py` (targets
+   `lessons-md/courses/...`).
+3. Seed the structure: `python allie/tools/seed_course_structure.py` — free
+   lessons get `storagePath` on the doc; gated lessons get it in
+   `lessonContent`.
 
-## Key Takeaways
-- Diversification is crucial in AI investing
-- Each investment vehicle has unique risk/reward profiles
-- Due diligence is essential for all AI investments
-```
+### Method 3: Manual console edits
 
-### Method 2: Firebase Storage (Advanced)
+Only for **free** lessons, and only metadata plus `content`/`storagePath` on
+the doc. For gated lessons, edit the `lessonContent/{courseId}__{moduleId}__{lessonId}`
+document instead. A console write to a lesson doc that includes gated fields
+will be rejected by the rules.
 
-1. Upload markdown files to Firebase Storage
-2. Set the `storagePath` field in your lesson document
-3. The system will automatically fetch and display the content
+### Automatic fallback
 
-### Method 3: Automatic Fallback
+If no content is found anywhere, the lesson page renders a professional
+"Content coming soon" placeholder with the title, duration, and description.
 
-If no content is provided, the system automatically generates a professional placeholder with:
-- Lesson title and overview
-- Duration information
-- Learning objectives template
-- "Content coming soon" message
+## Adding videos
 
-## Content Formatting Tips
+- **Free lesson**: `node scripts/set_lesson_video.cjs <lessonDocPath> <url>` —
+  writes `videoUrl` on the lesson doc.
+- **Premium / founders lesson**: the same script detects the tier and writes
+  the URL to `lessonContent` instead (removing any copy from the public doc).
+  `set_lesson_video_by_title.cjs` works the same way when you only know the
+  title.
 
-### Use Markdown for Rich Formatting
+Supported: YouTube URLs, Vimeo URLs, direct video file URLs.
+
+## Content formatting tips
+
+### Use Markdown for rich formatting
 - `# Heading 1` for main sections
 - `## Heading 2` for subsections
-- `**bold text**` for emphasis
-- `*italic text*` for emphasis
+- `**bold text**` / `*italic text*` for emphasis
 - `- bullet points` for lists
 - `> blockquotes` for important notes
 
-### Textbook-Style Features
-The lesson content is automatically styled to look like a professional textbook with:
-- Beautiful typography
-- Proper spacing and margins
-- Professional color scheme
-- Mobile-responsive design
-- Print-friendly layout
+The lesson page renders content in the locked "Liquid Glass" lesson theme
+(`src/styles/lesson-content.css`, palette in `docs/brand/lesson-gradient-palette.md`):
+typography, tables, code blocks, and blockquotes are styled automatically,
+mobile-responsive, and print-friendly.
 
-### Adding Images
-To add images to your lessons:
-1. Upload images to Firebase Storage
-2. Get the download URL
-3. Use markdown image syntax: `![Alt text](image-url)`
+### Adding images
+1. Upload images to Firebase Storage under a public path (`course_content/`
+   images are public by rule).
+2. Get the download URL.
+3. Use markdown image syntax: `![Alt text](image-url)`.
 
-### Adding Videos
-Set the `videoUrl` field in your lesson document with:
-- YouTube URLs
-- Vimeo URLs
-- Direct video file URLs
+## Field reference
 
-## Lesson Fields Reference
+Lesson doc (world-readable — metadata only):
 
 ```typescript
 {
   id: string;           // Auto-generated
   title: string;        // Lesson title
   order: number;        // Display order
-  isFree: boolean;      // Free or premium
-  content?: string;     // Direct markdown content (recommended)
-  storagePath?: string; // Path to markdown file in storage
-  videoUrl?: string;    // Video URL (YouTube, Vimeo, etc.)
-  durationMinutes?: number; // Estimated duration
-  description?: string; // Short description
+  tier: 'free' | 'premium' | 'founders';
+  isFree: boolean;      // Keep in sync with tier === 'free'
+  durationMinutes?: number;
+  description?: string;
+  storagePath?: string; // FREE lessons only
+  videoUrl?: string;    // FREE lessons only
 }
 ```
 
-## Best Practices
+`lessonContent/{courseId}__{moduleId}__{lessonId}` (tier-gated):
 
-1. **Keep content focused**: Each lesson should cover 1-3 related concepts
-2. **Use clear headings**: Help students navigate the content
-3. **Include examples**: Real-world examples make concepts clearer
-4. **Add takeaways**: Summarize key points at the end
-5. **Optimize for mobile**: Content is automatically responsive
-6. **Test on different devices**: Ensure readability across platforms
+```typescript
+{
+  courseId: string;
+  moduleId: string;
+  lessonId: string;
+  tier: 'free' | 'premium' | 'founders';
+  content?: string;     // Markdown body
+  storagePath?: string; // Storage markdown pointer
+  videoUrl?: string;
+  youtubeUrl?: string;
+}
+```
 
-## Content Ideas for AI Integration Course
+## Best practices
 
-### Introduction to AI Module
-- AI fundamentals and terminology
-- Current AI landscape overview
-- AI adoption in different industries
-- Future trends and predictions
+1. **Keep content focused**: each lesson should cover 1-3 related concepts
+2. **Use clear headings**: help students navigate the content
+3. **Include examples**: real-world examples make concepts clearer
+4. **Add takeaways**: summarize key points at the end
+5. **Keep `tier` and `isFree` in sync** (the UI reads both)
+6. **Never bypass the split**: Admin-SDK scripts skip the rules, so they must
+   enforce the metadata/content split themselves (see the seeder scripts for
+   the pattern)
 
-### Investment Strategies Module
-- VC investment basics
-- Public market analysis
-- ETF selection criteria
-- Risk management strategies
+## Getting help
 
-### Practical Applications Module
-- AI tools for business
-- Implementation strategies
-- Case studies and examples
-- ROI measurement
-
-## Getting Help
-
-If you need assistance adding content:
 1. Use the AI Tutor feature in each lesson
 2. Contact support through the platform
 3. Refer to this guide for formatting help
-
-The lesson content system is designed to be flexible and user-friendly, allowing you to create professional, engaging educational content for your students.
-

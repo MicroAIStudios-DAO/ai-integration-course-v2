@@ -1,0 +1,40 @@
+/* AI Integration Course — Lesson "Liquid Glass" brand palette.
+   Locked 2026-07-16 (owner-approved). Scope: lesson pages only.
+   Canonical doc: lesson-gradient-palette.md · JSON twin: lesson-gradient-palette.json
+   Live implementation: src/styles/lesson-content.css (.lg-page tokens). */
+
+:root {
+  /* Core */
+  --lg-ground: #0a0f1c;
+  --lg-ink: #e9eef7;
+  --lg-ink-soft: #c3cddd;
+  --lg-muted: #8fa0b8;
+
+  /* Gradient accents */
+  --lg-amber: #fbbf24;
+  --lg-amber-strong: #f59e0b;
+  --lg-cyan: #22d3ee;
+  --lg-magenta: #e879f9;
+  --lg-yellow: #fde047;
+
+  /* Signature gradients */
+  --lg-gradient-cta: linear-gradient(120deg, #f59e0b, #fbbf24);
+  --lg-gradient-progress: linear-gradient(90deg, #f59e0b, #22d3ee);
+
+  /* Ambient glows (on ground) */
+  --lg-glow-amber: rgba(245, 158, 11, 0.16);
+  --lg-glow-cyan: rgba(34, 211, 238, 0.13);
+  --lg-glow-magenta: rgba(217, 70, 239, 0.13);
+
+  /* Liquid glass material */
+  --lg-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015)), rgba(13, 20, 36, 0.62);
+  --lg-glass-border: rgba(255, 255, 255, 0.11);
+  --lg-glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  --lg-glass-backdrop: blur(22px) saturate(1.35);
+  --lg-card: rgba(9, 14, 26, 0.55);
+  --lg-card-border: rgba(148, 163, 184, 0.16);
+
+  /* Typography shadows (45°) */
+  --lg-halo-head: 2px 2px 3px rgba(0, 0, 0, 0.45);
+  --lg-halo-body: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}

@@ -12,6 +12,11 @@ type LessonAccessSubject = Pick<Lesson, 'id' | 'tier' | 'isFree'> | null | undef
 type LessonContentDoc = {
   content?: string;
   markdown?: string;
+  // Gated media moved out of the world-readable lesson docs (see
+  // scripts/migrate-protected-lesson-content.js)
+  videoUrl?: string;
+  youtubeUrl?: string;
+  storagePath?: string;
 };
 
 const PUBLIC_PREVIEW_LESSON_IDS = new Set([
@@ -126,6 +131,19 @@ export const getSecureLessonContent = async (
   moduleId: string,
   lessonId: string
 ): Promise<string | null> => {
+  const secureDoc = await getSecureLessonDoc(courseId, moduleId, lessonId);
+  return secureDoc?.content ?? null;
+};
+
+// Gated lessons keep their body AND media URLs in the tier-gated
+// lessonContent collection; the lesson docs in the course tree are
+// world-readable metadata only (so the catalog collection query works
+// for anonymous visitors).
+export const getSecureLessonDoc = async (
+  courseId: string,
+  moduleId: string,
+  lessonId: string
+): Promise<{ content: string | null; videoUrl: string | null; storagePath: string | null } | null> => {
   const contentRef = doc(db, 'lessonContent', getLessonContentDocumentId(courseId, moduleId, lessonId));
   const contentSnap = await getDoc(contentRef);
   if (!contentSnap.exists()) {
@@ -133,7 +151,11 @@ export const getSecureLessonContent = async (
   }
 
   const data = contentSnap.data() as LessonContentDoc;
-  return data.content || data.markdown || null;
+  return {
+    content: data.content || data.markdown || null,
+    videoUrl: data.videoUrl || data.youtubeUrl || null,
+    storagePath: data.storagePath || null,
+  };
 };
 
 export const isPublicPreviewLesson = (lesson: LessonAccessSubject): boolean =>
@@ -150,6 +172,19 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
   return null;
 };
 
+const toTrialDate = (value: UserProfile['trialEndsAt']): Date | null => {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (typeof (value as { toDate?: () => Date }).toDate === 'function') {
+    return (value as { toDate: () => Date }).toDate();
+  }
+  if (typeof value === 'string') {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+  return null;
+};
+
 export const userHasPaidAccess = (profile: UserProfile | null | undefined): boolean => {
   if (!profile) return false;
   if (profile.foundingMember === true) return true;
@@ -157,6 +192,14 @@ export const userHasPaidAccess = (profile: UserProfile | null | undefined): bool
 
   if (profile.subscriptionStatus === 'active') {
     return true;
+  }
+
+  // Mirror functions/src/accessControl.ts and firestore.rules: a paying
+  // trial user ($1 seven-day pro_trial → Stripe status 'trialing') has
+  // access while the trial window is open.
+  if (profile.subscriptionStatus === 'trialing') {
+    const trialEndsAt = toTrialDate(profile.trialEndsAt) || toTrialDate(profile.trialEndDate);
+    return !!trialEndsAt && trialEndsAt > new Date();
   }
 
   return false;

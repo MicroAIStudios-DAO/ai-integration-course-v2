@@ -1,5 +1,6 @@
 import admin from 'firebase-admin';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { isAdminProfile, UserAccessProfile } from './accessControl';
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -8,9 +9,24 @@ if (!admin.apps.length) {
 const buildLessonContentId = (courseId: string, moduleId: string, lessonId: string): string =>
   `${courseId}__${moduleId}__${lessonId}`;
 
+// These callables run with the Admin SDK, which bypasses firestore.rules —
+// without this gate ANY caller could write course/lesson docs.
+const requireAdmin = async (auth: { uid?: string } | undefined): Promise<void> => {
+  if (!auth?.uid) {
+    throw new HttpsError('unauthenticated', 'Sign in required');
+  }
+  const snap = await admin.firestore().collection('users').doc(auth.uid).get();
+  const profile = snap.exists ? (snap.data() as UserAccessProfile) : null;
+  if (!isAdminProfile(profile)) {
+    throw new HttpsError('permission-denied', 'Admin access required');
+  }
+};
+
 export const addLessonToFirestoreV2 = onCall(
   { region: 'us-central1' },
   async (request) => {
+    await requireAdmin(request.auth);
+
     const { courseId, moduleId, lesson } = request.data || {};
 
     if (!courseId || !moduleId || !lesson) {
@@ -30,13 +46,16 @@ export const addLessonToFirestoreV2 = onCall(
       const isProtectedLesson = lesson.isFree !== true && lesson.tier !== 'free';
       const batch = admin.firestore().batch();
 
+      // Lesson docs are world-readable catalog metadata: content pointers
+      // (storagePath/videoUrl) for protected lessons must never land on
+      // them — they go to the tier-gated lessonContent doc instead.
       batch.set(lessonRef, {
         title: lesson.title,
         order: lesson.order,
         isFree: lesson.isFree || false,
         tier: lesson.tier || 'premium',
-        storagePath: lesson.storagePath || null,
-        videoUrl: lesson.videoUrl || null,
+        storagePath: isProtectedLesson ? null : (lesson.storagePath || null),
+        videoUrl: isProtectedLesson ? null : (lesson.videoUrl || null),
         durationMinutes: lesson.durationMinutes || 0,
         description: lesson.description || null,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -44,13 +63,15 @@ export const addLessonToFirestoreV2 = onCall(
         ...(isProtectedLesson ? {} : { content: lesson.content || null }),
       }, { merge: true });
 
-      if (isProtectedLesson && lesson.content) {
+      if (isProtectedLesson && (lesson.content || lesson.storagePath || lesson.videoUrl)) {
         batch.set(contentRef, {
           courseId,
           moduleId,
           lessonId,
           tier: lesson.tier || 'premium',
-          content: lesson.content,
+          ...(lesson.content ? { content: lesson.content } : {}),
+          ...(lesson.storagePath ? { storagePath: lesson.storagePath } : {}),
+          ...(lesson.videoUrl ? { videoUrl: lesson.videoUrl } : {}),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         }, { merge: true });
       }
@@ -73,7 +94,9 @@ export const addLessonToFirestoreV2 = onCall(
 
 export const listCoursesAndModulesV2 = onCall(
   { region: 'us-central1' },
-  async () => {
+  async (request) => {
+    await requireAdmin(request.auth);
+
     try {
       const coursesSnap = await admin.firestore().collection('courses').get();
       const result: any[] = [];

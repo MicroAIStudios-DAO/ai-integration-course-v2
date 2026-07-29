@@ -92,12 +92,11 @@ select {
   }
 }
 
-/* Improve mobile lesson page */
+/* Improve mobile lesson page.
+   NOTE: .lesson-content belongs to the Liquid Glass lesson theme
+   (src/styles/lesson-content.css) — do not restyle it here; the theme's
+   .textbook-content padding already handles mobile. */
 @media (max-width: 768px) {
-  .lesson-content {
-    padding: 1rem;
-  }
-  
   .video-container {
     width: 100%;
     height: auto;

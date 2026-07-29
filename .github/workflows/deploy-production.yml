@@ -106,14 +106,16 @@ jobs:
 
       # ── 7. Deploy ────────────────────────────────────────────────────────
       # Deploy target logic:
-      #   - push to main → always deploy all three targets
+      #   - push to main → always deploy all four targets (storage included:
+      #     storage.rules gates premium markdown downloads — without it here,
+      #     rule changes merge but never go live)
       #   - manual dispatch → respect the deploy_target input
       - name: Determine deploy targets
         id: targets
         run: |
           INPUT="${{ github.event.inputs.deploy_target }}"
           if [ "${{ github.event_name }}" = "push" ] || [ -z "$INPUT" ] || [ "$INPUT" = "all" ]; then
-            echo "targets=hosting,functions,firestore" >> $GITHUB_OUTPUT
+            echo "targets=hosting,functions,firestore,storage" >> $GITHUB_OUTPUT
           else
             echo "targets=$INPUT" >> $GITHUB_OUTPUT
           fi
