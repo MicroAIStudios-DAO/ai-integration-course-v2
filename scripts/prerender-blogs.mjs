@@ -31,6 +31,7 @@ import {
   loadBlogPosts,
   loadMarketingPages,
   loadPricingPlans,
+  loadSiteLinks,
   readPostMarkdown,
 } from './blog-data.mjs';
 import { homepage, staticRoutes } from './route-meta.mjs';
@@ -172,6 +173,45 @@ function renderBlocks(blocks) {
 const tldrBlock = (text) =>
   `<p><strong>TL;DR for AI search engines:</strong> ${escapeHtml(text)}</p>`;
 
+// ─── Prerendered global chrome ───────────────────────────────────────────────
+// Mirrors SiteHeader.tsx / SiteFooter.tsx via src/content/siteLinks.ts so
+// every prerendered page carries the same crawlable nav/footer links users
+// see — this is what de-orphans pages for non-JS crawlers (Ahrefs Phase 3).
+
+function chromeNavHtml(siteLinks) {
+  const links = [
+    `<a href="/">${escapeHtml(SITE_NAME)}</a>`,
+    ...siteLinks.headerNavLinks.map(
+      (link) => `<a href="${link.to}">${escapeHtml(link.label)}</a>`
+    ),
+    `<a href="${siteLinks.headerTrialLink.to}">${escapeHtml(siteLinks.headerTrialLink.label)}</a>`,
+    `<a href="${siteLinks.headerLoginLink.to}">${escapeHtml(siteLinks.headerLoginLink.label)}</a>`,
+  ];
+  return `<nav aria-label="Primary">${links.join(' &bull; ')}</nav>`;
+}
+
+function chromeFooterHtml(siteLinks) {
+  const parts = ['<footer>'];
+  for (const column of siteLinks.footerColumns) {
+    parts.push(`<p><strong>${escapeHtml(column.heading)}</strong></p>`, '<ul>');
+    for (const link of column.links) {
+      parts.push(`<li><a href="${link.to}">${escapeHtml(link.label)}</a></li>`);
+    }
+    parts.push('</ul>');
+  }
+  parts.push(
+    `<p>${escapeHtml(siteLinks.footerAiDisclosure)}</p>`,
+    `<p>© ${new Date().getFullYear()} Synconis Logic Systems. All rights reserved.</p>`,
+    '</footer>'
+  );
+  return parts.join('\n');
+}
+
+// Breadcrumbs' visible home anchor is descriptive on purpose — bare "Home"
+// (35 uses) was an audit finding. JSON-LD breadcrumb names stay "Home" to
+// match the runtime SEO.tsx breadcrumbs.
+const BREADCRUMB_HOME_TEXT = 'AI automation training';
+
 const jsonLdTags = (schemas) =>
   schemas
     .map((s) => `    <script type="application/ld+json">${JSON.stringify(s)}</script>`)
@@ -246,11 +286,16 @@ function blogJsonLd(post, faqs) {
   return jsonLdTags(schemas);
 }
 
-function blogBody(post, articleHtml) {
+function blogBody(post, articleHtml, ctx) {
   // Minimal semantic markup — crawlers read this; browsers replace it the
   // moment React hydrates, so no styling is needed.
+  // "Keep reading" siblings use the same deterministic rule as
+  // BlogPostPage.tsx: the next two posts in catalog order.
+  const idx = ctx.posts.findIndex((p) => p.slug === post.slug);
+  const siblings = [1, 2].map((offset) => ctx.posts[(idx + offset) % ctx.posts.length]);
   return [
-    `<nav aria-label="Breadcrumb"><a href="/">Home</a> / <a href="/blogs">Blog</a> / ${escapeHtml(post.title)}</nav>`,
+    chromeNavHtml(ctx.siteLinks),
+    `<nav aria-label="Breadcrumb"><a href="/">${BREADCRUMB_HOME_TEXT}</a> / <a href="/blogs">Blog</a> / ${escapeHtml(post.title)}</nav>`,
     '<article>',
     `<p>${escapeHtml(post.eyebrow)}</p>`,
     `<h1>${escapeHtml(post.title)}</h1>`,
@@ -258,12 +303,20 @@ function blogBody(post, articleHtml) {
     `<p>${escapeHtml(post.summary)}</p>`,
     articleHtml,
     '</article>',
-    `<p><a href="/pricing">Explore the AI Integration Course — $1 Pro trial</a></p>`,
+    '<h2>Keep reading</h2>',
+    '<ul>',
+    ...siblings.map(
+      (sibling) => `<li><a href="/blogs/${sibling.slug}">${escapeHtml(sibling.title)}</a></li>`
+    ),
+    '<li><a href="/courses">Explore the full AI integration curriculum</a></li>',
+    '<li><a href="/start-trial">Start the $1 Pro trial</a></li>',
+    '</ul>',
     `<p><a href="/blogs">Back to all articles</a></p>`,
+    chromeFooterHtml(ctx.siteLinks),
   ].join('\n');
 }
 
-function prerenderPost(template, post) {
+function prerenderPost(template, post, ctx) {
   const markdown = readPostMarkdown(post);
   const articleHtml = marked.parse(markdown);
   const faqs = extractFAQs(markdown);
@@ -294,7 +347,7 @@ function prerenderPost(template, post) {
   ].join('\n');
   html = html.replace('</head>', `${articleMeta}\n  </head>`);
 
-  html = injectRoot(html, blogBody(post, articleHtml), `/blogs/${post.slug}`);
+  html = injectRoot(html, blogBody(post, articleHtml, ctx), `/blogs/${post.slug}`);
   writeRoute(`/blogs/${post.slug}`, html);
   return { faqCount: faqs.length, bytes: html.length };
 }
@@ -304,9 +357,10 @@ function prerenderPost(template, post) {
 // Body mirrors ResourceDetailPage.tsx / IndustrySolutionPage.tsx: eyebrow,
 // h1, description, audience, optional workflows list, then sections with
 // h2 + body + bullets. All copy comes verbatim from marketingPages.ts.
-function detailPageBody(basePath, crumbName, item) {
+function detailPageBody(basePath, crumbName, item, ctx) {
   const parts = [
-    `<nav aria-label="Breadcrumb"><a href="/">Home</a> / <a href="${basePath}">${escapeHtml(crumbName)}</a> / ${escapeHtml(item.title)}</nav>`,
+    chromeNavHtml(ctx.siteLinks),
+    `<nav aria-label="Breadcrumb"><a href="/">${BREADCRUMB_HOME_TEXT}</a> / <a href="${basePath}">${escapeHtml(crumbName)}</a> / ${escapeHtml(item.title)}</nav>`,
     '<article>',
     `<p>${escapeHtml(item.eyebrow)}</p>`,
     `<h1>${escapeHtml(item.title)}</h1>`,
@@ -333,14 +387,27 @@ function detailPageBody(basePath, crumbName, item) {
       parts.push('</ul>');
     }
   }
+  // Related reading mirrors the visible block the detail components render
+  // from relatedBlogSlugs (marketingPages.ts).
+  const related = (item.relatedBlogSlugs ?? [])
+    .map((slug) => ctx.posts.find((p) => p.slug === slug))
+    .filter(Boolean);
+  if (related.length > 0) {
+    parts.push('<h2>Related reading</h2>', '<ul>');
+    for (const post of related) {
+      parts.push(`<li><a href="/blogs/${post.slug}">${escapeHtml(post.title)}</a></li>`);
+    }
+    parts.push('<li><a href="/courses">Explore the full AI integration curriculum</a></li>', '</ul>');
+  }
   parts.push(
     '</article>',
-    `<p><a href="/pricing">Explore the AI Integration Course — $1 Pro trial</a> &bull; <a href="${basePath}">Back to ${escapeHtml(crumbName)}</a></p>`
+    `<p><a href="/pricing">Explore the AI Integration Course — $1 Pro trial</a> &bull; <a href="${basePath}">Back to ${escapeHtml(crumbName)}</a></p>`,
+    chromeFooterHtml(ctx.siteLinks)
   );
   return parts.join('\n');
 }
 
-function prerenderDetailPage(template, { basePath, crumbName, item }) {
+function prerenderDetailPage(template, { basePath, crumbName, item }, ctx) {
   const routePath = `${basePath}/${item.slug}`;
   const canonicalUrl = `${BASE_URL}${routePath}`;
   let html = applyHeadMeta(template, {
@@ -377,7 +444,7 @@ function prerenderDetailPage(template, { basePath, crumbName, item }) {
     ]),
   ]);
   html = html.replace('</head>', `${schemas}\n  </head>`);
-  html = injectRoot(html, detailPageBody(basePath, crumbName, item), routePath);
+  html = injectRoot(html, detailPageBody(basePath, crumbName, item, ctx), routePath);
   writeRoute(routePath, html);
 }
 
@@ -405,8 +472,12 @@ function pricingPlanParts({ plans, planKeys }) {
 }
 
 function staticRouteBody(route, ctx) {
+  // Noindex utility routes (login/signup/checkout) stay chrome-free —
+  // minimal funnel/auth pages, not link-graph participants.
+  const withChrome = !route.noindex && !route.robots;
   const parts = [
-    `<nav aria-label="Breadcrumb"><a href="/">Home</a> / ${escapeHtml(route.h1)}</nav>`,
+    ...(withChrome ? [chromeNavHtml(ctx.siteLinks)] : []),
+    `<nav aria-label="Breadcrumb"><a href="/">${withChrome ? BREADCRUMB_HOME_TEXT : 'Home'}</a> / ${escapeHtml(route.h1)}</nav>`,
     '<main>',
     `<h1>${escapeHtml(route.h1)}</h1>`,
     `<p>${escapeHtml(route.blurb)}</p>`,
@@ -467,10 +538,14 @@ function staticRouteBody(route, ctx) {
       parts.push(`<h2>${escapeHtml(faq.question)}</h2>`, `<p>${escapeHtml(faq.answer)}</p>`);
     }
   }
-  parts.push(
-    '</main>',
-    `<p><a href="/pricing">Start the $1 Pro trial</a> &bull; <a href="/blogs">Read the blog</a> &bull; <a href="/">Home</a></p>`
-  );
+  parts.push('</main>');
+  if (withChrome) {
+    parts.push(chromeFooterHtml(ctx.siteLinks));
+  } else {
+    parts.push(
+      `<p><a href="/pricing">Start the $1 Pro trial</a> &bull; <a href="/blogs">Read the blog</a></p>`
+    );
+  }
   return parts.join('\n');
 }
 
@@ -574,6 +649,7 @@ function main() {
     pricingTldr,
     faqTldr,
     pricing: loadPricingPlans(),
+    siteLinks: loadSiteLinks(),
   };
   let failures = 0;
 
@@ -596,7 +672,7 @@ function main() {
   // 2. Blog articles
   for (const post of posts) {
     try {
-      const result = prerenderPost(template, post);
+      const result = prerenderPost(template, post, ctx);
       console.log(
         `✅ prerendered /blogs/${post.slug} (${(result.bytes / 1024).toFixed(1)} KB, ${result.faqCount} FAQs)`
       );
@@ -633,7 +709,7 @@ function main() {
   for (const page of detailPages) {
     const routePath = `${page.basePath}/${page.item.slug}`;
     try {
-      prerenderDetailPage(template, page);
+      prerenderDetailPage(template, page, ctx);
       console.log(`✅ prerendered ${routePath}`);
     } catch (err) {
       failures += 1;
@@ -647,12 +723,14 @@ function main() {
   // happen last — earlier steps read the pristine template.
   try {
     const homepageBody = [
+      chromeNavHtml(ctx.siteLinks),
       '<main>',
       `<h1>${escapeHtml(homepage.h1)}</h1>`,
       `<p>${escapeHtml(homepage.blurb)}</p>`,
       ...renderBlocks(pageBodies['/']),
       `<p><a href="/pricing">Start the $1 Pro trial</a> &bull; <a href="/courses">Course overview</a> &bull; <a href="/blogs">Blog</a> &bull; <a href="/faq">FAQ</a></p>`,
       '</main>',
+      chromeFooterHtml(ctx.siteLinks),
     ].join('\n');
     let homepageHtml = template.replace(
       '</head>',
