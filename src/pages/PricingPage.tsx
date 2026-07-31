@@ -445,10 +445,10 @@ print(result.body)`}
         <div className="mt-20 max-w-3xl mx-auto">
           <h2 className="text-3xl font-bold text-white text-center mb-12">Frequently Asked Questions</h2>
           <div className="space-y-6">
-            {pricingFaqItems.map((item, i) => (
+            {pricingFaqItems.map((item) => (
               <div
                 key={item.question}
-                className={`bg-slate-800/50 rounded-lg p-6${i === 5 ? ' border border-cyan-500/20' : ''}`}
+                className={`bg-slate-800/50 rounded-lg p-6${item.question === 'Will this course be outdated in 2 months?' ? ' border border-cyan-500/20' : ''}`}
               >
                 <h4 className="text-lg font-semibold text-white mb-2">{item.question}</h4>
                 <p className="text-gray-400">{item.answer}</p>
