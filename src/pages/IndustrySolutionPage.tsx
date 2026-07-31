@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { industryPages } from '../content/marketingPages';
+import { getBlogPostBySlug } from '../content/blogPosts';
 
 const IndustrySolutionPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -83,6 +84,38 @@ const IndustrySolutionPage: React.FC = () => {
               </section>
             ))}
           </div>
+
+          {/* Related reading — contextual internal links shared with the
+              prerendered HTML (relatedBlogSlugs in marketingPages.ts) */}
+          {industry.relatedBlogSlugs && industry.relatedBlogSlugs.length > 0 && (
+            <div className="mt-10">
+              <h2 className="text-2xl font-bold text-white">Related reading</h2>
+              <ul className="mt-4 space-y-2 text-slate-300">
+                {industry.relatedBlogSlugs.map((slug) => {
+                  const post = getBlogPostBySlug(slug);
+                  if (!post) return null;
+                  return (
+                    <li key={slug}>
+                      <Link
+                        to={`/blogs/${post.slug}`}
+                        className="font-semibold text-cyan-300 hover:text-cyan-100 underline"
+                      >
+                        {post.title}
+                      </Link>
+                    </li>
+                  );
+                })}
+                <li>
+                  <Link
+                    to="/courses"
+                    className="font-semibold text-cyan-300 hover:text-cyan-100 underline"
+                  >
+                    Explore the full AI integration curriculum
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          )}
 
           <div className="mt-10 rounded-2xl border border-white/10 bg-slate-900/60 p-6">
             <h2 className="text-xl font-bold text-white">Turn this into a controlled pilot</h2>

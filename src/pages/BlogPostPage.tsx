@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import SEO from '../components/SEO';
-import { getBlogPostBySlug } from '../content/blogPosts';
+import { blogPosts, getBlogPostBySlug } from '../content/blogPosts';
 import '../styles/blog-content.css';
 import { MarkdownPre } from '../components/common/CopyableCodeBlock';
 
@@ -239,6 +239,41 @@ const BlogPostPage: React.FC = () => {
             </Link>
           </div>
         )}
+
+        {/* ── Keep reading — contextual internal links, mirrored by the
+               prerendered HTML (same sibling-selection rule in
+               scripts/prerender-blogs.mjs: next two posts in catalog order) */}
+        <div className="mt-10 border-t border-slate-200 pt-8">
+          <h2 className="text-2xl font-bold text-slate-950">Keep reading</h2>
+          <ul className="mt-4 space-y-2 text-slate-700">
+            {(() => {
+              const idx = blogPosts.findIndex((p) => p.slug === post.slug);
+              return [1, 2].map((offset) => {
+                const sibling = blogPosts[(idx + offset) % blogPosts.length];
+                return (
+                  <li key={sibling.slug}>
+                    <Link
+                      to={`/blogs/${sibling.slug}`}
+                      className="font-semibold text-cyan-700 hover:text-cyan-900 underline"
+                    >
+                      {sibling.title}
+                    </Link>
+                  </li>
+                );
+              });
+            })()}
+            <li>
+              <Link to="/courses" className="font-semibold text-cyan-700 hover:text-cyan-900 underline">
+                Explore the full AI integration curriculum
+              </Link>
+            </li>
+            <li>
+              <Link to="/start-trial" className="font-semibold text-cyan-700 hover:text-cyan-900 underline">
+                Start the $1 Pro trial
+              </Link>
+            </li>
+          </ul>
+        </div>
 
         {/* ── Back to Blog ──────────────────────────────────────────────── */}
         <div className="mt-8">

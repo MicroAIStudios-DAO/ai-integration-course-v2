@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { resourceLibraryItems } from '../content/marketingPages';
+import { getBlogPostBySlug } from '../content/blogPosts';
 
 const ResourceDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -71,6 +72,38 @@ const ResourceDetailPage: React.FC = () => {
               </section>
             ))}
           </div>
+
+          {/* Related reading — contextual internal links shared with the
+              prerendered HTML (relatedBlogSlugs in marketingPages.ts) */}
+          {resource.relatedBlogSlugs && resource.relatedBlogSlugs.length > 0 && (
+            <div className="mt-10">
+              <h2 className="text-2xl font-bold text-slate-950">Related reading</h2>
+              <ul className="mt-4 space-y-2 text-slate-700">
+                {resource.relatedBlogSlugs.map((slug) => {
+                  const post = getBlogPostBySlug(slug);
+                  if (!post) return null;
+                  return (
+                    <li key={slug}>
+                      <Link
+                        to={`/blogs/${post.slug}`}
+                        className="font-semibold text-cyan-700 hover:text-cyan-900 underline"
+                      >
+                        {post.title}
+                      </Link>
+                    </li>
+                  );
+                })}
+                <li>
+                  <Link
+                    to="/courses"
+                    className="font-semibold text-cyan-700 hover:text-cyan-900 underline"
+                  >
+                    Explore the full AI integration curriculum
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          )}
 
           <div className="mt-10 rounded-2xl border border-cyan-200 bg-cyan-50 p-6">
             <h2 className="text-xl font-bold text-slate-950">Want the implementation version?</h2>
