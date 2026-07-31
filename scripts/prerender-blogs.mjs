@@ -85,6 +85,10 @@ function applyHeadMeta(html, { title, seoTitle, description, canonicalUrl, keywo
   if (image) {
     html = replaceMetaContent(html, /<meta property="og:image"[^>]*>/, image);
     html = replaceMetaContent(html, /<meta name="twitter:image"[^>]*>/, image);
+    // Page-specific image → the headline is the best available description.
+    // Without an image override the template's hero-image alt stays put.
+    html = replaceMetaContent(html, /<meta property="og:image:alt"[^>]*>/, title);
+    html = replaceMetaContent(html, /<meta name="twitter:image:alt"[^>]*>/, title);
   }
   return html;
 }
@@ -266,10 +270,12 @@ function prerenderPost(template, post) {
   html = replaceMetaContent(html, /<meta property="og:type"[^>]*>/, 'article');
   html = stripJsonLd(html); // homepage Course schema — wrong entity for an article
 
+  // data-rh: SEO.tsx re-emits these on hydration; marking them lets
+  // react-helmet-async replace rather than duplicate them.
   const articleMeta = [
-    `    <meta property="article:published_time" content="${escapeHtml(post.publishedTime)}" />`,
-    `    <meta property="article:modified_time" content="${escapeHtml(post.modifiedTime || post.publishedTime)}" />`,
-    `    <meta property="article:author" content="${escapeHtml(post.author)}" />`,
+    `    <meta property="article:published_time" content="${escapeHtml(post.publishedTime)}" data-rh="true" />`,
+    `    <meta property="article:modified_time" content="${escapeHtml(post.modifiedTime || post.publishedTime)}" data-rh="true" />`,
+    `    <meta property="article:author" content="${escapeHtml(post.author)}" data-rh="true" />`,
     blogJsonLd(post, faqs),
   ].join('\n');
   html = html.replace('</head>', `${articleMeta}\n  </head>`);

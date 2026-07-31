@@ -75,6 +75,19 @@ describe.skipIf(!hasBuild)('prerendered routes (build/)', () => {
       '<title>Advanced AI Integration & Systems Engineering | AI Integration Course</title>'
     );
 
+    // Social-card contract: exactly one description, absolute social images,
+    // twitter:site + twitter:image:alt present sitewide (Ahrefs issue #15).
+    const descCount = (html.match(/<meta name="description"/g) ?? []).length;
+    expect(descCount, `${route}: has ${descCount} meta descriptions (must be exactly 1)`).toBe(1);
+    expect(html, `${route}: og:image must be an absolute URL`).toMatch(
+      /<meta property="og:image" content="https:\/\//
+    );
+    expect(html, `${route}: twitter:image must be an absolute URL`).toMatch(
+      /<meta name="twitter:image" content="https:\/\//
+    );
+    expect(html, `${route}: twitter:site missing`).toContain('name="twitter:site"');
+    expect(html, `${route}: twitter:image:alt missing`).toContain('name="twitter:image:alt"');
+
     // Bing/Google display limits, measured on decoded text. Blog posts are
     // included: long headlines must set seoTitle in blogPosts.ts (rendered
     // verbatim, no brand suffix). 65 (not 60) leaves headroom for the brand

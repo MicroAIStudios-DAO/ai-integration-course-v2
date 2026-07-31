@@ -35,22 +35,28 @@
     <meta charset="utf-8" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#111827" />
+    <!-- data-rh="true" on the tags below marks them as react-helmet-async
+         owned: on hydration, SEO.tsx REPLACES them instead of appending a
+         second copy (the source of the duplicate meta-description audit
+         finding). The prerender scripts rewrite their content= in place. -->
+    <meta name="theme-color" content="#111827" data-rh="true" />
     <title>Advanced AI Integration & Systems Engineering | AI Integration Course</title>
-    <meta name="description" content="Practical AI automation training for business owners and developers. Learn Gemini API integration, AI workflow automation, and real deployment patterns." />
-    <meta name="keywords" content="AI integration course, Gemini API with Python, AI business automation, AI workflow automation, AI course for non-coders" />
-    <meta name="author" content="Blaine Casey" />
-    <link rel="canonical" href="https://aiintegrationcourse.com/" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://aiintegrationcourse.com/" />
-    <meta property="og:title" content="AI Integration Course" />
-    <meta property="og:description" content="Learn how to integrate AI into your business with actionable playbooks, live coaching, and real implementation workflows." />
-    <meta property="og:image" content="/assets/hero_background_neural_network.png" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@aiintegrationco" />
-    <meta name="twitter:title" content="AI Integration Course" />
-    <meta name="twitter:description" content="Learn the strategies, tools, and workflows to ship AI automation with a practical implementation-first course." />
-    <meta name="twitter:image" content="/assets/hero_background_neural_network.png" />
+    <meta name="description" content="Practical AI automation training for business owners and developers. Learn Gemini API integration, AI workflow automation, and real deployment patterns." data-rh="true" />
+    <meta name="keywords" content="AI integration course, Gemini API with Python, AI business automation, AI workflow automation, AI course for non-coders" data-rh="true" />
+    <meta name="author" content="Blaine Casey" data-rh="true" />
+    <link rel="canonical" href="https://aiintegrationcourse.com/" data-rh="true" />
+    <meta property="og:type" content="website" data-rh="true" />
+    <meta property="og:url" content="https://aiintegrationcourse.com/" data-rh="true" />
+    <meta property="og:title" content="AI Integration Course" data-rh="true" />
+    <meta property="og:description" content="Learn how to integrate AI into your business with actionable playbooks, live coaching, and real implementation workflows." data-rh="true" />
+    <meta property="og:image" content="https://aiintegrationcourse.com/assets/hero_background_neural_network.png" data-rh="true" />
+    <meta property="og:image:alt" content="Abstract neural network visualization — AI Integration Course" data-rh="true" />
+    <meta name="twitter:card" content="summary_large_image" data-rh="true" />
+    <meta name="twitter:site" content="@aiintegrationco" data-rh="true" />
+    <meta name="twitter:title" content="AI Integration Course" data-rh="true" />
+    <meta name="twitter:description" content="Learn the strategies, tools, and workflows to ship AI automation with a practical implementation-first course." data-rh="true" />
+    <meta name="twitter:image" content="https://aiintegrationcourse.com/assets/hero_background_neural_network.png" data-rh="true" />
+    <meta name="twitter:image:alt" content="Abstract neural network visualization — AI Integration Course" data-rh="true" />
     <link
       rel="preload"
       as="image"

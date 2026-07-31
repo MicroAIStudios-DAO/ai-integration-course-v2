@@ -18,6 +18,8 @@ interface SEOProps {
   seoTitle?: string;
   description?: string;
   image?: string;
+  /** Accessible description of the social image (og:image:alt / twitter:image:alt). */
+  imageAlt?: string;
   url?: string;
   type?: 'website' | 'article' | 'course';
   publishedTime?: string;
@@ -49,6 +51,7 @@ export const SEO: React.FC<SEOProps> = ({
   seoTitle,
   description = DEFAULT_DESCRIPTION,
   image = DEFAULT_IMAGE,
+  imageAlt,
   url,
   type = 'website',
   publishedTime,
@@ -73,6 +76,11 @@ export const SEO: React.FC<SEOProps> = ({
   const socialTitle = seoTitle && title ? title : fullTitle;
   const fullUrl = url ? `${BASE_URL}${url}` : BASE_URL;
   const fullImage = image.startsWith('http') ? image : `${BASE_URL}${image}`;
+  const imageAltText =
+    imageAlt ||
+    (image === DEFAULT_IMAGE
+      ? 'Abstract neural network visualization — AI Integration Course'
+      : socialTitle);
 
   // ── WebSite Schema ───────────────────────────────────────────────────────
   const websiteSchema = {
@@ -246,6 +254,7 @@ export const SEO: React.FC<SEOProps> = ({
       <meta property="og:title" content={socialTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={fullImage} />
+      <meta property="og:image:alt" content={imageAltText} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
       <meta property="og:site_name" content={SITE_NAME} />
@@ -257,6 +266,7 @@ export const SEO: React.FC<SEOProps> = ({
       <meta name="twitter:title" content={socialTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={fullImage} />
+      <meta name="twitter:image:alt" content={imageAltText} />
       <meta name="twitter:creator" content="@aiintegrationco" />
       <meta name="twitter:site" content="@aiintegrationco" />
 
