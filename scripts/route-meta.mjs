@@ -135,7 +135,7 @@ export const staticRoutes = [
   },
   {
     // Auth/utility pages: prerendered only to carry noindex so Bing drops
-    // them from the index; excluded from the sitemap (generate-sitemap.js).
+    // them from the index; excluded from the sitemap (generate-sitemap.mjs).
     path: '/login',
     title: 'Log In',
     description: 'Log in to your AI Integration Course account.',
