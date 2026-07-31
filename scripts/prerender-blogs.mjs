@@ -162,7 +162,7 @@ function renderBlocks(blocks) {
     else if (block.links)
       parts.push(
         `<p>${block.links
-          .map(([text, href]) => `<a href="${href}">${escapeHtml(text)}</a>`)
+          .map(([text, href]) => `<a href="${escapeHtml(href)}">${escapeHtml(text)}</a>`)
           .join(' &bull; ')}</p>`
       );
   }
