@@ -9,6 +9,8 @@ import RoiGuaranteeBadge from '../components/conversion/RoiGuaranteeBadge';
 import ExitIntentLeadMagnet from '../components/lead-magnet/ExitIntentLeadMagnet';
 import { PlanKey, plans, formatPlanPrice } from '../config/pricing';
 import CopyableCodeBlock from '../components/common/CopyableCodeBlock';
+import SiteHeader from '../components/layout/SiteHeader';
+import SiteFooter from '../components/layout/SiteFooter';
 import { pricingFaqItems, pricingTldr } from '../content/marketingPages';
 
 const CheckIcon = () => (
@@ -86,24 +88,9 @@ const PricingPage: React.FC = () => {
         author="Blaine Casey"
       />
 
-      {/* Header */}
-      <header className="border-b border-slate-700/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <Link to="/" className="text-2xl font-bold text-white">
-              AI Integration<span className="text-indigo-400">Course</span>
-            </Link>
-            <nav className="flex items-center gap-6">
-              <Link to="/courses" className="text-gray-300 hover:text-white transition-colors">Curriculum</Link>
-              {isRegisteredUser ? (
-                <Link to="/profile" className="text-gray-300 hover:text-white transition-colors">Dashboard</Link>
-              ) : (
-                <Link to="/login" className="text-gray-300 hover:text-white transition-colors">Login</Link>
-              )}
-            </nav>
-          </div>
-        </div>
-      </header>
+      {/* Shared global navigation (Phase 3) — also fixes the old header's
+          "AI IntegrationCourse" missing-space brand rendering. */}
+      <SiteHeader />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {/* Hero */}
@@ -516,18 +503,11 @@ print(result.body)`}
 
       <ExitIntentLeadMagnet source="pricing_exit_intent" />
 
-      <footer className="border-t border-slate-700/50 mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="text-gray-400 text-sm">&copy; 2025 AI Integration Course. All rights reserved.</div>
-            <div className="flex gap-6">
-              <Link to="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">Terms of Service</Link>
-              <Link to="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</Link>
-              <a href="mailto:support@aiintegrationcourse.com" className="text-gray-400 hover:text-white text-sm transition-colors">Contact</a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      {/* Shared global footer (Phase 3) — replaces the stale
+          "© 2025 AI Integration Course" strip. */}
+      <div className="mt-20">
+        <SiteFooter />
+      </div>
     </div>
   );
 };

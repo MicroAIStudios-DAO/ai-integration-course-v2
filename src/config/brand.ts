@@ -16,5 +16,8 @@ export const BRAND = {
   /** Header sub-tagline shown beneath the course name */
   headerTagline:
     'an initiative from The Foundation for Applied Artificial Intelligence & Systems Design, a Synconis Labs venture',
-  copyright: '© 2026 Synconis Logic Systems. All rights reserved.',
+  // Dynamic year: the footer once shipped a conflicting pair of hardcoded
+  // strings ("© 2025 AI Integration Course" vs "© 2026 Synconis Logic
+  // Systems"). One entity, computed year, everywhere.
+  copyright: `© ${new Date().getFullYear()} Synconis Logic Systems. All rights reserved.`,
 } as const;
