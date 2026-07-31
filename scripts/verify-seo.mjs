@@ -7,6 +7,11 @@
 //      unreplaced content-generation placeholders were once the ONLY external
 //      links on the entire site.
 //
+//   2. Sitemap ↔ build contract: every sitemap URL is canonical-host, has a
+//      prerendered file, is self-canonical, and is not noindexed — and every
+//      indexable prerendered route appears in the sitemap. The committed
+//      sitemap once drifted 3 blog posts behind the published content.
+//
 // Scans every prerendered HTML file in build/ plus the blog markdown sources
 // in public/blogs/ (the markdown is also served raw to AI crawlers).
 
@@ -77,3 +82,66 @@ if (violations.length > 0) {
   process.exit(1);
 }
 console.log('✅ verify-seo: no forbidden link targets in build output');
+
+// ─── 2. Sitemap ↔ build contract ─────────────────────────────────────────────
+
+const BASE_URL = 'https://aiintegrationcourse.com';
+const SITEMAP_PATH = path.join(BUILD_DIR, 'sitemap.xml');
+const sitemapErrors = [];
+
+if (!existsSync(SITEMAP_PATH)) {
+  console.error('❌ verify-seo: build/sitemap.xml missing — run generate-sitemap.mjs first.');
+  process.exit(1);
+}
+
+const sitemapLocs = [...readFileSync(SITEMAP_PATH, 'utf8').matchAll(/<loc>([^<]+)<\/loc>/g)].map(
+  (m) => m[1]
+);
+const sitemapSet = new Set(sitemapLocs);
+
+const routeToFile = (route) =>
+  route === '/'
+    ? path.join(BUILD_DIR, 'index.html')
+    : path.join(BUILD_DIR, ...route.split('/').filter(Boolean), 'index.html');
+
+for (const loc of sitemapLocs) {
+  if (!loc.startsWith(`${BASE_URL}/`) && loc !== `${BASE_URL}/`) {
+    sitemapErrors.push(`${loc}: not on the canonical host ${BASE_URL}`);
+    continue;
+  }
+  const route = loc.slice(BASE_URL.length) || '/';
+  const file = routeToFile(route);
+  if (!existsSync(file)) {
+    sitemapErrors.push(`${loc}: no prerendered file at ${relPath(file)} (would 200 as app shell)`);
+    continue;
+  }
+  const html = readFileSync(file, 'utf8');
+  const canonical = html.match(/<link rel="canonical" href="([^"]*)"/)?.[1];
+  if (canonical !== loc) {
+    sitemapErrors.push(`${loc}: canonical is ${canonical ?? 'MISSING'} (must be self-referencing)`);
+  }
+  if (/<meta name="robots" content="[^"]*noindex/.test(html)) {
+    sitemapErrors.push(`${loc}: page is noindexed but listed in the sitemap`);
+  }
+}
+
+// Inverse: every indexable prerendered route must be in the sitemap.
+for (const file of walkHtml(BUILD_DIR)) {
+  if (path.basename(file) === 'app-shell.html') continue;
+  const html = readFileSync(file, 'utf8');
+  if (/<meta name="robots" content="[^"]*noindex/.test(html)) continue;
+  const canonical = html.match(/<link rel="canonical" href="([^"]*)"/)?.[1];
+  if (!canonical) continue;
+  if (!sitemapSet.has(canonical)) {
+    sitemapErrors.push(`${relPath(file)}: indexable (canonical ${canonical}) but absent from sitemap`);
+  }
+}
+
+if (sitemapErrors.length > 0) {
+  console.error(`❌ verify-seo: ${sitemapErrors.length} sitemap contract violation(s):`);
+  for (const e of sitemapErrors) console.error(`   ${e}`);
+  process.exit(1);
+}
+console.log(
+  `✅ verify-seo: sitemap contract holds (${sitemapLocs.length} URLs, all prerendered, self-canonical, indexable)`
+);
