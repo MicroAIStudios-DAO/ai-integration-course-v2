@@ -31,6 +31,7 @@ const INDEXABLE_ROUTES = [
   '/roadmap',
   '/start-trial',
   '/privacy',
+  '/terms',
   '/courses',
   '/blogs/workflow-complete-guide',
   '/blogs/ai-integration-architecture-reliable-workflows',
@@ -104,9 +105,24 @@ describe.skipIf(!hasBuild)('prerendered routes (build/)', () => {
     expect(html).toContain('<meta name="robots" content="noindex, follow"');
   });
 
-  it('app-shell.html has no canonical and no JSON-LD', () => {
+  it('/checkout/start carries noindex,nofollow, its own title, and no canonical', () => {
+    const file = routeFile('/checkout/start');
+    expect(existsSync(file), `${file} missing — prerender did not cover /checkout/start`).toBe(
+      true
+    );
+    const html = readFileSync(file, 'utf8');
+    expect(html).toContain('<meta name="robots" content="noindex, nofollow"');
+    expect(html).not.toContain('rel="canonical"');
+    expect(html).toContain('<title>Secure Checkout | AI Integration Course</title>');
+    expect(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1]?.trim()).toBeTruthy();
+  });
+
+  it('app-shell.html has no canonical, no JSON-LD, and defaults to noindex', () => {
     const html = readFileSync(path.join(BUILD_DIR, 'app-shell.html'), 'utf8');
     expect(html).not.toContain('rel="canonical"');
     expect(html).not.toContain('application/ld+json');
+    // Auth/app shell routes must not be indexed; SEO.tsx overrides on
+    // hydration for legitimate SPA pages (the tag carries data-rh).
+    expect(html).toContain('<meta name="robots" content="noindex"');
   });
 });

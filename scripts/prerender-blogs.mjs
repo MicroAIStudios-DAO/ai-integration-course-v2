@@ -395,8 +395,17 @@ function prerenderStaticRoute(template, route, posts, faqs) {
     canonicalUrl,
   });
   html = stripJsonLd(html); // homepage Course schema doesn't belong on subpages
+  if (route.omitCanonical) {
+    // noindex+nofollow utility routes (e.g. /checkout/start) carry no
+    // canonical at all — the robots directive is the whole story.
+    html = stripCanonical(html);
+  }
   const headExtras = [];
-  if (route.noindex) {
+  if (route.robots) {
+    // Explicit robots override (e.g. "noindex, nofollow" on checkout).
+    // data-rh lets react-helmet-async take ownership on hydration.
+    headExtras.push(`    <meta name="robots" content="${route.robots}" data-rh="true" />`);
+  } else if (route.noindex) {
     // Auth/utility pages: keep them crawlable (follow) so Bing sees the
     // directive, but out of the index. Must NOT be robots.txt-blocked.
     headExtras.push('    <meta name="robots" content="noindex, follow" />');
@@ -434,11 +443,18 @@ function main() {
   // 1. Clean SPA fallback for unmatched routes (the ** rewrite target).
   // Strip homepage canonical + JSON-LD so arbitrary routes don't claim
   // homepage identity; React sets correct meta after hydration.
+  // The shell serves only routes with no prerendered file — auth/app pages
+  // (/dashboard, /login flows, /welcome, labs, …) — so it defaults to
+  // noindex. data-rh lets SEO.tsx (react-helmet-async) replace the directive
+  // on hydration for any legitimate SPA page that renders its own robots meta.
   writeFileSync(
     path.join(BUILD_DIR, 'app-shell.html'),
-    stripCanonical(stripJsonLd(template))
+    stripCanonical(stripJsonLd(template)).replace(
+      '</head>',
+      '    <meta name="robots" content="noindex" data-rh="true" />\n  </head>'
+    )
   );
-  console.log('✅ app-shell.html written (SPA fallback)');
+  console.log('✅ app-shell.html written (SPA fallback, noindex by default)');
 
   // 2. Blog articles
   for (const post of posts) {
