@@ -26,6 +26,8 @@ const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
 
 const ALLOWED_ORIGINS = [
   'https://aiintegrationcourse.com',
+  // Transitional: www 301s to the apex at the hosting layer, but keep the
+  // origin allowed so in-flight www sessions don't break mid-migration.
   'https://www.aiintegrationcourse.com',
   'http://localhost:3000',
   'http://localhost:5000',

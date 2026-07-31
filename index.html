@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <!-- Host canonicalization fallback. The authoritative 301 (www → apex) is
+         configured in Firebase Hosting's custom-domain settings; this catches
+         any www traffic that slips through before/despite that redirect so
+         users and JS-executing crawlers always converge on the canonical host. -->
+    <script>
+      if (window.location.hostname === 'www.aiintegrationcourse.com') {
+        window.location.replace(
+          window.location.href.replace('//www.aiintegrationcourse.com', '//aiintegrationcourse.com')
+        );
+      }
+    </script>
+
     <!-- Consent Mode v2 defaults — DENIED until the user opts in via the cookie banner.
          GTM, GA4, Google Ads, Microsoft Clarity, and Ahrefs are loaded only after consent
          by src/utils/consent.ts. This keeps all non-essential trackers off until opt-in. -->
