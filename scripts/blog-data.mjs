@@ -42,8 +42,14 @@ export function loadBlogPosts() {
 // Library articles, industry pages, and the FAQ items visibly rendered on
 // /faq — same single-source-of-truth approach as blogPosts.
 export function loadMarketingPages() {
-  const { resourceLibraryItems, industryPages, homepageFaqItems } =
-    loadTsModule('src/content/marketingPages.ts');
+  const {
+    resourceLibraryItems,
+    industryPages,
+    homepageFaqItems,
+    pricingFaqItems,
+    pricingTldr,
+    faqTldr,
+  } = loadTsModule('src/content/marketingPages.ts');
   if (!Array.isArray(resourceLibraryItems) || !Array.isArray(industryPages)) {
     throw new Error('marketingPages exports not found in src/content/marketingPages.ts');
   }
@@ -51,6 +57,9 @@ export function loadMarketingPages() {
     resourceLibraryItems,
     industryPages,
     homepageFaqItems: homepageFaqItems ?? [],
+    pricingFaqItems: pricingFaqItems ?? [],
+    pricingTldr: pricingTldr ?? '',
+    faqTldr: faqTldr ?? '',
   };
 }
 
