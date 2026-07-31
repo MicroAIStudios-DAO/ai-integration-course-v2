@@ -22,6 +22,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useSearchParams } from 'react-router-dom';
 import { useReCaptcha } from '../hooks/useReCaptcha';
 import { startCheckoutForPlan, isPlanKey } from '../utils/checkout';
@@ -187,6 +188,16 @@ const CheckoutStartPage: React.FC = () => {
         fontFamily: 'system-ui, -apple-system, sans-serif',
       }}
     >
+      {/* Mirrors the prerendered head for /checkout/start (scripts/route-meta.mjs)
+          so SPA navigation gets the same title/robots as a direct page load. */}
+      <Helmet>
+        <title>Secure Checkout | AI Integration Course</title>
+        <meta
+          name="description"
+          content="Enter your email to continue to secure Stripe checkout for your selected AI Integration Course plan."
+        />
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <div style={{ width: '100%', maxWidth: '440px' }}>
         {/* Badge */}
         <div style={{ textAlign: 'center', marginBottom: '16px' }}>

@@ -63,9 +63,12 @@ const stripCanonical = (html) => html.replace(/[ \t]*<link rel="canonical"[^>]*>
 
 // Rewrites the shared head fields every prerendered page needs. og:type and
 // JSON-LD are page-kind specific, so callers handle those.
-function applyHeadMeta(html, { title, description, canonicalUrl, keywords, image }) {
-  const fullTitle = `${title} | ${SITE_NAME}`;
-  html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(fullTitle)}</title>`);
+// seoTitle (blogPosts.ts): compact <title> rendered verbatim (no suffix);
+// og/twitter keep the full headline. Mirrors src/components/SEO.tsx.
+function applyHeadMeta(html, { title, seoTitle, description, canonicalUrl, keywords, image }) {
+  const fullTitle = seoTitle ? title : `${title} | ${SITE_NAME}`;
+  const documentTitle = seoTitle || `${title} | ${SITE_NAME}`;
+  html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(documentTitle)}</title>`);
   html = replaceMetaContent(html, /<meta name="description"[^>]*>/, description);
   if (keywords) {
     html = replaceMetaContent(html, /<meta name="keywords"[^>]*>/, keywords.join(', '));
@@ -82,6 +85,10 @@ function applyHeadMeta(html, { title, description, canonicalUrl, keywords, image
   if (image) {
     html = replaceMetaContent(html, /<meta property="og:image"[^>]*>/, image);
     html = replaceMetaContent(html, /<meta name="twitter:image"[^>]*>/, image);
+    // Page-specific image → the headline is the best available description.
+    // Without an image override the template's hero-image alt stays put.
+    html = replaceMetaContent(html, /<meta property="og:image:alt"[^>]*>/, title);
+    html = replaceMetaContent(html, /<meta name="twitter:image:alt"[^>]*>/, title);
   }
   return html;
 }
@@ -253,6 +260,7 @@ function prerenderPost(template, post) {
 
   let html = applyHeadMeta(template, {
     title: post.title,
+    seoTitle: post.seoTitle,
     description: post.description,
     canonicalUrl: fullUrl,
     keywords: post.keywords,
@@ -262,10 +270,12 @@ function prerenderPost(template, post) {
   html = replaceMetaContent(html, /<meta property="og:type"[^>]*>/, 'article');
   html = stripJsonLd(html); // homepage Course schema — wrong entity for an article
 
+  // data-rh: SEO.tsx re-emits these on hydration; marking them lets
+  // react-helmet-async replace rather than duplicate them.
   const articleMeta = [
-    `    <meta property="article:published_time" content="${escapeHtml(post.publishedTime)}" />`,
-    `    <meta property="article:modified_time" content="${escapeHtml(post.modifiedTime || post.publishedTime)}" />`,
-    `    <meta property="article:author" content="${escapeHtml(post.author)}" />`,
+    `    <meta property="article:published_time" content="${escapeHtml(post.publishedTime)}" data-rh="true" />`,
+    `    <meta property="article:modified_time" content="${escapeHtml(post.modifiedTime || post.publishedTime)}" data-rh="true" />`,
+    `    <meta property="article:author" content="${escapeHtml(post.author)}" data-rh="true" />`,
     blogJsonLd(post, faqs),
   ].join('\n');
   html = html.replace('</head>', `${articleMeta}\n  </head>`);
@@ -395,8 +405,17 @@ function prerenderStaticRoute(template, route, posts, faqs) {
     canonicalUrl,
   });
   html = stripJsonLd(html); // homepage Course schema doesn't belong on subpages
+  if (route.omitCanonical) {
+    // noindex+nofollow utility routes (e.g. /checkout/start) carry no
+    // canonical at all — the robots directive is the whole story.
+    html = stripCanonical(html);
+  }
   const headExtras = [];
-  if (route.noindex) {
+  if (route.robots) {
+    // Explicit robots override (e.g. "noindex, nofollow" on checkout).
+    // data-rh lets react-helmet-async take ownership on hydration.
+    headExtras.push(`    <meta name="robots" content="${route.robots}" data-rh="true" />`);
+  } else if (route.noindex) {
     // Auth/utility pages: keep them crawlable (follow) so Bing sees the
     // directive, but out of the index. Must NOT be robots.txt-blocked.
     headExtras.push('    <meta name="robots" content="noindex, follow" />');
@@ -434,11 +453,18 @@ function main() {
   // 1. Clean SPA fallback for unmatched routes (the ** rewrite target).
   // Strip homepage canonical + JSON-LD so arbitrary routes don't claim
   // homepage identity; React sets correct meta after hydration.
+  // The shell serves only routes with no prerendered file — auth/app pages
+  // (/dashboard, /login flows, /welcome, labs, …) — so it defaults to
+  // noindex. data-rh lets SEO.tsx (react-helmet-async) replace the directive
+  // on hydration for any legitimate SPA page that renders its own robots meta.
   writeFileSync(
     path.join(BUILD_DIR, 'app-shell.html'),
-    stripCanonical(stripJsonLd(template))
+    stripCanonical(stripJsonLd(template)).replace(
+      '</head>',
+      '    <meta name="robots" content="noindex" data-rh="true" />\n  </head>'
+    )
   );
-  console.log('✅ app-shell.html written (SPA fallback)');
+  console.log('✅ app-shell.html written (SPA fallback, noindex by default)');
 
   // 2. Blog articles
   for (const post of posts) {

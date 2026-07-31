@@ -111,8 +111,31 @@ export const staticRoutes = [
       'How AI Integration Course collects, uses, and protects your data, including account information, analytics, and payment processing.',
   },
   {
+    path: '/terms',
+    title: 'Terms of Service',
+    description:
+      'The Terms of Service that govern your use of the AI Integration Course website, courses, tools, and related services, and how to contact us with questions.',
+    h1: 'Terms of Service',
+    blurb:
+      'These Terms of Service govern your use of AI Integration Course, including our website, courses, tools, and related services.',
+  },
+  {
+    // Pre-checkout lead capture. Prerendered so it stops inheriting the
+    // homepage title/meta from app-shell.html, but noindexed (nofollow —
+    // it's a dead-end utility page) and excluded from the sitemap.
+    path: '/checkout/start',
+    title: 'Secure Checkout',
+    description:
+      'Enter your email to continue to secure Stripe checkout for your selected AI Integration Course plan.',
+    h1: 'Start your checkout',
+    blurb:
+      'Enter your email to continue to secure Stripe checkout for your selected AI Integration Course plan. Payments are processed by Stripe.',
+    robots: 'noindex, nofollow',
+    omitCanonical: true,
+  },
+  {
     // Auth/utility pages: prerendered only to carry noindex so Bing drops
-    // them from the index; excluded from the sitemap (generate-sitemap.js).
+    // them from the index; excluded from the sitemap (generate-sitemap.mjs).
     path: '/login',
     title: 'Log In',
     description: 'Log in to your AI Integration Course account.',

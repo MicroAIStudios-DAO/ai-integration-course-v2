@@ -1,6 +1,13 @@
 export interface BlogPost {
   slug: string;
   title: string;
+  /**
+   * Search-length <title> tag (≤60 chars), rendered verbatim — no
+   * " | AI Integration Course" suffix. The full `title` stays as the
+   * on-page H1 and og:title. Falls back to `${title} | AI Integration
+   * Course` when absent, so keep this set on long headlines.
+   */
+  seoTitle?: string;
   eyebrow: string;
   description: string;
   summary: string;
@@ -19,9 +26,10 @@ export const blogPosts: BlogPost[] = [
   {
     slug: 'api-based-ai-automation-guide',
     title: 'API-Based AI Automation: A Builder\'s Guide to Connecting Models to Real Systems',
+    seoTitle: 'API-Based AI Automation: A Builder\'s Guide',
     eyebrow: 'Guide',
     description:
-      'API-based AI automation connects a hosted language model to your existing APIs and tools, enabling multi-step workflows that run unattended. This guide covers the trigger-model-tool-validate pattern, tool definition design, and the reliability decisions that separate a prototype from a production system.',
+      'API-based AI automation connects a hosted LLM to your existing APIs and tools. Learn the trigger-model-tool-validate loop and what makes it production-ready.',
     summary:
       'API-based AI automation is not a single API call — it is a loop: trigger, model call, tool execution, output validation, and repeat. This guide explains the core pattern, how to write tool definitions the model will use correctly, common workflow shapes, and the error-handling decisions that keep automation running in production.',
     keywords: [
@@ -44,9 +52,10 @@ export const blogPosts: BlogPost[] = [
   {
     slug: 'persistent-ai-memory-patterns',
     title: 'Persistent AI Memory Patterns: Giving Your Agents a Reliable Long-Term Memory',
+    seoTitle: 'Persistent AI Memory Patterns for Agents',
     eyebrow: 'Guide',
     description:
-      'LLMs forget everything between calls. Persistent AI memory is the engineering layer that fixes this — conversation buffers, semantic memory, entity stores, and episodic logs. Here is when to use each.',
+      'LLMs forget everything between calls. Persistent AI memory fixes this with conversation buffers, semantic memory, entity stores, and episodic logs.',
     summary:
       'Persistent AI memory is not a feature you toggle on — it is a set of storage and retrieval patterns you design. This guide covers the four main patterns (conversation buffer, semantic memory, entity store, episodic log), how to combine them, and the reliability mistakes that break memory in production.',
     keywords: [
@@ -69,9 +78,10 @@ export const blogPosts: BlogPost[] = [
   {
     slug: 'ai-agents-for-small-business',
     title: 'AI Agents for Small Business: A Practical Builder\'s Guide',
+    seoTitle: 'AI Agents for Small Business: Builder\'s Guide',
     eyebrow: 'Guide',
     description:
-      'AI agents for small business are not chatbots — they are autonomous loops that call tools, chain steps, and integrate with your existing systems. Here is how to build them reliably.',
+      'AI agents for small business are not chatbots — they are autonomous loops that call tools, chain steps, and plug into your systems. How to build them reliably.',
     summary:
       'The value of AI agents for small business comes from integration, not intelligence: connecting model reasoning to your APIs, databases, and workflows. This guide covers the agent loop, five real use cases, and the failure modes that kill demos in production.',
     keywords: [
@@ -93,6 +103,7 @@ export const blogPosts: BlogPost[] = [
   {
     slug: 'ai-workflow-error-handling-patterns',
     title: 'AI Workflow Error Handling Patterns: Retries, Fallbacks, and Resilience in Production',
+    seoTitle: 'AI Workflow Error Handling: Retries & Fallbacks',
     eyebrow: 'Guide',
     description:
       'AI workflows fail in ways traditional software does not. Learn the four patterns that keep production AI running: retries, validation, fallbacks, idempotency.',
@@ -117,6 +128,7 @@ export const blogPosts: BlogPost[] = [
   {
     slug: 'ai-integration-architecture-reliable-workflows',
     title: 'AI Integration Architecture: A Systems-Engineering Guide to Reliable AI Workflows',
+    seoTitle: 'AI Integration Architecture for Reliable Workflows',
     eyebrow: 'Guide',
     description:
       'Reliable AI workflows come from systems engineering, not prompt tricks. Learn the five-layer architecture that keeps AI agents working after the demo.',
@@ -140,6 +152,7 @@ export const blogPosts: BlogPost[] = [
   {
     slug: 'rag-implementation-guide-production',
     title: 'RAG Implementation Guide: Retrieval-Augmented Generation That Works in Production',
+    seoTitle: 'Production RAG Implementation Guide',
     eyebrow: 'Guide',
     description:
       'A practical guide to production RAG: chunking, embeddings, retrieval quality, grounded prompting, evals, and the failure modes that make RAG unreliable.',
@@ -164,6 +177,7 @@ export const blogPosts: BlogPost[] = [
   {
     slug: 'cursor-vs-claude-code-vs-gemini-2026',
     title: 'Cursor vs Claude Code vs Gemini: How to Actually Ship Real Work with AI in 2026',
+    seoTitle: 'Cursor vs Claude Code vs Gemini (2026)',
     eyebrow: 'Blog',
     description:
       'Stop guessing which AI coding tool is best. The practical 2026 breakdown of Cursor, Claude Code, and Gemini — and the stack developers use to ship real work.',
@@ -191,6 +205,7 @@ export const blogPosts: BlogPost[] = [
   {
     slug: 'workflow-complete-guide',
     title: 'Workflow: The Complete Guide to Designing, Managing, and Optimizing Your Business Processes',
+    seoTitle: 'Workflow Design & Optimization: Complete Guide',
     eyebrow: 'Blog',
     description:
       'A practical guide to workflow design, workflow management systems, process optimization, and the patterns teams use to reduce errors and boost throughput.',

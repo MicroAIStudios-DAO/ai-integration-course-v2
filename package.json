@@ -33,7 +33,7 @@
     "start": "vite",
     "dev": "vite",
     "build": "vite build",
-    "postbuild": "node scripts/strip-gated-content.mjs && node scripts/prerender-blogs.mjs && node scripts/generate-llms-guides.mjs",
+    "postbuild": "node scripts/strip-gated-content.mjs && node scripts/prerender-blogs.mjs && node scripts/generate-llms-guides.mjs && node scripts/generate-sitemap.mjs && node scripts/verify-seo.mjs",
     "build:production": "NODE_ENV=production npm run build",
     "test": "vitest run",
     "clean": "rm -rf build node_modules functions/node_modules functions/lib .firebase",
@@ -53,7 +53,7 @@
     "preview": "vite preview",
     "artifactregistry-login": "npx google-artifactregistry-auth --repo-config=./.npmrc --credential-config=./.npmrc",
     "setup": "bash setup.sh",
-    "generate-sitemap": "node scripts/generate-sitemap.js",
+    "generate-sitemap": "node scripts/generate-sitemap.mjs",
     "indexnow": "node scripts/indexnow-ping.mjs",
     "predeploy": "npm run build"
   },

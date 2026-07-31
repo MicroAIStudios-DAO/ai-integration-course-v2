@@ -403,6 +403,8 @@ export const __internals = { cosine, chunkText, estTokensFromChars, streamOpenAI
 // user, enabling CSRF attacks and quota/cost abuse of the OpenAI backend.
 const ALLOWED_ORIGINS = [
   'https://aiintegrationcourse.com',
+  // Transitional: www 301s to the apex at the hosting layer, but keep the
+  // origin allowed so in-flight www sessions don't break mid-migration.
   'https://www.aiintegrationcourse.com',
   // Local development origins
   'http://localhost:3000',

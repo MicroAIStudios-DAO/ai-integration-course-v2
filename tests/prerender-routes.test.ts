@@ -31,12 +31,16 @@ const INDEXABLE_ROUTES = [
   '/roadmap',
   '/start-trial',
   '/privacy',
+  '/terms',
   '/courses',
   '/blogs/workflow-complete-guide',
   '/blogs/ai-integration-architecture-reliable-workflows',
   '/blogs/rag-implementation-guide-production',
   '/blogs/cursor-vs-claude-code-vs-gemini-2026',
   '/blogs/ai-workflow-error-handling-patterns',
+  '/blogs/ai-agents-for-small-business',
+  '/blogs/persistent-ai-memory-patterns',
+  '/blogs/api-based-ai-automation-guide',
 ];
 
 const NOINDEX_ROUTES = ['/login', '/signup'];
@@ -71,24 +75,36 @@ describe.skipIf(!hasBuild)('prerendered routes (build/)', () => {
       '<title>Advanced AI Integration & Systems Engineering | AI Integration Course</title>'
     );
 
-    // Bing SEO limits (blog articles excluded — their titles are content-led).
-    // Lengths measured on decoded text, as search engines render them.
-    // 65 (not 60) leaves headroom for the brand suffix on detail pages while
-    // still catching double-branded titles like the 77-char /about regression.
-    if (!route.startsWith('/blogs/')) {
-      const decode = (s: string) =>
-        s.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-      const title = decode(html.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? '');
-      expect(
-        title.length,
-        `${route}: title "${title}" is ${title.length} chars (max 65)`
-      ).toBeLessThanOrEqual(65);
-      const desc = decode(html.match(/<meta name="description" content="([^"]*)"/)?.[1] ?? '');
-      expect(
-        desc.length,
-        `${route}: meta description is ${desc.length} chars (max 160)`
-      ).toBeLessThanOrEqual(160);
-    }
+    // Social-card contract: exactly one description, absolute social images,
+    // twitter:site + twitter:image:alt present sitewide (Ahrefs issue #15).
+    const descCount = (html.match(/<meta name="description"/g) ?? []).length;
+    expect(descCount, `${route}: has ${descCount} meta descriptions (must be exactly 1)`).toBe(1);
+    expect(html, `${route}: og:image must be an absolute URL`).toMatch(
+      /<meta property="og:image" content="https:\/\//
+    );
+    expect(html, `${route}: twitter:image must be an absolute URL`).toMatch(
+      /<meta name="twitter:image" content="https:\/\//
+    );
+    expect(html, `${route}: twitter:site missing`).toContain('name="twitter:site"');
+    expect(html, `${route}: twitter:image:alt missing`).toContain('name="twitter:image:alt"');
+
+    // Bing/Google display limits, measured on decoded text. Blog posts are
+    // included: long headlines must set seoTitle in blogPosts.ts (rendered
+    // verbatim, no brand suffix). 65 (not 60) leaves headroom for the brand
+    // suffix on detail pages while still catching double-branded titles
+    // like the 77-char /about regression.
+    const decode = (s: string) =>
+      s.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+    const title = decode(html.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? '');
+    expect(
+      title.length,
+      `${route}: title "${title}" is ${title.length} chars (max 65)`
+    ).toBeLessThanOrEqual(65);
+    const desc = decode(html.match(/<meta name="description" content="([^"]*)"/)?.[1] ?? '');
+    expect(
+      desc.length,
+      `${route}: meta description is ${desc.length} chars (max 160)`
+    ).toBeLessThanOrEqual(160);
   });
 
   it('homepage keeps its own canonical and gains an H1', () => {
@@ -104,9 +120,24 @@ describe.skipIf(!hasBuild)('prerendered routes (build/)', () => {
     expect(html).toContain('<meta name="robots" content="noindex, follow"');
   });
 
-  it('app-shell.html has no canonical and no JSON-LD', () => {
+  it('/checkout/start carries noindex,nofollow, its own title, and no canonical', () => {
+    const file = routeFile('/checkout/start');
+    expect(existsSync(file), `${file} missing — prerender did not cover /checkout/start`).toBe(
+      true
+    );
+    const html = readFileSync(file, 'utf8');
+    expect(html).toContain('<meta name="robots" content="noindex, nofollow"');
+    expect(html).not.toContain('rel="canonical"');
+    expect(html).toContain('<title>Secure Checkout | AI Integration Course</title>');
+    expect(html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1]?.trim()).toBeTruthy();
+  });
+
+  it('app-shell.html has no canonical, no JSON-LD, and defaults to noindex', () => {
     const html = readFileSync(path.join(BUILD_DIR, 'app-shell.html'), 'utf8');
     expect(html).not.toContain('rel="canonical"');
     expect(html).not.toContain('application/ld+json');
+    // Auth/app shell routes must not be indexed; SEO.tsx overrides on
+    // hydration for legitimate SPA pages (the tag carries data-rh).
+    expect(html).toContain('<meta name="robots" content="noindex"');
   });
 });

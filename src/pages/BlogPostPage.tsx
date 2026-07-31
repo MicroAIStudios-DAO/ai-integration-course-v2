@@ -162,6 +162,7 @@ const BlogPostPage: React.FC = () => {
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <SEO
         title={post.title}
+        seoTitle={post.seoTitle}
         description={post.description}
         image={post.heroImage}
         url={`/blogs/${post.slug}`}
