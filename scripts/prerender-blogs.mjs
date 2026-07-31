@@ -30,9 +30,11 @@ import {
   extractFAQs,
   loadBlogPosts,
   loadMarketingPages,
+  loadPricingPlans,
   readPostMarkdown,
 } from './blog-data.mjs';
 import { homepage, staticRoutes } from './route-meta.mjs';
+import { pageBodies, pricingCopy } from './page-copy.mjs';
 
 const BUILD_DIR = path.join(REPO_ROOT, 'build');
 const TEMPLATE_PATH = path.join(BUILD_DIR, 'index.html');
@@ -146,6 +148,29 @@ const breadcrumbSchema = (items) => ({
     item: item.url,
   })),
 });
+
+// Renders the block arrays from scripts/page-copy.mjs into minimal semantic
+// HTML — crawlers read it; React replaces it on hydration.
+function renderBlocks(blocks) {
+  const parts = [];
+  for (const block of blocks) {
+    if (block.h2) parts.push(`<h2>${escapeHtml(block.h2)}</h2>`);
+    else if (block.h3) parts.push(`<h3>${escapeHtml(block.h3)}</h3>`);
+    else if (block.p) parts.push(`<p>${escapeHtml(block.p)}</p>`);
+    else if (block.ul)
+      parts.push('<ul>', ...block.ul.map((item) => `<li>${escapeHtml(item)}</li>`), '</ul>');
+    else if (block.links)
+      parts.push(
+        `<p>${block.links
+          .map(([text, href]) => `<a href="${href}">${escapeHtml(text)}</a>`)
+          .join(' &bull; ')}</p>`
+      );
+  }
+  return parts;
+}
+
+const tldrBlock = (text) =>
+  `<p><strong>TL;DR for AI search engines:</strong> ${escapeHtml(text)}</p>`;
 
 const jsonLdTags = (schemas) =>
   schemas
@@ -287,6 +312,9 @@ function detailPageBody(basePath, crumbName, item) {
     `<h1>${escapeHtml(item.title)}</h1>`,
     `<p>${escapeHtml(item.description)}</p>`,
     `<p>Audience: ${escapeHtml(item.audience)}</p>`,
+    // Mirrors the visible TL;DR block on the detail pages (existing
+    // description + audience re-rendered — no new copy).
+    tldrBlock(`${item.description} Best for: ${item.audience}`),
   ];
   if (Array.isArray(item.workflows) && item.workflows.length > 0) {
     parts.push('<h2>Recommended first workflows</h2>', '<ul>');
@@ -355,26 +383,87 @@ function prerenderDetailPage(template, { basePath, crumbName, item }) {
 
 // ─── Static marketing routes ─────────────────────────────────────────────────
 
-function staticRouteBody(route, posts, faqs) {
+// Plan cards for the prerendered /pricing body — rendered straight from
+// src/config/pricing.ts so the crawler-visible tiers can never drift from
+// the tiers the React page displays.
+function pricingPlanParts({ plans, planKeys }) {
+  const parts = [];
+  for (const key of planKeys) {
+    const plan = plans[key];
+    if (!plan) continue;
+    parts.push(`<h3>${escapeHtml(plan.name)}</h3>`);
+    parts.push(`<p>$${plan.displayPrice}${escapeHtml(plan.intervalLabel)}</p>`);
+    if (plan.tagline) parts.push(`<p>${escapeHtml(plan.tagline)}</p>`);
+    const note = pricingCopy.planNotes[key];
+    if (note) parts.push(`<p>${escapeHtml(note)}</p>`);
+    const included = (plan.features ?? []).filter((f) => f.included);
+    if (included.length > 0) {
+      parts.push('<ul>', ...included.map((f) => `<li>${escapeHtml(f.text)}</li>`), '</ul>');
+    }
+  }
+  return parts;
+}
+
+function staticRouteBody(route, ctx) {
   const parts = [
     `<nav aria-label="Breadcrumb"><a href="/">Home</a> / ${escapeHtml(route.h1)}</nav>`,
     '<main>',
     `<h1>${escapeHtml(route.h1)}</h1>`,
     `<p>${escapeHtml(route.blurb)}</p>`,
   ];
+  // Full mirrored page copy (scripts/page-copy.mjs) for the marketing pages
+  // that used to ship as ~250-char shells.
+  if (pageBodies[route.path]) {
+    parts.push(...renderBlocks(pageBodies[route.path]));
+  }
+  if (route.path === '/pricing') {
+    parts.push(...renderBlocks(pricingCopy.hero));
+    parts.push(...pricingPlanParts(ctx.pricing));
+    parts.push(...renderBlocks(pricingCopy.afterPlans));
+    parts.push(tldrBlock(ctx.pricingTldr));
+    parts.push('<h2>Frequently Asked Questions</h2>');
+    for (const faq of ctx.pricingFaqItems) {
+      parts.push(`<h3>${escapeHtml(faq.question)}</h3>`, `<p>${escapeHtml(faq.answer)}</p>`);
+    }
+    parts.push(...renderBlocks(pricingCopy.objections));
+  }
   if (route.listBlogPosts) {
     parts.push('<ul>');
-    for (const post of posts) {
+    for (const post of ctx.posts) {
       parts.push(
         `<li><a href="/blogs/${post.slug}">${escapeHtml(post.title)}</a> — ${escapeHtml(post.description)}</li>`
       );
     }
     parts.push('</ul>');
   }
-  if (route.includeFaqs && faqs.length > 0) {
+  // Index pages list their child pages (copy from marketingPages.ts), so the
+  // leaves are discoverable from raw HTML instead of being crawl orphans.
+  if (route.path === '/library') {
+    for (const item of ctx.resourceLibraryItems) {
+      parts.push(
+        `<h2><a href="/library/${item.slug}">${escapeHtml(item.title)}</a></h2>`,
+        `<p>${escapeHtml(item.summary ?? item.description)}</p>`,
+        `<p>Best for: ${escapeHtml(item.audience)}</p>`
+      );
+    }
+  }
+  if (route.path === '/solutions') {
+    for (const item of ctx.industryPages) {
+      parts.push(
+        `<h2><a href="/solutions/${item.slug}">${escapeHtml(item.title)}</a></h2>`,
+        `<p>${escapeHtml(item.summary ?? item.description)}</p>`
+      );
+      const workflows = (item.workflows ?? []).slice(0, 3);
+      if (workflows.length > 0) {
+        parts.push('<ul>', ...workflows.map((w) => `<li>${escapeHtml(w)}</li>`), '</ul>');
+      }
+    }
+  }
+  if (route.includeFaqs && ctx.homepageFaqItems.length > 0) {
     // Same Q&A FAQPage.tsx renders, so the FAQPage JSON-LD matches visible
-    // content in the raw HTML too.
-    for (const faq of faqs) {
+    // content in the raw HTML too. TL;DR mirrors the visible block.
+    parts.push(tldrBlock(ctx.faqTldr));
+    for (const faq of ctx.homepageFaqItems) {
       parts.push(`<h2>${escapeHtml(faq.question)}</h2>`, `<p>${escapeHtml(faq.answer)}</p>`);
     }
   }
@@ -385,7 +474,7 @@ function staticRouteBody(route, posts, faqs) {
   return parts.join('\n');
 }
 
-function prerenderStaticRoute(template, route, posts, faqs) {
+function prerenderStaticRoute(template, route, ctx) {
   const canonicalUrl = `${BASE_URL}${route.path}`;
   let html = applyHeadMeta(template, {
     title: route.title,
@@ -415,15 +504,48 @@ function prerenderStaticRoute(template, route, posts, faqs) {
         { name: route.h1, url: canonicalUrl },
       ]),
     ];
-    if (route.includeFaqs && faqs.length > 0) {
-      schemas.push(faqPageSchema(faqs));
+    if (route.includeFaqs && ctx.homepageFaqItems.length > 0) {
+      schemas.push(faqPageSchema(ctx.homepageFaqItems));
+    }
+    if (route.path === '/pricing') {
+      // Product + one Offer per real tier (src/config/pricing.ts), plus
+      // FAQPage for the page's visible Q&A. NO review/aggregateRating —
+      // no real reviews exist and none may be fabricated.
+      schemas.push(pricingProductSchema(ctx.pricing, route.description));
+      schemas.push(faqPageSchema(ctx.pricingFaqItems));
     }
     headExtras.push(jsonLdTags(schemas));
   }
   html = html.replace('</head>', `${headExtras.join('\n')}\n  </head>`);
-  html = injectRoot(html, staticRouteBody(route, posts, faqs), route.path);
+  html = injectRoot(html, staticRouteBody(route, ctx), route.path);
   writeRoute(route.path, html);
   return { bytes: html.length };
+}
+
+// Offers reflect src/config/pricing.ts exactly; priceValidUntil matches the
+// hand-written homepage Course schema (index.html).
+function pricingProductSchema({ plans, planKeys }, description) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: 'AI Integration Course',
+    description,
+    brand: { '@type': 'Brand', name: SITE_NAME },
+    url: `${BASE_URL}/pricing`,
+    offers: planKeys
+      .map((key) => plans[key])
+      .filter(Boolean)
+      .map((plan) => ({
+        '@type': 'Offer',
+        name: plan.name,
+        price: Number(plan.displayPrice).toFixed(2),
+        priceCurrency: 'USD',
+        priceValidUntil: '2026-12-31',
+        availability: 'https://schema.org/InStock',
+        url: `${BASE_URL}/pricing`,
+        ...(plan.tagline && { description: plan.tagline }),
+      })),
+  };
 }
 
 // ─── Main ────────────────────────────────────────────────────────────────────
@@ -435,7 +557,24 @@ function main() {
   }
   const template = readFileSync(TEMPLATE_PATH, 'utf8');
   const posts = loadBlogPosts();
-  const { resourceLibraryItems, industryPages, homepageFaqItems } = loadMarketingPages();
+  const {
+    resourceLibraryItems,
+    industryPages,
+    homepageFaqItems,
+    pricingFaqItems,
+    pricingTldr,
+    faqTldr,
+  } = loadMarketingPages();
+  const ctx = {
+    posts,
+    resourceLibraryItems,
+    industryPages,
+    homepageFaqItems,
+    pricingFaqItems,
+    pricingTldr,
+    faqTldr,
+    pricing: loadPricingPlans(),
+  };
   let failures = 0;
 
   // 1. Clean SPA fallback for unmatched routes (the ** rewrite target).
@@ -470,7 +609,7 @@ function main() {
   // 3. Static marketing routes
   for (const route of staticRoutes) {
     try {
-      prerenderStaticRoute(template, route, posts, homepageFaqItems);
+      prerenderStaticRoute(template, route, ctx);
       console.log(`✅ prerendered ${route.path}`);
     } catch (err) {
       failures += 1;
@@ -503,13 +642,15 @@ function main() {
   }
 
   // 5. Homepage: keep its hand-written meta + Course JSON-LD, add
-  // Organization JSON-LD and a crawler-visible h1 + intro. Must
+  // Organization JSON-LD and the full crawler-visible landing copy
+  // (scripts/page-copy.mjs mirrors NewLandingPage.tsx). Must
   // happen last — earlier steps read the pristine template.
   try {
     const homepageBody = [
       '<main>',
       `<h1>${escapeHtml(homepage.h1)}</h1>`,
       `<p>${escapeHtml(homepage.blurb)}</p>`,
+      ...renderBlocks(pageBodies['/']),
       `<p><a href="/pricing">Start the $1 Pro trial</a> &bull; <a href="/courses">Course overview</a> &bull; <a href="/blogs">Blog</a> &bull; <a href="/faq">FAQ</a></p>`,
       '</main>',
     ].join('\n');

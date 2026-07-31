@@ -61,18 +61,20 @@ export const staticRoutes = [
     title: 'AI Integration Library',
     description:
       'Permanent guides for AI operators and developers: RAG for small business, function calling with Gemini, and model comparison for automation teams.',
-    h1: 'AI Integration Library',
+    // h1/blurb mirror ResourceLibraryPage.tsx so raw and hydrated HTML agree.
+    h1: 'Long-tail guides for business owners and developers building with AI',
     blurb:
-      'Permanent reference guides: RAG for small business, function calling with Gemini, and model comparison workflows for automation teams.',
+      'This library is built for the two audiences that matter most to AI integration: the operator looking for a practical business outcome and the developer looking for a stable implementation path.',
   },
   {
     path: '/solutions',
     title: 'AI Integration by Industry',
     description:
       'Industry-specific AI integration for real estate, e-commerce, and law firms — where automation creates leverage without breaking quality controls.',
-    h1: 'AI Integration by Industry',
+    // h1/blurb mirror IndustrySolutionsPage.tsx so raw and hydrated HTML agree.
+    h1: 'AI integration patterns for real businesses',
     blurb:
-      'Where AI automation creates operational leverage in real estate, e-commerce, and law firms — without breaking review and quality controls.',
+      'These pages are built for high-intent searchers who already know the business context. Each page maps common workflow pain, the safest first automation pilot, and the rollout logic the course teaches.',
   },
   {
     path: '/ai-workshops-san-diego',

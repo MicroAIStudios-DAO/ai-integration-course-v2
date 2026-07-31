@@ -18,7 +18,9 @@ const NewLandingPage: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans relative overflow-hidden selection:bg-amber-500 selection:text-slate-950">
       <SEO
         title="Advanced AI Integration & Systems Engineering"
-        description="A project-backed academy for developers, operators, and founders — real technical depth with an accessible on-ramp. Master API-first AI systems engineering, bypass brittle prompting, and earn certified credentials."
+        // Mirrors index.html's static description (search-length, ≤160 chars)
+        // so raw HTML and the hydrated DOM agree.
+        description="Practical AI automation training for business owners and developers. Learn Gemini API integration, AI workflow automation, and real deployment patterns."
         url="/"
         keywords={[
           "AI integration academy",
