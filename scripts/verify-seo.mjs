@@ -12,6 +12,12 @@
 //      indexable prerendered route appears in the sitemap. The committed
 //      sitemap once drifted 3 blog posts behind the published content.
 //
+//   3. Prerendered-content floors: each indexable route's built HTML must
+//      contain at least a per-route minimum of visible body text. The money
+//      pages once shipped as ~250-char shells that AI crawlers (which do not
+//      execute JS) saw as empty — the single biggest cause of 0 keywords and
+//      0 AI citations in the Jul 2026 Ahrefs audit.
+//
 // Scans every prerendered HTML file in build/ plus the blog markdown sources
 // in public/blogs/ (the markdown is also served raw to AI crawlers).
 
@@ -145,3 +151,64 @@ if (sitemapErrors.length > 0) {
 console.log(
   `✅ verify-seo: sitemap contract holds (${sitemapLocs.length} URLs, all prerendered, self-canonical, indexable)`
 );
+
+// ─── 3. Prerendered-content floors (visible chars inside #root) ──────────────
+
+// Floors sit safely below current values so copy edits don't trip them, but
+// far above the old ~250-char shells so a pipeline regression fails loudly.
+const TEXT_FLOORS = [
+  ['/', 2500],
+  ['/pricing', 2000],
+  ['/about', 1500],
+  ['/faq', 1000],
+  ['/blogs', 1200],
+  ['/library', 1000],
+  ['/solutions', 1000],
+  ['/ai-workshops-san-diego', 900],
+  ['/roadmap', 500],
+  // TODO(Phase 4): raise to 2000 once the curriculum has a build-time source
+  // of truth. /courses content is live Firestore that has drifted from the
+  // repo seed data — prerendering a snapshot now would ship wrong content.
+  ['/courses', 250],
+];
+const PATTERN_FLOORS = [
+  [/^\/blogs\/./, 2000],
+  [/^\/(library|solutions)\/./, 1200],
+];
+const DEFAULT_FLOOR = 150;
+
+function floorFor(route) {
+  const exact = TEXT_FLOORS.find(([r]) => r === route);
+  if (exact) return exact[1];
+  const pattern = PATTERN_FLOORS.find(([re]) => re.test(route));
+  return pattern ? pattern[1] : DEFAULT_FLOOR;
+}
+
+function visibleTextLength(html) {
+  const m = html.match(/<div id="root">([\s\S]*?)<\/div>\s*(?:<script|<\/body)/);
+  const body = m ? m[1] : '';
+  return body
+    .replace(/<script[\s\S]*?<\/script>/g, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim().length;
+}
+
+const floorErrors = [];
+for (const loc of sitemapLocs) {
+  const route = loc.slice(BASE_URL.length) || '/';
+  const file = routeToFile(route);
+  if (!existsSync(file)) continue; // already reported by the sitemap contract
+  const len = visibleTextLength(readFileSync(file, 'utf8'));
+  const floor = floorFor(route);
+  if (len < floor) {
+    floorErrors.push(`${route}: ${len} visible chars in built HTML (floor ${floor})`);
+  }
+}
+
+if (floorErrors.length > 0) {
+  console.error(`❌ verify-seo: ${floorErrors.length} route(s) below prerendered-content floor:`);
+  for (const e of floorErrors) console.error(`   ${e}`);
+  process.exit(1);
+}
+console.log(`✅ verify-seo: prerendered-content floors hold for all ${sitemapLocs.length} routes`);
