@@ -14,6 +14,15 @@ on:
       - '.github/workflows/deploy-hosting.yml'
   workflow_dispatch: # Allow manual trigger from GitHub UI
 
+# Shares the production-deploy group with deploy-production.yml: both
+# workflows deploy hosting on push to main, and running them concurrently
+# is a race where the last writer wins. Serializing them means whichever
+# runs second deploys last — and with identical env mapping (below), both
+# produce a working bundle either way.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
 env:
   FIREBASE_PROJECT: ai-integra-course-v2
 
@@ -37,18 +46,35 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Guard against the empty-secret failure mode: a bundle built without
+      # Firebase config deploys "successfully" but never hydrates in browsers.
+      - name: Fail fast if Firebase client config is missing
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.REACT_APP_FIREBASE_API_KEY }}
+        run: |
+          if [ -z "$VITE_FIREBASE_API_KEY" ]; then
+            echo "::error::REACT_APP_FIREBASE_API_KEY secret is empty/missing — refusing to build a bundle that cannot hydrate."
+            exit 1
+          fi
+
       - name: Build production bundle
         run: npm run build
         env:
-          # Vite env vars for production build
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          # Vite env vars for the production build.
+          # CRITICAL: the repo's GitHub secrets are named REACT_APP_* (CRA-era
+          # names, same values) — referencing secrets.VITE_* resolves to EMPTY
+          # strings, the bundle ships without Firebase config, the runtime env
+          # validator throws, and React never hydrates (prod outage of
+          # 31 Jul 2026). Mapping mirrors deploy-production.yml exactly.
+          VITE_FIREBASE_API_KEY: ${{ secrets.REACT_APP_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.REACT_APP_FIREBASE_AUTH_DOMAIN }}
           VITE_FIREBASE_PROJECT_ID: ai-integra-course-v2
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
-          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
-          VITE_RECAPTCHA_SITE_KEY: ${{ secrets.VITE_RECAPTCHA_SITE_KEY }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.REACT_APP_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.REACT_APP_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.REACT_APP_FIREBASE_APP_ID }}
+          VITE_FIREBASE_MEASUREMENT_ID: ${{ secrets.REACT_APP_FIREBASE_MEASUREMENT_ID }}
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.REACT_APP_STRIPE_PUBLISHABLE_KEY }}
+          VITE_RECAPTCHA_SITE_KEY: ${{ secrets.REACT_APP_RECAPTCHA_ENTERPRISE_KEY }}
 
       - name: Authenticate to Google Cloud
         id: auth
