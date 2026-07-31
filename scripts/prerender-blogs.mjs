@@ -107,21 +107,10 @@ function writeRoute(routePath, html) {
   writeFileSync(path.join(outDir, 'index.html'), html);
 }
 
-const websiteSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'WebSite',
-  name: SITE_NAME,
-  url: BASE_URL,
-  publisher: {
-    '@type': 'Organization',
-    name: SITE_NAME,
-    logo: { '@type': 'ImageObject', url: `${BASE_URL}/logo192.png` },
-  },
-  sameAs: [
-    'https://twitter.com/aiintegrationco',
-    'https://www.linkedin.com/company/ai-integration-course',
-  ],
-};
+// NOTE: no websiteSchema here on purpose. SEO.tsx (react-helmet-async) emits
+// the WebSite block on every page that renders <SEO>; when the prerenderer
+// also injected one, JS-rendering crawlers saw TWO WebSite blocks per page
+// (Ahrefs audit finding). The runtime copy is the single source now.
 
 // Mirrors the WebSite publisher block in src/components/SEO.tsx; used on the
 // homepage alongside the hand-written Course schema in index.html.
@@ -173,7 +162,7 @@ function blogJsonLd(post, faqs) {
     ? post.heroImage
     : `${BASE_URL}${post.heroImage}`;
 
-  const schemas = [websiteSchema];
+  const schemas = [];
 
   schemas.push({
     '@context': 'https://schema.org',
@@ -337,7 +326,6 @@ function prerenderDetailPage(template, { basePath, crumbName, item }) {
   // Client SEO.tsx renders these routes with type="article" (BlogPosting);
   // mirror the same core fields so raw HTML and hydrated DOM agree.
   const schemas = jsonLdTags([
-    websiteSchema,
     {
       '@context': 'https://schema.org',
       '@type': 'BlogPosting',
@@ -401,6 +389,7 @@ function prerenderStaticRoute(template, route, posts, faqs) {
   const canonicalUrl = `${BASE_URL}${route.path}`;
   let html = applyHeadMeta(template, {
     title: route.title,
+    seoTitle: route.seoTitle,
     description: route.description,
     canonicalUrl,
   });
@@ -421,7 +410,6 @@ function prerenderStaticRoute(template, route, posts, faqs) {
     headExtras.push('    <meta name="robots" content="noindex, follow" />');
   } else {
     const schemas = [
-      websiteSchema,
       breadcrumbSchema([
         { name: 'Home', url: `${BASE_URL}/` },
         { name: route.h1, url: canonicalUrl },
@@ -515,7 +503,7 @@ function main() {
   }
 
   // 5. Homepage: keep its hand-written meta + Course JSON-LD, add
-  // Organization + WebSite JSON-LD and a crawler-visible h1 + intro. Must
+  // Organization JSON-LD and a crawler-visible h1 + intro. Must
   // happen last — earlier steps read the pristine template.
   try {
     const homepageBody = [
@@ -527,11 +515,11 @@ function main() {
     ].join('\n');
     let homepageHtml = template.replace(
       '</head>',
-      `${jsonLdTags([organizationSchema, websiteSchema])}\n  </head>`
+      `${jsonLdTags([organizationSchema])}\n  </head>`
     );
     homepageHtml = injectRoot(homepageHtml, homepageBody, '/');
     writeFileSync(TEMPLATE_PATH, homepageHtml);
-    console.log('✅ prerendered / (homepage h1 + Organization/WebSite schema)');
+    console.log('✅ prerendered / (homepage body + Organization schema)');
   } catch (err) {
     failures += 1;
     console.error(`❌ failed to prerender homepage: ${err.message}`);

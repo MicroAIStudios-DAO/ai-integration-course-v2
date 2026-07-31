@@ -152,11 +152,15 @@ export const staticRoutes = [
     noindex: true,
   },
   {
+    // Title/H1 mirror the live Firestore course title ("AI Integration
+    // Course") so raw HTML and the hydrated page agree; seoTitle avoids the
+    // degenerate "AI Integration Course | AI Integration Course" tag.
     path: '/courses',
-    title: 'AI Integration & Automation Mastery',
+    title: 'AI Integration Course',
+    seoTitle: 'AI Integration Course: Build-First AI Curriculum',
     description:
       'The build-first AI curriculum: prompt engineering, API orchestration, production RAG, multi-agent systems, and low-code automation with n8n and Zapier.',
-    h1: 'AI Integration & Automation Mastery',
+    h1: 'AI Integration Course',
     blurb:
       'The build-first curriculum: prompt engineering and API orchestration, retrieval-augmented generation, multi-agent architectures, low-code automation with n8n/Make/Zapier, and AI business strategy.',
   },
