@@ -9,6 +9,13 @@ interface FAQItem {
 
 interface SEOProps {
   title?: string;
+  /**
+   * Search-length <title> override (≤60 chars), rendered verbatim with no
+   * site suffix. `title` remains the H1/og:title. Without it, the tag is
+   * `${title} | AI Integration Course`, which overruns Google's ~60-char
+   * display limit on long headlines.
+   */
+  seoTitle?: string;
   description?: string;
   image?: string;
   url?: string;
@@ -39,6 +46,7 @@ const DEFAULT_DESCRIPTION =
 
 export const SEO: React.FC<SEOProps> = ({
   title,
+  seoTitle,
   description = DEFAULT_DESCRIPTION,
   image = DEFAULT_IMAGE,
   url,
@@ -60,6 +68,9 @@ export const SEO: React.FC<SEOProps> = ({
   course,
 }) => {
   const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} | Practical AI Automation Training`;
+  // <title> uses the compact seoTitle; og/twitter keep the full headline.
+  const documentTitle = seoTitle || fullTitle;
+  const socialTitle = seoTitle && title ? title : fullTitle;
   const fullUrl = url ? `${BASE_URL}${url}` : BASE_URL;
   const fullImage = image.startsWith('http') ? image : `${BASE_URL}${image}`;
 
@@ -201,7 +212,7 @@ export const SEO: React.FC<SEOProps> = ({
   return (
     <Helmet>
       {/* ── Basic Meta ──────────────────────────────────────────────────── */}
-      <title>{fullTitle}</title>
+      <title>{documentTitle}</title>
       <meta name="description" content={description} />
       <meta name="keywords" content={keywords.join(', ')} />
       <meta name="author" content={author} />
@@ -232,7 +243,7 @@ export const SEO: React.FC<SEOProps> = ({
       {/* ── Open Graph ──────────────────────────────────────────────────── */}
       <meta property="og:type" content={type === 'course' ? 'website' : type} />
       <meta property="og:url" content={fullUrl} />
-      <meta property="og:title" content={fullTitle} />
+      <meta property="og:title" content={socialTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={fullImage} />
       <meta property="og:image:width" content="1200" />
@@ -243,7 +254,7 @@ export const SEO: React.FC<SEOProps> = ({
       {/* ── Twitter / X Card ────────────────────────────────────────────── */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:url" content={fullUrl} />
-      <meta name="twitter:title" content={fullTitle} />
+      <meta name="twitter:title" content={socialTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={fullImage} />
       <meta name="twitter:creator" content="@aiintegrationco" />

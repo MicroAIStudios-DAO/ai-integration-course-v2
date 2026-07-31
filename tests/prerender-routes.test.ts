@@ -38,6 +38,9 @@ const INDEXABLE_ROUTES = [
   '/blogs/rag-implementation-guide-production',
   '/blogs/cursor-vs-claude-code-vs-gemini-2026',
   '/blogs/ai-workflow-error-handling-patterns',
+  '/blogs/ai-agents-for-small-business',
+  '/blogs/persistent-ai-memory-patterns',
+  '/blogs/api-based-ai-automation-guide',
 ];
 
 const NOINDEX_ROUTES = ['/login', '/signup'];
@@ -72,24 +75,23 @@ describe.skipIf(!hasBuild)('prerendered routes (build/)', () => {
       '<title>Advanced AI Integration & Systems Engineering | AI Integration Course</title>'
     );
 
-    // Bing SEO limits (blog articles excluded — their titles are content-led).
-    // Lengths measured on decoded text, as search engines render them.
-    // 65 (not 60) leaves headroom for the brand suffix on detail pages while
-    // still catching double-branded titles like the 77-char /about regression.
-    if (!route.startsWith('/blogs/')) {
-      const decode = (s: string) =>
-        s.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-      const title = decode(html.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? '');
-      expect(
-        title.length,
-        `${route}: title "${title}" is ${title.length} chars (max 65)`
-      ).toBeLessThanOrEqual(65);
-      const desc = decode(html.match(/<meta name="description" content="([^"]*)"/)?.[1] ?? '');
-      expect(
-        desc.length,
-        `${route}: meta description is ${desc.length} chars (max 160)`
-      ).toBeLessThanOrEqual(160);
-    }
+    // Bing/Google display limits, measured on decoded text. Blog posts are
+    // included: long headlines must set seoTitle in blogPosts.ts (rendered
+    // verbatim, no brand suffix). 65 (not 60) leaves headroom for the brand
+    // suffix on detail pages while still catching double-branded titles
+    // like the 77-char /about regression.
+    const decode = (s: string) =>
+      s.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+    const title = decode(html.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? '');
+    expect(
+      title.length,
+      `${route}: title "${title}" is ${title.length} chars (max 65)`
+    ).toBeLessThanOrEqual(65);
+    const desc = decode(html.match(/<meta name="description" content="([^"]*)"/)?.[1] ?? '');
+    expect(
+      desc.length,
+      `${route}: meta description is ${desc.length} chars (max 160)`
+    ).toBeLessThanOrEqual(160);
   });
 
   it('homepage keeps its own canonical and gains an H1', () => {

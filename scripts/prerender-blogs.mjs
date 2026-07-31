@@ -63,9 +63,12 @@ const stripCanonical = (html) => html.replace(/[ \t]*<link rel="canonical"[^>]*>
 
 // Rewrites the shared head fields every prerendered page needs. og:type and
 // JSON-LD are page-kind specific, so callers handle those.
-function applyHeadMeta(html, { title, description, canonicalUrl, keywords, image }) {
-  const fullTitle = `${title} | ${SITE_NAME}`;
-  html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(fullTitle)}</title>`);
+// seoTitle (blogPosts.ts): compact <title> rendered verbatim (no suffix);
+// og/twitter keep the full headline. Mirrors src/components/SEO.tsx.
+function applyHeadMeta(html, { title, seoTitle, description, canonicalUrl, keywords, image }) {
+  const fullTitle = seoTitle ? title : `${title} | ${SITE_NAME}`;
+  const documentTitle = seoTitle || `${title} | ${SITE_NAME}`;
+  html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(documentTitle)}</title>`);
   html = replaceMetaContent(html, /<meta name="description"[^>]*>/, description);
   if (keywords) {
     html = replaceMetaContent(html, /<meta name="keywords"[^>]*>/, keywords.join(', '));
@@ -253,6 +256,7 @@ function prerenderPost(template, post) {
 
   let html = applyHeadMeta(template, {
     title: post.title,
+    seoTitle: post.seoTitle,
     description: post.description,
     canonicalUrl: fullUrl,
     keywords: post.keywords,
