@@ -7,6 +7,17 @@
 //      unreplaced content-generation placeholders were once the ONLY external
 //      links on the entire site.
 //
+//   2. Sitemap ↔ build contract: every sitemap URL is canonical-host, has a
+//      prerendered file, is self-canonical, and is not noindexed — and every
+//      indexable prerendered route appears in the sitemap. The committed
+//      sitemap once drifted 3 blog posts behind the published content.
+//
+//   3. Prerendered-content floors: each indexable route's built HTML must
+//      contain at least a per-route minimum of visible body text. The money
+//      pages once shipped as ~250-char shells that AI crawlers (which do not
+//      execute JS) saw as empty — the single biggest cause of 0 keywords and
+//      0 AI citations in the Jul 2026 Ahrefs audit.
+//
 // Scans every prerendered HTML file in build/ plus the blog markdown sources
 // in public/blogs/ (the markdown is also served raw to AI crawlers).
 
@@ -77,3 +88,127 @@ if (violations.length > 0) {
   process.exit(1);
 }
 console.log('✅ verify-seo: no forbidden link targets in build output');
+
+// ─── 2. Sitemap ↔ build contract ─────────────────────────────────────────────
+
+const BASE_URL = 'https://aiintegrationcourse.com';
+const SITEMAP_PATH = path.join(BUILD_DIR, 'sitemap.xml');
+const sitemapErrors = [];
+
+if (!existsSync(SITEMAP_PATH)) {
+  console.error('❌ verify-seo: build/sitemap.xml missing — run generate-sitemap.mjs first.');
+  process.exit(1);
+}
+
+const sitemapLocs = [...readFileSync(SITEMAP_PATH, 'utf8').matchAll(/<loc>([^<]+)<\/loc>/g)].map(
+  (m) => m[1]
+);
+const sitemapSet = new Set(sitemapLocs);
+
+const routeToFile = (route) =>
+  route === '/'
+    ? path.join(BUILD_DIR, 'index.html')
+    : path.join(BUILD_DIR, ...route.split('/').filter(Boolean), 'index.html');
+
+for (const loc of sitemapLocs) {
+  if (!loc.startsWith(`${BASE_URL}/`) && loc !== `${BASE_URL}/`) {
+    sitemapErrors.push(`${loc}: not on the canonical host ${BASE_URL}`);
+    continue;
+  }
+  const route = loc.slice(BASE_URL.length) || '/';
+  const file = routeToFile(route);
+  if (!existsSync(file)) {
+    sitemapErrors.push(`${loc}: no prerendered file at ${relPath(file)} (would 200 as app shell)`);
+    continue;
+  }
+  const html = readFileSync(file, 'utf8');
+  const canonical = html.match(/<link rel="canonical" href="([^"]*)"/)?.[1];
+  if (canonical !== loc) {
+    sitemapErrors.push(`${loc}: canonical is ${canonical ?? 'MISSING'} (must be self-referencing)`);
+  }
+  if (/<meta name="robots" content="[^"]*noindex/.test(html)) {
+    sitemapErrors.push(`${loc}: page is noindexed but listed in the sitemap`);
+  }
+}
+
+// Inverse: every indexable prerendered route must be in the sitemap.
+for (const file of walkHtml(BUILD_DIR)) {
+  if (path.basename(file) === 'app-shell.html') continue;
+  const html = readFileSync(file, 'utf8');
+  if (/<meta name="robots" content="[^"]*noindex/.test(html)) continue;
+  const canonical = html.match(/<link rel="canonical" href="([^"]*)"/)?.[1];
+  if (!canonical) continue;
+  if (!sitemapSet.has(canonical)) {
+    sitemapErrors.push(`${relPath(file)}: indexable (canonical ${canonical}) but absent from sitemap`);
+  }
+}
+
+if (sitemapErrors.length > 0) {
+  console.error(`❌ verify-seo: ${sitemapErrors.length} sitemap contract violation(s):`);
+  for (const e of sitemapErrors) console.error(`   ${e}`);
+  process.exit(1);
+}
+console.log(
+  `✅ verify-seo: sitemap contract holds (${sitemapLocs.length} URLs, all prerendered, self-canonical, indexable)`
+);
+
+// ─── 3. Prerendered-content floors (visible chars inside #root) ──────────────
+
+// Floors sit safely below current values so copy edits don't trip them, but
+// far above the old ~250-char shells so a pipeline regression fails loudly.
+const TEXT_FLOORS = [
+  ['/', 2500],
+  ['/pricing', 2000],
+  ['/about', 1500],
+  ['/faq', 1000],
+  ['/blogs', 1200],
+  ['/library', 1000],
+  ['/solutions', 1000],
+  ['/ai-workshops-san-diego', 900],
+  ['/roadmap', 500],
+  // TODO(Phase 4): raise to 2000 once the curriculum has a build-time source
+  // of truth. /courses content is live Firestore that has drifted from the
+  // repo seed data — prerendering a snapshot now would ship wrong content.
+  ['/courses', 250],
+];
+const PATTERN_FLOORS = [
+  [/^\/blogs\/./, 2000],
+  [/^\/(library|solutions)\/./, 1200],
+];
+const DEFAULT_FLOOR = 150;
+
+function floorFor(route) {
+  const exact = TEXT_FLOORS.find(([r]) => r === route);
+  if (exact) return exact[1];
+  const pattern = PATTERN_FLOORS.find(([re]) => re.test(route));
+  return pattern ? pattern[1] : DEFAULT_FLOOR;
+}
+
+function visibleTextLength(html) {
+  const m = html.match(/<div id="root">([\s\S]*?)<\/div>\s*(?:<script|<\/body)/);
+  const body = m ? m[1] : '';
+  return body
+    .replace(/<script[\s\S]*?<\/script>/g, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim().length;
+}
+
+const floorErrors = [];
+for (const loc of sitemapLocs) {
+  const route = loc.slice(BASE_URL.length) || '/';
+  const file = routeToFile(route);
+  if (!existsSync(file)) continue; // already reported by the sitemap contract
+  const len = visibleTextLength(readFileSync(file, 'utf8'));
+  const floor = floorFor(route);
+  if (len < floor) {
+    floorErrors.push(`${route}: ${len} visible chars in built HTML (floor ${floor})`);
+  }
+}
+
+if (floorErrors.length > 0) {
+  console.error(`❌ verify-seo: ${floorErrors.length} route(s) below prerendered-content floor:`);
+  for (const e of floorErrors) console.error(`   ${e}`);
+  process.exit(1);
+}
+console.log(`✅ verify-seo: prerendered-content floors hold for all ${sitemapLocs.length} routes`);

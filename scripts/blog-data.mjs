@@ -42,8 +42,14 @@ export function loadBlogPosts() {
 // Library articles, industry pages, and the FAQ items visibly rendered on
 // /faq — same single-source-of-truth approach as blogPosts.
 export function loadMarketingPages() {
-  const { resourceLibraryItems, industryPages, homepageFaqItems } =
-    loadTsModule('src/content/marketingPages.ts');
+  const {
+    resourceLibraryItems,
+    industryPages,
+    homepageFaqItems,
+    pricingFaqItems,
+    pricingTldr,
+    faqTldr,
+  } = loadTsModule('src/content/marketingPages.ts');
   if (!Array.isArray(resourceLibraryItems) || !Array.isArray(industryPages)) {
     throw new Error('marketingPages exports not found in src/content/marketingPages.ts');
   }
@@ -51,7 +57,21 @@ export function loadMarketingPages() {
     resourceLibraryItems,
     industryPages,
     homepageFaqItems: homepageFaqItems ?? [],
+    pricingFaqItems: pricingFaqItems ?? [],
+    pricingTldr: pricingTldr ?? '',
+    faqTldr: faqTldr ?? '',
   };
+}
+
+// Pricing tiers for the prerendered /pricing body and Product/Offer JSON-LD.
+// src/config/pricing.ts is display-only data (no runtime imports), so it
+// transpiles cleanly; plans/planKeys stay the single source of tier truth.
+export function loadPricingPlans() {
+  const { plans, planKeys } = loadTsModule('src/config/pricing.ts');
+  if (!plans || !Array.isArray(planKeys)) {
+    throw new Error('plans/planKeys exports not found in src/config/pricing.ts');
+  }
+  return { plans, planKeys };
 }
 
 export function readPostMarkdown(post) {

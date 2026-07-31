@@ -4,9 +4,6 @@
 User-agent: *
 Allow: /
 
-# Sitemap location
-Sitemap: https://aiintegrationcourse.com/sitemap.xml
-
 # Disallow admin and private routes
 Disallow: /admin
 Disallow: /api/
@@ -26,3 +23,65 @@ Disallow: /courses/*/modules/
 Allow: /static/
 Allow: /images/
 Allow: /assets/
+
+# ── AI search & assistant crawlers — explicitly welcome ─────────────────────
+# A crawler obeys only its most-specific user-agent group, so each group
+# repeats the private-route disallows from the * group above. Keep them in
+# sync. Prerendered pages + /llms.txt + /blogs/*.md are the intended surface.
+
+User-agent: GPTBot
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /__/
+Disallow: /firebase/
+Disallow: /course_content/lessons/
+Disallow: /courses/*/modules/
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /__/
+Disallow: /firebase/
+Disallow: /course_content/lessons/
+Disallow: /courses/*/modules/
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /__/
+Disallow: /firebase/
+Disallow: /course_content/lessons/
+Disallow: /courses/*/modules/
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /__/
+Disallow: /firebase/
+Disallow: /course_content/lessons/
+Disallow: /courses/*/modules/
+
+User-agent: CCBot
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /__/
+Disallow: /firebase/
+Disallow: /course_content/lessons/
+Disallow: /courses/*/modules/
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /__/
+Disallow: /firebase/
+Disallow: /course_content/lessons/
+Disallow: /courses/*/modules/
+
+# Sitemap location
+Sitemap: https://aiintegrationcourse.com/sitemap.xml

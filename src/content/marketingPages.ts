@@ -345,3 +345,53 @@ export const industryPages: IndustryPage[] = [
     ]
   }
 ];
+
+// FAQ items rendered on /pricing (PricingPage.tsx) and mirrored into the
+// prerendered HTML + FAQPage JSON-LD by scripts/prerender-blogs.mjs. Copy is
+// the pricing page's original on-page Q&A, verbatim.
+export const pricingFaqItems: FaqItem[] = [
+  {
+    question: 'What is the 14-day guarantee?',
+    answer:
+      'Build your first working AI Agent in 14 days, or we refund every penny. You keep the source code.'
+  },
+  {
+    question: 'What is actually free?',
+    answer:
+      'Anyone can browse the free lessons, and the first two founder builds remain open. The useful premium build path, AI tutor, and full curriculum unlock when you subscribe.'
+  },
+  {
+    question: 'How does the annual discount work?',
+    answer:
+      'Monthly is $29.99. Annual drops to $19.99/month billed as one $239.88 payment — that saves you $120 per year compared to paying monthly.'
+  },
+  {
+    question: 'Can I cancel anytime?',
+    answer:
+      'Yes! You can cancel your subscription at any time. You will continue to have access until the end of your billing period.'
+  },
+  {
+    question: 'How does Enterprise pricing work?',
+    answer:
+      'Enterprise uses the lowest per-seat rate: $14.99 per seat with a 5-seat minimum, so the starting price is $74.95/month. It includes the full curriculum plus shared workflow libraries, team progress visibility, priority support, and implementation help.'
+  },
+  {
+    question: 'Will this course be outdated in 2 months?',
+    answer:
+      'The curriculum is built around implementation patterns, not specific model versions. We push monthly content updates to reflect the latest APIs and tools. All plan members get every update at no extra cost.'
+  },
+  {
+    question: 'Why not just watch free YouTube tutorials?',
+    answer:
+      'YouTube gives you fragments. This course gives you a complete, sequenced build path from your first API call to a production-deployed automation — with an AI tutor to unblock you in real time.'
+  }
+];
+
+// "TL;DR for AI search engines" blocks (same pattern the blog articles use).
+// Facts only — composed strictly from the pricing tiers and guarantees that
+// already appear on the pages; no new claims.
+export const pricingTldr =
+  'AI Integration Course pricing: $1 for a 7-day Pro Trial of the full curriculum (then $29.99/month unless cancelled before day 8), $29.99/month billed monthly, or $239.88/year (a $19.99/month equivalent that saves $120 vs monthly). Teams: $14.99 per seat per month with a 5-seat minimum ($74.95/month starting price). Every paid plan includes the 14-Day Build Guarantee, and free lessons stay open without payment.';
+
+export const faqTldr =
+  'AI Integration Course is a build-first AI automation curriculum with free open lessons, an AI tutor (Allie), and a $1 seven-day Pro Trial — then $29.99/month, or $239.88/year on annual billing. Every paid plan carries the 14-Day Build Guarantee.';

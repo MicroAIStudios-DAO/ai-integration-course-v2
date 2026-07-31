@@ -70,7 +70,13 @@ export const SEO: React.FC<SEOProps> = ({
   breadcrumbs,
   course,
 }) => {
-  const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} | Practical AI Automation Training`;
+  // A title equal to the site name would render "X | X" (seen live on
+  // /courses, whose Firestore course title IS the site name) — fall back to
+  // the descriptive default instead.
+  const fullTitle =
+    title && title !== SITE_NAME
+      ? `${title} | ${SITE_NAME}`
+      : `${SITE_NAME} | Practical AI Automation Training`;
   // <title> uses the compact seoTitle; og/twitter keep the full headline.
   const documentTitle = seoTitle || fullTitle;
   const socialTitle = seoTitle && title ? title : fullTitle;

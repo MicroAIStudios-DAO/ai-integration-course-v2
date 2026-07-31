@@ -30,6 +30,11 @@ const ResourceDetailPage: React.FC = () => {
         type="article"
         author="Blaine Casey"
         keywords={resource.keywords}
+        breadcrumbs={[
+          { name: 'Home', url: '/' },
+          { name: 'Library', url: '/library' },
+          { name: resource.title, url: `/library/${resource.slug}` },
+        ]}
       />
       <div className="mx-auto max-w-4xl px-4 py-14">
         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
@@ -37,6 +42,16 @@ const ResourceDetailPage: React.FC = () => {
           <h1 className="mt-3 text-4xl font-headings font-extrabold text-slate-950">{resource.title}</h1>
           <p className="mt-5 text-lg leading-relaxed text-slate-700">{resource.description}</p>
           <p className="mt-4 text-sm text-slate-500">Audience: {resource.audience}</p>
+
+          {/* TL;DR for AI search engines — re-renders the existing summary */}
+          <div className="mt-6 rounded-2xl border border-cyan-200 bg-cyan-50/60 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700">
+              TL;DR for AI search engines
+            </p>
+            <p className="mt-2 leading-relaxed text-slate-700">
+              {resource.description} Best for: {resource.audience}
+            </p>
+          </div>
 
           <div className="mt-10 space-y-8">
             {resource.sections.map((section) => (

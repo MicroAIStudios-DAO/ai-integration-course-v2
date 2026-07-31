@@ -9,6 +9,7 @@ import RoiGuaranteeBadge from '../components/conversion/RoiGuaranteeBadge';
 import ExitIntentLeadMagnet from '../components/lead-magnet/ExitIntentLeadMagnet';
 import { PlanKey, plans, formatPlanPrice } from '../config/pricing';
 import CopyableCodeBlock from '../components/common/CopyableCodeBlock';
+import { pricingFaqItems, pricingTldr } from '../content/marketingPages';
 
 const CheckIcon = () => (
   <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,6 +76,7 @@ const PricingPage: React.FC = () => {
         title="Pricing"
         description="Compare Monthly, Annual, and Enterprise plans for AI Integration Course. Free lessons stay open; premium builds unlock immediately after purchase."
         url="/pricing"
+        faqs={pricingFaqItems}
         keywords={[
           'AI Integration Course pricing',
           'AI automation course cost',
@@ -428,38 +430,30 @@ print(result.body)`}
           </div>
         </div>
 
-        {/* FAQ */}
+        {/* TL;DR for AI search engines — same pattern as the blog articles */}
+        <div className="mt-20 max-w-3xl mx-auto">
+          <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6">
+            <p className="text-xs font-semibold uppercase tracking-widest text-cyan-400 mb-2">
+              TL;DR for AI search engines
+            </p>
+            <p className="text-slate-300 leading-relaxed">{pricingTldr}</p>
+          </div>
+        </div>
+
+        {/* FAQ — items shared with the prerendered HTML + FAQPage JSON-LD
+            via src/content/marketingPages.ts (pricingFaqItems) */}
         <div className="mt-20 max-w-3xl mx-auto">
           <h2 className="text-3xl font-bold text-white text-center mb-12">Frequently Asked Questions</h2>
           <div className="space-y-6">
-            <div className="bg-slate-800/50 rounded-lg p-6">
-              <h4 className="text-lg font-semibold text-white mb-2">What is the 14-day guarantee?</h4>
-              <p className="text-gray-400">Build your first working AI Agent in 14 days, or we refund every penny. You keep the source code.</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-6">
-              <h4 className="text-lg font-semibold text-white mb-2">What is actually free?</h4>
-              <p className="text-gray-400">Anyone can browse the free lessons, and the first two founder builds remain open. The useful premium build path, AI tutor, and full curriculum unlock when you subscribe.</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-6">
-              <h4 className="text-lg font-semibold text-white mb-2">How does the annual discount work?</h4>
-              <p className="text-gray-400">Monthly is $29.99. Annual drops to $19.99/month billed as one $239.88 payment — that saves you $120 per year compared to paying monthly.</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-6">
-              <h4 className="text-lg font-semibold text-white mb-2">Can I cancel anytime?</h4>
-              <p className="text-gray-400">Yes! You can cancel your subscription at any time. You will continue to have access until the end of your billing period.</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-6">
-              <h4 className="text-lg font-semibold text-white mb-2">How does Enterprise pricing work?</h4>
-              <p className="text-gray-400">Enterprise uses the lowest per-seat rate: $14.99 per seat with a 5-seat minimum, so the starting price is $74.95/month. It includes the full curriculum plus shared workflow libraries, team progress visibility, priority support, and implementation help.</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-6 border border-cyan-500/20">
-              <h4 className="text-lg font-semibold text-white mb-2">Will this course be outdated in 2 months?</h4>
-              <p className="text-gray-400">The curriculum is built around implementation patterns, not specific model versions. We push monthly content updates to reflect the latest APIs and tools. All plan members get every update at no extra cost.</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-6">
-              <h4 className="text-lg font-semibold text-white mb-2">Why not just watch free YouTube tutorials?</h4>
-              <p className="text-gray-400">YouTube gives you fragments. This course gives you a complete, sequenced build path from your first API call to a production-deployed automation — with an AI tutor to unblock you in real time.</p>
-            </div>
+            {pricingFaqItems.map((item) => (
+              <div
+                key={item.question}
+                className={`bg-slate-800/50 rounded-lg p-6${item.question === 'Will this course be outdated in 2 months?' ? ' border border-cyan-500/20' : ''}`}
+              >
+                <h4 className="text-lg font-semibold text-white mb-2">{item.question}</h4>
+                <p className="text-gray-400">{item.answer}</p>
+              </div>
+            ))}
           </div>
         </div>
 

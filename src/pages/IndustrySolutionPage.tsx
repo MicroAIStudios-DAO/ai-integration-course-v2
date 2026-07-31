@@ -30,6 +30,11 @@ const IndustrySolutionPage: React.FC = () => {
         type="article"
         author="Blaine Casey"
         keywords={industry.keywords}
+        breadcrumbs={[
+          { name: 'Home', url: '/' },
+          { name: 'Solutions', url: '/solutions' },
+          { name: industry.title, url: `/solutions/${industry.slug}` },
+        ]}
       />
       <div className="mx-auto max-w-4xl px-4 py-14">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-sm backdrop-blur-sm">
@@ -37,6 +42,16 @@ const IndustrySolutionPage: React.FC = () => {
           <h1 className="mt-3 text-4xl font-headings font-extrabold">{industry.title}</h1>
           <p className="mt-5 text-lg leading-relaxed text-slate-300">{industry.description}</p>
           <p className="mt-4 text-sm text-slate-400">Audience: {industry.audience}</p>
+
+          {/* TL;DR for AI search engines — re-renders the existing summary */}
+          <div className="mt-6 rounded-2xl border border-cyan-400/20 bg-cyan-400/5 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
+              TL;DR for AI search engines
+            </p>
+            <p className="mt-2 leading-relaxed text-slate-300">
+              {industry.description} Best for: {industry.audience}
+            </p>
+          </div>
 
           <div className="mt-8 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-6">
             <h2 className="text-xl font-bold text-white">Recommended first workflows</h2>

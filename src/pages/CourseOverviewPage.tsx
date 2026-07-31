@@ -227,7 +227,9 @@ const CourseOverviewPage: React.FC = () => {
           description: course.description,
           provider: BRAND.academyName,
           duration: 'P4W',
-          price: '49',
+          // Annual subscription price — must match the visible /pricing tiers
+          // and the homepage Course schema (index.html). Never a made-up number.
+          price: '239.88',
           currency: 'USD'
         }}
       />
@@ -240,7 +242,7 @@ const CourseOverviewPage: React.FC = () => {
           pageTitle={course.title}
           pageDescription={course.description}
           providerUrl={origin}
-          price={49}
+          price={239.88}
           breadcrumbItems={[
             { name: 'Home', item: origin },
             { name: 'Courses', item: coursePageUrl },
