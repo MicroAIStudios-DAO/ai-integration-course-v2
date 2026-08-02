@@ -7,6 +7,8 @@ import ExitIntentLeadMagnet from '../components/lead-magnet/ExitIntentLeadMagnet
 import { topWorkflowsLeadMagnet } from '../content/leadMagnets';
 import { trackFreeStarterOptIn } from '../utils/analytics';
 import SEO from '../components/SEO';
+import SiteHeader from '../components/layout/SiteHeader';
+import SiteFooter from '../components/layout/SiteFooter';
 import { BRAND } from '../config/brand';
 
 const NewLandingPage: React.FC = () => {
@@ -44,41 +46,9 @@ const NewLandingPage: React.FC = () => {
         <span>🎓 {BRAND.academyName} • Summer 2026 Admissions Open</span>
       </div>
 
-      {/* Modern Navigation Header */}
-      <header className="relative z-20 border-b border-white/10 bg-slate-950/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-5 md:px-8">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center font-bold text-slate-950 shadow-lg shadow-amber-500/20">
-              SΛ
-            </div>
-            <div>
-              <span className="text-lg font-bold tracking-tight text-white block leading-none font-headings uppercase">
-                {BRAND.courseName}
-              </span>
-              <span className="text-[10px] uppercase tracking-[0.25em] text-amber-500 block mt-1 font-semibold">
-                {BRAND.academyShortName} · {BRAND.ventureName}
-              </span>
-            </div>
-          </div>
-          <nav className="hidden md:flex space-x-8 text-sm font-semibold tracking-wide text-slate-300">
-            <a href="#who-we-are" className="hover:text-amber-400 transition-colors">Faculty & Bio</a>
-            <a href="#advantages" className="hover:text-amber-400 transition-colors">Academic Advantages</a>
-            <a href="#curriculum" className="hover:text-amber-400 transition-colors">Syllabus Overview</a>
-            <a href="#trust" className="hover:text-amber-400 transition-colors">Institutional Trust</a>
-          </nav>
-          <div className="flex items-center gap-4">
-            <Link to="/login" className="text-sm font-semibold text-slate-300 hover:text-white transition-colors">
-              Student Login
-            </Link>
-            <Link
-              to="/checkout/start?plan=pro_trial"
-              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2 rounded-xl text-sm transition-all shadow-md shadow-amber-500/10 hover:shadow-amber-400/20 hover:scale-[1.02] active:scale-[0.98]"
-            >
-              Start Trial
-            </Link>
-          </div>
-        </div>
-      </header>
+      {/* Shared global navigation (Phase 3): real page links replace the
+          old anchor-only nav so the homepage links the rest of the site. */}
+      <SiteHeader />
 
       {/* Academic Hero Section */}
       <section className="relative z-10 max-w-7xl mx-auto px-6 pt-16 pb-20 md:px-8 md:pt-24 md:pb-28 text-center flex flex-col items-center">
@@ -504,19 +474,10 @@ const NewLandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Modern Academic Footer */}
-      <footer className="relative z-10 border-t border-white/5 px-6 py-12 text-center text-slate-500 text-xs">
-        <div className="flex flex-wrap justify-center gap-6 mb-6">
-          <Link to="/pricing" className="hover:text-slate-300 transition-colors">Pricing & Tuition</Link>
-          <Link to="/about" className="hover:text-slate-300 transition-colors">About Faculty</Link>
-          <Link to="/faq" className="hover:text-slate-300 transition-colors">FAQ</Link>
-          <Link to="/terms" className="hover:text-slate-300 transition-colors">Terms of Use</Link>
-          <Link to="/privacy" className="hover:text-slate-300 transition-colors">Privacy Policy</Link>
-        </div>
-        <p className="max-w-2xl mx-auto leading-relaxed">
-          {BRAND.copyright} {BRAND.courseName} is offered by {BRAND.academyName}, a {BRAND.ventureName} venture.
-        </p>
-      </footer>
+      {/* Shared global footer (Phase 3): links every previously-orphaned page. */}
+      <div className="relative z-10">
+        <SiteFooter />
+      </div>
 
       <FeedbackDrawer />
       <ExitIntentLeadMagnet source="edu_landing_exit_intent" />

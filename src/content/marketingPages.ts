@@ -36,6 +36,12 @@ export interface ResourceArticle {
   audience: string;
   keywords: string[];
   sections: MarketingSection[];
+  /**
+   * Blog posts (by slug, src/content/blogPosts.ts) this page links to as
+   * "Related reading" — rendered by the detail pages AND the prerender
+   * pipeline so every leaf carries contextual in-body internal links.
+   */
+  relatedBlogSlugs?: string[];
 }
 
 export interface IndustryPage {
@@ -48,6 +54,8 @@ export interface IndustryPage {
   keywords: string[];
   workflows: string[];
   sections: MarketingSection[];
+  /** See ResourceArticle.relatedBlogSlugs. */
+  relatedBlogSlugs?: string[];
 }
 
 export const homepageFaqItems: FaqItem[] = [
@@ -97,6 +105,7 @@ export const homepageVideoObject: VideoSchemaConfig = {
 export const resourceLibraryItems: ResourceArticle[] = [
   {
     slug: 'rag-for-small-business',
+    relatedBlogSlugs: ['rag-implementation-guide-production', 'persistent-ai-memory-patterns'],
     title: 'RAG for Small Business',
     eyebrow: 'Library Guide',
     description:
@@ -140,6 +149,7 @@ export const resourceLibraryItems: ResourceArticle[] = [
   },
   {
     slug: 'function-calling-with-gemini-1-5-pro',
+    relatedBlogSlugs: ['api-based-ai-automation-guide', 'ai-workflow-error-handling-patterns'],
     title: 'Function Calling with Gemini 1.5 Pro',
     eyebrow: 'Developer Guide',
     description:
@@ -183,6 +193,7 @@ export const resourceLibraryItems: ResourceArticle[] = [
   },
   {
     slug: 'openai-vs-anthropic-for-automation',
+    relatedBlogSlugs: ['cursor-vs-claude-code-vs-gemini-2026', 'ai-integration-architecture-reliable-workflows'],
     title: 'OpenAI vs. Anthropic for Automation',
     eyebrow: 'Comparison Guide',
     description:
@@ -229,6 +240,7 @@ export const resourceLibraryItems: ResourceArticle[] = [
 export const industryPages: IndustryPage[] = [
   {
     slug: 'real-estate',
+    relatedBlogSlugs: ['ai-agents-for-small-business', 'workflow-complete-guide'],
     title: 'AI Integration for Real Estate',
     eyebrow: 'Industry Workflow',
     description:
@@ -268,6 +280,7 @@ export const industryPages: IndustryPage[] = [
   },
   {
     slug: 'e-commerce',
+    relatedBlogSlugs: ['ai-workflow-error-handling-patterns', 'ai-agents-for-small-business'],
     title: 'AI Integration for E-commerce',
     eyebrow: 'Industry Workflow',
     description:
@@ -307,6 +320,7 @@ export const industryPages: IndustryPage[] = [
   },
   {
     slug: 'law-firms',
+    relatedBlogSlugs: ['rag-implementation-guide-production', 'ai-integration-architecture-reliable-workflows'],
     title: 'AI Integration for Law Firms',
     eyebrow: 'Industry Workflow',
     description:

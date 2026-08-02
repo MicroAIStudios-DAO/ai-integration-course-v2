@@ -18,6 +18,11 @@
 //      execute JS) saw as empty — the single biggest cause of 0 keywords and
 //      0 AI citations in the Jul 2026 Ahrefs audit.
 //
+//   4. Internal link graph: every sitemap route must receive at least one
+//      internal link from another prerendered page. The audit found 11
+//      orphan pages — including /start-trial, a conversion page nothing
+//      linked to — because chrome links lived only in client-side React.
+//
 // Scans every prerendered HTML file in build/ plus the blog markdown sources
 // in public/blogs/ (the markdown is also served raw to AI crawlers).
 
@@ -212,3 +217,46 @@ if (floorErrors.length > 0) {
   process.exit(1);
 }
 console.log(`✅ verify-seo: prerendered-content floors hold for all ${sitemapLocs.length} routes`);
+
+// ─── 4. Internal link graph — no sitemap route may be an orphan ──────────────
+
+const sitemapRoutes = new Set(sitemapLocs.map((loc) => loc.slice(BASE_URL.length) || '/'));
+
+function fileToRoute(file) {
+  const rel = relPath(file);
+  if (rel === 'build/index.html') return '/';
+  const m = rel.match(/^build\/(.+)\/index\.html$/);
+  return m ? `/${m[1]}` : null;
+}
+
+const inlinkCounts = new Map([...sitemapRoutes].map((r) => [r, 0]));
+for (const file of walkHtml(BUILD_DIR)) {
+  if (path.basename(file) === 'app-shell.html') continue;
+  const fromRoute = fileToRoute(file);
+  if (fromRoute === null) continue; // asset HTML (lead magnets etc.)
+  const html = readFileSync(file, 'utf8');
+  const seen = new Set();
+  for (const match of html.matchAll(/<a href="(\/[^"#?]*)/g)) {
+    let target = match[1];
+    if (target.length > 1 && target.endsWith('/')) target = target.slice(0, -1);
+    if (target === fromRoute || seen.has(target)) continue;
+    seen.add(target);
+    if (inlinkCounts.has(target)) {
+      inlinkCounts.set(target, inlinkCounts.get(target) + 1);
+    }
+  }
+}
+
+const orphanErrors = [...inlinkCounts]
+  .filter(([, count]) => count === 0)
+  .map(([route]) => `${route}: 0 internal inlinks from other prerendered pages`);
+
+if (orphanErrors.length > 0) {
+  console.error(`❌ verify-seo: ${orphanErrors.length} orphan route(s) in the sitemap:`);
+  for (const e of orphanErrors) console.error(`   ${e}`);
+  process.exit(1);
+}
+const minInlinks = Math.min(...inlinkCounts.values());
+console.log(
+  `✅ verify-seo: link graph holds — every sitemap route has ≥${minInlinks} internal inlinks`
+);

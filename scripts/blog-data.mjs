@@ -63,6 +63,18 @@ export function loadMarketingPages() {
   };
 }
 
+// Global nav/footer link data for the prerendered chrome — the same module
+// SiteHeader.tsx / SiteFooter.tsx render from, so raw HTML and hydrated DOM
+// expose identical chrome links.
+export function loadSiteLinks() {
+  const { headerNavLinks, headerLoginLink, headerTrialLink, footerColumns, footerAiDisclosure } =
+    loadTsModule('src/content/siteLinks.ts');
+  if (!Array.isArray(headerNavLinks) || !Array.isArray(footerColumns)) {
+    throw new Error('siteLinks exports not found in src/content/siteLinks.ts');
+  }
+  return { headerNavLinks, headerLoginLink, headerTrialLink, footerColumns, footerAiDisclosure };
+}
+
 // Pricing tiers for the prerendered /pricing body and Product/Offer JSON-LD.
 // src/config/pricing.ts is display-only data (no runtime imports), so it
 // transpiles cleanly; plans/planKeys stay the single source of tier truth.
