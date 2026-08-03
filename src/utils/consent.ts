@@ -2,10 +2,13 @@
  * Cookie consent manager (GDPR / ePrivacy / CCPA).
  *
  * Strategy: trackers are OFF by default. index.html sets Google Consent Mode v2
- * defaults to "denied". No analytics/ads/session-recording scripts load until the
- * visitor explicitly accepts via the cookie banner. On accept we (a) update Google
+ * defaults to "denied". No analytics/ads scripts load until the visitor
+ * explicitly accepts via the cookie banner. On accept we (a) update Google
  * Consent Mode to "granted" and (b) inject GTM, gtag.js (GA4 + Google Ads),
- * Microsoft Clarity, and Ahrefs. On reject, nothing loads.
+ * and Ahrefs. On reject, nothing loads.
+ *
+ * Exception: Microsoft Clarity loads unconditionally from index.html (owner
+ * decision 2026-07-15) and is intentionally NOT injected here.
  */
 
 export type ConsentValue = 'granted' | 'denied';
@@ -16,7 +19,6 @@ const STORAGE_KEY = 'cookie_consent';
 const GTM_ID = 'GTM-M8T3DKFQ';
 const GOOGLE_ADS_ID = 'AW-17956658756';
 const GA4_ID = 'G-15SDDF1S5S';
-const CLARITY_ID = 'xmssx6j9mq';
 // Public Ahrefs Web Analytics site identifier (rendered client-side for every
 // visitor — not a secret). Named without "key" to avoid secret-scanner false positives.
 const AHREFS_ANALYTICS_ID = 'I2l5sw2gsKNPJvnp9dQpkA';
@@ -72,15 +74,6 @@ const loadTrackers = (): void => {
   injectScript({ async: '', src: `https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ADS_ID}` });
   gtag('config', GOOGLE_ADS_ID, { allow_enhanced_conversions: true });
   gtag('config', GA4_ID, { send_page_view: true });
-
-  // Microsoft Clarity
-  injectScript(
-    {},
-    `(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};` +
-      `t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;` +
-      `y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);` +
-      `})(window,document,"clarity","script","${CLARITY_ID}");`
-  );
 
   // Ahrefs Web Analytics
   injectScript({ src: 'https://analytics.ahrefs.com/analytics.js', 'data-key': AHREFS_ANALYTICS_ID, async: '' });
