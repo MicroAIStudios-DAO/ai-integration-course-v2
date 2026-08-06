@@ -59,7 +59,7 @@ Test:
 
 - **Full Guide**: [PRODUCTION_DEPLOYMENT.md](PRODUCTION_DEPLOYMENT.md)
 - **Checklist**: [PRODUCTION_READINESS.md](PRODUCTION_READINESS.md)
-- **Status**: [DEPLOYMENT_STATUS.md](DEPLOYMENT_STATUS.md)
+- **Status**: [DEPLOYMENT_STATUS.md](docs/archive/DEPLOYMENT_STATUS.md)
 
 ## Rollback
 
