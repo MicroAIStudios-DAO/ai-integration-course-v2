@@ -123,6 +123,11 @@ chmod +x scripts/deploy-production.sh
    npm run deploy
    ```
 
+## 📚 Documentation
+
+A full map of project docs — setup, deployment, GCloud, Firebase optimization,
+integrations, and historical archives — lives in **[docs/README.md](docs/README.md)**.
+
 ## Overview
 
 The AI Integration Course platform provides users with tools, insights, and strategies to outthink the hype and invest with confidence in the age of AI. The application features a structured learning path with courses, modules, and lessons, along with premium content gating for subscribers.
