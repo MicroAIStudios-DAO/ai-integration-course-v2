@@ -99,4 +99,4 @@ jobs:
           # and allow the gh CLI + git so the agent can create issues / open PRs.
           claude_args: >-
             --model claude-opus-4-5
-            --allowedTools "Bash,Read,Grep,Glob,Edit,Write,Bash(gh:*),Bash(git:*),Bash(npm:*)"
+            --allowedTools "Bash,Read,Grep,Glob,Edit,Write"
