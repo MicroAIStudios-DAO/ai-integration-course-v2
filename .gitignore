@@ -74,3 +74,12 @@ gha-creds-*.json
 *.pfx
 *service-account*.json
 gha-creds-*.json
+
+# Editor / backup artifacts (should never be committed)
+*.swp
+*.swo
+*~
+*.orig
+*.bak
+*.backup
+*.original-backup
