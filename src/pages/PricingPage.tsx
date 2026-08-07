@@ -12,7 +12,7 @@ import CopyableCodeBlock from '../components/common/CopyableCodeBlock';
 import SiteHeader from '../components/layout/SiteHeader';
 import SiteFooter from '../components/layout/SiteFooter';
 import SocialProofSection from '../components/conversion/SocialProofSection';
-import { pricingFaqItems, pricingTldr } from '../content/marketingPages';
+import { pricingFaqItems, pricingObjections, pricingTldr } from '../content/marketingPages';
 
 const CheckIcon = () => (
   <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -453,14 +453,10 @@ print(result.body)`}
         <div className="mt-20 max-w-3xl mx-auto">
           <h2 className="text-2xl font-bold text-white text-center mb-8">What usually stops people from starting</h2>
           <div className="space-y-4">
-            {[
-              { q: '"I\'m not technical."', a: 'You do not need to be technical to start. The path is built to get you moving with guided, practical steps — not coding or heavy theory.' },
-              { q: '"I don\'t have time."', a: 'Your first useful win should take minutes, not days. Most lessons are intentionally short and built for real schedules.' },
-              { q: '"What if it\'s not worth it?"', a: "That's exactly why the guarantee exists. If you don't build something useful in 14 days, you get your money back." },
-            ].map(({ q, a }) => (
-              <div key={q} className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
-                <p className="text-emerald-400 font-semibold mb-2">{q}</p>
-                <p className="text-slate-300 leading-relaxed">{a}</p>
+            {pricingObjections.map(({ question, answer }) => (
+              <div key={question} className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
+                <p className="text-emerald-400 font-semibold mb-2">{question}</p>
+                <p className="text-slate-300 leading-relaxed">{answer}</p>
               </div>
             ))}
           </div>
