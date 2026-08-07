@@ -11,6 +11,7 @@ import { PlanKey, plans, formatPlanPrice } from '../config/pricing';
 import CopyableCodeBlock from '../components/common/CopyableCodeBlock';
 import SiteHeader from '../components/layout/SiteHeader';
 import SiteFooter from '../components/layout/SiteFooter';
+import SocialProofSection from '../components/conversion/SocialProofSection';
 import { pricingFaqItems, pricingTldr } from '../content/marketingPages';
 
 const CheckIcon = () => (
@@ -416,6 +417,10 @@ print(result.body)`}
             </div>
           </div>
         </div>
+
+        {/* Social proof — renders nothing until real permissioned data
+            exists in src/content/socialProof.ts (Phase 4.6) */}
+        <SocialProofSection theme="dark" />
 
         {/* TL;DR for AI search engines — same pattern as the blog articles */}
         <div className="mt-20 max-w-3xl mx-auto">
