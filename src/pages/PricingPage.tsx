@@ -2,16 +2,18 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SubscribeButton from '../components/payment/SubscribeButton';
-import { trackViewPricing } from '../utils/analytics';
+import { trackPlanListView, trackViewPricing } from '../utils/analytics';
 import useFoundingAccess from '../hooks/useFoundingAccess';
 import SEO from '../components/SEO';
 import RoiGuaranteeBadge from '../components/conversion/RoiGuaranteeBadge';
 import ExitIntentLeadMagnet from '../components/lead-magnet/ExitIntentLeadMagnet';
-import { PlanKey, plans, formatPlanPrice } from '../config/pricing';
+import { PlanKey, planKeys, plans, formatPlanPrice } from '../config/pricing';
 import CopyableCodeBlock from '../components/common/CopyableCodeBlock';
 import SiteHeader from '../components/layout/SiteHeader';
 import SiteFooter from '../components/layout/SiteFooter';
-import { pricingFaqItems, pricingTldr } from '../content/marketingPages';
+import SocialProofSection from '../components/conversion/SocialProofSection';
+import { pricingFaqItems, pricingObjections, pricingTldr } from '../content/marketingPages';
+import { useExperiment } from '../utils/experiments';
 
 const CheckIcon = () => (
   <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -35,11 +37,24 @@ const PricingPage: React.FC = () => {
   const pro = plans.pro;
   const corporate = plans.corporate;
   const [enterpriseSeats, setEnterpriseSeats] = useState(5);
+  // A/B surface (Phase 4.8): sticky variant + exposure event. Only 'control'
+  // is registered — add variants in src/utils/experiments.ts and branch on
+  // this value in the hero H1 to launch a headline test.
+  const pricingH1Variant = useExperiment('pricing_h1');
   const enterpriseMonthlyTotal = useMemo(() => Number((14.99 * enterpriseSeats).toFixed(2)), [enterpriseSeats]);
 
   useEffect(() => {
     // Track primary offer (trial) for analytics
     trackViewPricing('USD', trial.analyticsValue, trial.name);
+    // Plan-list impression with every real tier, so per-tier funnels
+    // (card view → cta_click → begin_checkout → purchase) are measurable.
+    trackPlanListView(
+      planKeys.map((key) => ({
+        planKey: key,
+        name: plans[key].name,
+        price: plans[key].analyticsValue,
+      }))
+    );
   }, [trial.analyticsValue, trial.name]);
 
   const renderCTA = (planKey: PlanKey) => {
@@ -95,7 +110,9 @@ const PricingPage: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {/* Hero */}
         <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
+          {/* pricing_h1 experiment surface — 'control' renders the current
+              headline; branch on pricingH1Variant to test alternatives. */}
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-6" data-exp-variant={pricingH1Variant}>
             Stop watching AI happen.<br />
             <span className="text-emerald-400">Start using it this week.</span>
           </h1>
@@ -417,6 +434,10 @@ print(result.body)`}
           </div>
         </div>
 
+        {/* Social proof — renders nothing until real permissioned data
+            exists in src/content/socialProof.ts (Phase 4.6) */}
+        <SocialProofSection theme="dark" />
+
         {/* TL;DR for AI search engines — same pattern as the blog articles */}
         <div className="mt-20 max-w-3xl mx-auto">
           <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6">
@@ -448,14 +469,10 @@ print(result.body)`}
         <div className="mt-20 max-w-3xl mx-auto">
           <h2 className="text-2xl font-bold text-white text-center mb-8">What usually stops people from starting</h2>
           <div className="space-y-4">
-            {[
-              { q: '"I\'m not technical."', a: 'You do not need to be technical to start. The path is built to get you moving with guided, practical steps — not coding or heavy theory.' },
-              { q: '"I don\'t have time."', a: 'Your first useful win should take minutes, not days. Most lessons are intentionally short and built for real schedules.' },
-              { q: '"What if it\'s not worth it?"', a: "That's exactly why the guarantee exists. If you don't build something useful in 14 days, you get your money back." },
-            ].map(({ q, a }) => (
-              <div key={q} className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
-                <p className="text-emerald-400 font-semibold mb-2">{q}</p>
-                <p className="text-slate-300 leading-relaxed">{a}</p>
+            {pricingObjections.map(({ question, answer }) => (
+              <div key={question} className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
+                <p className="text-emerald-400 font-semibold mb-2">{question}</p>
+                <p className="text-slate-300 leading-relaxed">{answer}</p>
               </div>
             ))}
           </div>

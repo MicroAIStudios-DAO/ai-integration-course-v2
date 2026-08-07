@@ -9,6 +9,7 @@ import { trackFreeStarterOptIn } from '../utils/analytics';
 import SEO from '../components/SEO';
 import SiteHeader from '../components/layout/SiteHeader';
 import SiteFooter from '../components/layout/SiteFooter';
+import SocialProofSection from '../components/conversion/SocialProofSection';
 import { BRAND } from '../config/brand';
 
 const NewLandingPage: React.FC = () => {
@@ -420,6 +421,12 @@ const NewLandingPage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Social proof — renders nothing until real permissioned data exists
+          in src/content/socialProof.ts (Phase 4.6) */}
+      <div className="relative z-10 px-6 md:px-8">
+        <SocialProofSection theme="dark" />
+      </div>
 
       {/* Tuition Plans & Funnel Section */}
       <section className="relative z-10 py-20 px-6 md:px-8 text-center max-w-4xl mx-auto">

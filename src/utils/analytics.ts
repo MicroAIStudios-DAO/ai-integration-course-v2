@@ -835,6 +835,73 @@ export const trackCertificateGenerated = (
   }
 };
 
+/**
+ * Track a lesson gate impression — a user hit locked content.
+ * Trigger: the Access Denied screen on LessonPage, or a locked lesson row
+ * interaction on the curriculum page. The highest-intent moment in the
+ * funnel; pairs with trackUpgradeCtaClick to measure gate→upgrade rate.
+ */
+export const trackLessonGateImpression = (
+  lessonId: string,
+  lessonTier: string,
+  surface: 'lesson_page' | 'curriculum_row' | 'curriculum_banner'
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'lesson_gate_impression', {
+      lesson_id: lessonId,
+      lesson_tier: lessonTier,
+      surface,
+    });
+    console.log('[Analytics] lesson_gate_impression:', { lessonId, lessonTier, surface });
+  }
+};
+
+/**
+ * Track an upgrade-CTA click from a gated surface.
+ * Trigger: any "unlock/upgrade/start trial" CTA rendered because content
+ * was locked.
+ */
+export const trackUpgradeCtaClick = (
+  surface: string,
+  destination: string,
+  lessonId?: string
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'upgrade_cta_click', {
+      surface,
+      destination,
+      ...(lessonId ? { lesson_id: lessonId } : {}),
+    });
+    console.log('[Analytics] upgrade_cta_click:', { surface, destination, lessonId });
+  }
+};
+
+/**
+ * Track the pricing plan list impression with ALL real tiers.
+ * Trigger: PricingPage mount. Complements trackViewPricing (which reports a
+ * single hardcoded item) with a GA4 view_item_list carrying every plan, so
+ * per-tier funnel analysis (card view → cta_click → begin_checkout →
+ * purchase) becomes possible.
+ */
+export const trackPlanListView = (
+  plans: { planKey: string; name: string; price: number }[]
+): void => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'view_item_list', {
+      item_list_id: 'pricing_plans',
+      item_list_name: 'Pricing Plans',
+      items: plans.map((p, index) => ({
+        item_id: p.planKey,
+        item_name: p.name,
+        price: p.price,
+        index,
+        quantity: 1,
+      })),
+    });
+    console.log('[Analytics] view_item_list:', plans.map((p) => p.planKey).join(','));
+  }
+};
+
 // Export all functions as named object for convenience
 const analytics = {
   initGA4,
@@ -862,6 +929,9 @@ const analytics = {
   trackAudienceEvent,
   trackError,
   trackCertificateGenerated,
+  trackLessonGateImpression,
+  trackUpgradeCtaClick,
+  trackPlanListView,
 };
 
 export default analytics;

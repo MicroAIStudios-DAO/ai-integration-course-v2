@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
+import { Link, useSearchParams } from 'react-router-dom';
 import { startCheckoutForPlan } from '../utils/checkout';
 import { trackCTAClick, pushAbandonmentFunnelState } from '../utils/analytics';
+import { pricingObjections } from '../content/marketingPages';
+import { useExperiment } from '../utils/experiments';
 
 /**
  * Section 3: Pre-Checkout Plan Selector
@@ -17,6 +20,12 @@ const PlanSelectorPage: React.FC = () => {
 
   const utmMedium = searchParams.get('utm_medium') || '';
   const preselect = searchParams.get('plan') || ''; // 'trial' | 'annual'
+  // A/B surface (Phase 4.8): which trial-target framing renders (monthly vs
+  // annual emphasis). Only 'control' is registered; branching on this value
+  // changes COPY EMPHASIS only — the actual renewal plan is a Stripe/billing
+  // decision that requires owner approval.
+  const trialTargetVariant = useExperiment('trial_target_plan');
+  void trialTargetVariant;
 
   // Source-aware copy: Section 13D
   const isFromPaidSocial = utmMedium === 'paid_social' || utmMedium === 'cpc';
@@ -70,6 +79,15 @@ const PlanSelectorPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center px-4 py-16">
+      {/* Mirrors the prerendered head for /start-trial (scripts/route-meta.mjs)
+          so SPA navigation gets the same title/meta as a direct load. */}
+      <Helmet>
+        <title>Start the $1 Pro Trial | AI Integration Course</title>
+        <meta
+          name="description"
+          content="Get 7 days of full access for $1 — complete curriculum, the Allie AI tutor, and the Forge sandbox. Cancel in two clicks; 14-day money-back guarantee."
+        />
+      </Helmet>
       <div className="w-full max-w-2xl">
 
         {/* Trust Row */}
@@ -174,6 +192,44 @@ const PlanSelectorPage: React.FC = () => {
               )}
             </button>
           </div>
+        </div>
+
+        {/* What unlocks — link into the curriculum so the offer is concrete
+            (Phase 4.7: this page was an orphan with no proof of value) */}
+        <div className="bg-gray-900/60 border border-white/10 rounded-2xl p-6 mb-8 text-center">
+          <p className="text-white font-semibold">See exactly what unlocks</p>
+          <p className="text-sm text-gray-400 mt-1">
+            Browse the full curriculum — free lessons stay open forever, and every premium
+            lesson is marked.
+          </p>
+          <Link
+            to="/courses"
+            onClick={() => trackCTAClick('view_curriculum', 'start_trial_page')}
+            className="mt-3 inline-flex items-center justify-center rounded-xl border border-white/20 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+          >
+            Browse the curriculum →
+          </Link>
+        </div>
+
+        {/* Guarantee */}
+        <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-2xl p-6 mb-8 text-center">
+          <p className="text-emerald-300 font-bold uppercase tracking-wide text-sm">
+            14-Day Build Guarantee
+          </p>
+          <p className="text-gray-300 mt-2 text-sm leading-relaxed">
+            Build your first working AI Agent in 14 days, or we refund every penny. You keep
+            the source code.
+          </p>
+        </div>
+
+        {/* Objection handling — shared verbatim with /pricing */}
+        <div className="space-y-3 mb-8">
+          {pricingObjections.map(({ question, answer }) => (
+            <div key={question} className="bg-gray-900/60 border border-white/10 rounded-xl p-4">
+              <p className="text-emerald-400 font-semibold text-sm mb-1">{question}</p>
+              <p className="text-gray-400 text-sm leading-relaxed">{answer}</p>
+            </div>
+          ))}
         </div>
 
         {/* Help line */}
