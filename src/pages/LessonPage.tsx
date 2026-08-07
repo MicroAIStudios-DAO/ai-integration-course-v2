@@ -26,10 +26,28 @@ import CourseSchema from "../components/seo/CourseSchema";
 import SEO from "../components/SEO";
 import { BRAND } from "../config/brand";
 import "../styles/lesson-content.css"; // Import textbook-style CSS
-import { trackLessonStart, trackLessonComplete, trackLesson1Completed } from "../utils/analytics";
+import {
+  trackLessonStart,
+  trackLessonComplete,
+  trackLesson1Completed,
+  trackLessonGateImpression,
+  trackUpgradeCtaClick,
+} from "../utils/analytics";
 import { MarkdownPre } from "../components/common/CopyableCodeBlock";
 import LessonSponsorSlot from "../components/LessonSponsorSlot";
 import NextLessonButton from "../components/onboarding/NextLessonButton";
+
+// Fires the gate impression once when the locked screen mounts — kept as a
+// child component so the tracking effect lives with the surface it measures.
+const LessonGateTracker: React.FC<{ lessonId?: string; lessonTier: string }> = ({
+  lessonId,
+  lessonTier,
+}) => {
+  useEffect(() => {
+    trackLessonGateImpression(lessonId ?? 'unknown', lessonTier, 'lesson_page');
+  }, [lessonId, lessonTier]);
+  return null;
+};
 
 const LessonPage: React.FC = () => {
   const { courseId, moduleId, lessonId } = useParams<{ courseId: string; moduleId: string; lessonId: string }>();
@@ -286,17 +304,25 @@ The detailed content for this lesson is being prepared. Please check back soon o
   if (error && !isAllowed) {
      return (
       <div className="container mx-auto px-4 py-8 text-center bg-gray-100 p-10 rounded-lg shadow-md">
-        <h2 className="text-2xl font-headings font-semibold mb-4 text-yellow-600">Access Denied</h2>
+        <LessonGateTracker lessonId={lessonId} lessonTier={lesson?.tier ?? 'premium'} />
+        <h2 className="text-2xl font-headings font-semibold mb-4 text-yellow-600">This lesson is part of the Pro curriculum</h2>
         <p className="text-gray-700 font-sans mb-6">{error} Please <Link to="/pricing" className="text-blue-600 hover:underline">choose a plan</Link> or <Link to="/login" className="text-blue-600 hover:underline">log in</Link> to access, or check your subscription.</p>
         <div className="space-y-4">
-          <button 
-            onClick={() => navigate(-1)} 
+          <Link
+            to="/start-trial"
+            onClick={() => trackUpgradeCtaClick('lesson_page_gate', '/start-trial', lessonId)}
+            className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-4 rounded inline-block mr-4"
+          >
+            Unlock with the $1 Pro trial
+          </Link>
+          <button
+            onClick={() => navigate(-1)}
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-4"
           >
             Go Back
           </button>
-          <Link 
-            to="/login" 
+          <Link
+            to="/login"
             className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded inline-block"
           >
             Master Access Login
@@ -324,7 +350,9 @@ The detailed content for this lesson is being prepared. Please check back soon o
       </div>
       <div className="lesson-progress" ref={progressRef} />
       <SEO
-        title={lesson ? `${lesson.title} Lesson` : "Course Lesson"}
+        // Lesson titles already start with "Lesson N: …" — appending the
+        // word again produced "Lesson 9: … Lesson | AI Integration Course".
+        title={lesson ? lesson.title : 'Course Lesson'}
         description={lessonDescription}
         url={pagePath}
         type="course"
@@ -341,7 +369,9 @@ The detailed content for this lesson is being prepared. Please check back soon o
           description: course?.description || lessonDescription,
           provider: BRAND.academyName,
           duration: 'P4W',
-          price: '49',
+          // Annual subscription price — must match /pricing and the other
+          // Course schemas. Never a made-up number.
+          price: '239.88',
           currency: 'USD'
         }}
       />
@@ -376,7 +406,9 @@ The detailed content for this lesson is being prepared. Please check back soon o
         <div className="textbook-header">
           <h1>{lesson?.title}</h1>
           <div className="textbook-meta">
-            <span>Duration: {lesson?.durationMinutes} minutes</span>
+            {/* Hide the row entirely when Firestore has no duration —
+                previously rendered a literal "Duration:  minutes". */}
+            {lesson?.durationMinutes ? <span>Duration: {lesson.durationMinutes} minutes</span> : null}
             {isFreeLesson(lesson) && (
               <span className="bg-green-500 bg-opacity-20 px-2 py-1 rounded-full text-xs">FREE</span>
             )}
@@ -399,8 +431,11 @@ The detailed content for this lesson is being prepared. Please check back soon o
             <span className="mx-1 font-semibold">{lesson?.title}</span>
           </nav>
 
-          {/* Video Player */}
-          {videoUrlToPlay ? (
+          {/* Video Player — rendered only when a video actually exists.
+              47 of 52 live lessons have no video (audit-live-lessons.mjs,
+              Jul 2026); showing a "being prepared" placeholder on paid
+              content advertised something that wasn't shipping. */}
+          {videoUrlToPlay && (
             <div className="mb-10">
               <div className="lesson-video">
                 <ReactPlayer
@@ -413,15 +448,6 @@ The detailed content for this lesson is being prepared. Please check back soon o
                   playsinline
                   className="react-player"
                 />
-              </div>
-            </div>
-          ) : (
-            <div className="mb-10">
-              <div className="lesson-video flex items-center justify-center bg-slate-900/80 border border-slate-700 rounded-xl">
-                <div className="text-center px-6">
-                  <p className="text-lg font-headings font-semibold text-slate-100">YouTube Placeholder</p>
-                  <p className="text-sm text-slate-300 mt-2">Video is being prepared for this lesson.</p>
-                </div>
               </div>
             </div>
           )}
