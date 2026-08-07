@@ -2,17 +2,18 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SubscribeButton from '../components/payment/SubscribeButton';
-import { trackViewPricing } from '../utils/analytics';
+import { trackPlanListView, trackViewPricing } from '../utils/analytics';
 import useFoundingAccess from '../hooks/useFoundingAccess';
 import SEO from '../components/SEO';
 import RoiGuaranteeBadge from '../components/conversion/RoiGuaranteeBadge';
 import ExitIntentLeadMagnet from '../components/lead-magnet/ExitIntentLeadMagnet';
-import { PlanKey, plans, formatPlanPrice } from '../config/pricing';
+import { PlanKey, planKeys, plans, formatPlanPrice } from '../config/pricing';
 import CopyableCodeBlock from '../components/common/CopyableCodeBlock';
 import SiteHeader from '../components/layout/SiteHeader';
 import SiteFooter from '../components/layout/SiteFooter';
 import SocialProofSection from '../components/conversion/SocialProofSection';
 import { pricingFaqItems, pricingObjections, pricingTldr } from '../content/marketingPages';
+import { useExperiment } from '../utils/experiments';
 
 const CheckIcon = () => (
   <svg className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -36,11 +37,24 @@ const PricingPage: React.FC = () => {
   const pro = plans.pro;
   const corporate = plans.corporate;
   const [enterpriseSeats, setEnterpriseSeats] = useState(5);
+  // A/B surface (Phase 4.8): sticky variant + exposure event. Only 'control'
+  // is registered — add variants in src/utils/experiments.ts and branch on
+  // this value in the hero H1 to launch a headline test.
+  const pricingH1Variant = useExperiment('pricing_h1');
   const enterpriseMonthlyTotal = useMemo(() => Number((14.99 * enterpriseSeats).toFixed(2)), [enterpriseSeats]);
 
   useEffect(() => {
     // Track primary offer (trial) for analytics
     trackViewPricing('USD', trial.analyticsValue, trial.name);
+    // Plan-list impression with every real tier, so per-tier funnels
+    // (card view → cta_click → begin_checkout → purchase) are measurable.
+    trackPlanListView(
+      planKeys.map((key) => ({
+        planKey: key,
+        name: plans[key].name,
+        price: plans[key].analyticsValue,
+      }))
+    );
   }, [trial.analyticsValue, trial.name]);
 
   const renderCTA = (planKey: PlanKey) => {
@@ -96,7 +110,9 @@ const PricingPage: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {/* Hero */}
         <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
+          {/* pricing_h1 experiment surface — 'control' renders the current
+              headline; branch on pricingH1Variant to test alternatives. */}
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-6" data-exp-variant={pricingH1Variant}>
             Stop watching AI happen.<br />
             <span className="text-emerald-400">Start using it this week.</span>
           </h1>
