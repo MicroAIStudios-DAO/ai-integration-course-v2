@@ -93,11 +93,11 @@ export const homepageBlocks = [
   },
   { h3: 'Module 2: Building AI Products' },
   {
-    p: '5 Lessons. From idea to working product — including the open Informed Architect founders build, where your agent grounds itself in live search results.',
+    p: '5 Lessons • 1 Project. AI in finance and investment — blockchain synergy, security and trust, investment trends — plus the open Informed Architect founders build, ending in the AI Portfolio Risk Snapshot + Investment Memo project.',
   },
   { h3: 'Module 3: Advanced AI Techniques' },
   {
-    p: '8 Lessons • 1 Project. Deeper technique work — persistent memory with vector databases (founders build) — capped by the Startup Validator + Experiment Planner project.',
+    p: '8 Lessons • 1 Project. Launching AI-powered ventures — idea validation, MVP development, data strategy, and funding — plus the Persistent Memory founders build (vector databases), ending in the Startup Validator + Experiment Planner project.',
   },
   { h3: 'Module 4: AI for Small Business' },
   {
