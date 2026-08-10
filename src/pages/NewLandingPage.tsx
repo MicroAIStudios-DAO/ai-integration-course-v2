@@ -456,7 +456,7 @@ const NewLandingPage: React.FC = () => {
           Admissions Are Now Open
         </h2>
         <p className="text-slate-300 mb-8 max-w-xl mx-auto text-sm md:text-base leading-relaxed">
-          Create a free student profile to immediately begin five baseline automation modules. When you are ready to master advanced multi-agent structures, transition to our premium tuition tiers.
+          Create a free student profile and start the open lessons immediately — five free lessons plus two open founders builds. When you are ready for the full curriculum, transition to Pro access.
         </p>
 
         {/* Dynamic Tuition Matric Container card */}

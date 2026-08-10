@@ -129,7 +129,7 @@ export const homepageBlocks = [
   },
   { h2: 'Admissions Are Now Open' },
   {
-    p: 'Create a free student profile to immediately begin five baseline automation modules. When you are ready to master advanced multi-agent structures, transition to our premium tuition tiers.',
+    p: 'Create a free student profile and start the open lessons immediately — five free lessons plus two open founders builds. When you are ready for the full curriculum, transition to Pro access.',
   },
   { h3: 'Pro Access — Self-Paced Membership' },
   {
