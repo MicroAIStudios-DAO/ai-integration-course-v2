@@ -57,9 +57,14 @@ export function getVariant(experimentId: string): string {
     const stored = window.localStorage.getItem(storageKey(experimentId));
     if (stored && def.variants.includes(stored)) return stored;
 
+    // Misconfigured weights (wrong length, negatives, all-zero) silently
+    // bias assignment — fall back to uniform instead.
+    const candidate =
+      def.weights && def.weights.length === def.variants.length ? def.weights : null;
     const weights =
-      def.weights && def.weights.length === def.variants.length
-        ? def.weights
+      candidate && candidate.every((w) => Number.isFinite(w) && w >= 0) &&
+      candidate.some((w) => w > 0)
+        ? candidate
         : def.variants.map(() => 1);
     const total = weights.reduce((a, b) => a + b, 0);
     let roll = Math.random() * total;

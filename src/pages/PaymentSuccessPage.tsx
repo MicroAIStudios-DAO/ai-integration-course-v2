@@ -159,9 +159,12 @@ const PaymentSuccessPage: React.FC = () => {
 
         if (queryPlan === "pro_trial") {
           // A $1 trial start is NOT a purchase conversion (see the guard
-          // comment on trackGoogleAdsPurchaseConversion) — report it as
-          // trial_start so trial→paid can be measured separately.
-          trackTrialStart(checkoutSessionId, "");
+          // comment on trackGoogleAdsPurchaseConversion). trial_start fires
+          // ONLY from the verified-summary effect below: this fallback runs
+          // before fetchCheckoutSessionSummary confirms the session, so
+          // firing here would (a) count fabricated /payment-success URLs and
+          // (b) double-fire alongside the verified effect, which uses a
+          // different dedup key.
         } else {
           if (typeof window !== "undefined" && (window as any).dataLayer) {
             (window as any).dataLayer.push({

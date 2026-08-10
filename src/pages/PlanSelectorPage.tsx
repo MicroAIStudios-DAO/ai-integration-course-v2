@@ -21,11 +21,11 @@ const PlanSelectorPage: React.FC = () => {
   const utmMedium = searchParams.get('utm_medium') || '';
   const preselect = searchParams.get('plan') || ''; // 'trial' | 'annual'
   // A/B surface (Phase 4.8): which trial-target framing renders (monthly vs
-  // annual emphasis). Only 'control' is registered; branching on this value
-  // changes COPY EMPHASIS only — the actual renewal plan is a Stripe/billing
-  // decision that requires owner approval.
-  const trialTargetVariant = useExperiment('trial_target_plan');
-  void trialTargetVariant;
+  // annual emphasis). Only 'control' is registered — to launch, capture the
+  // return value and branch on it. Branching changes COPY EMPHASIS only; the
+  // actual renewal plan is a Stripe/billing decision requiring owner
+  // approval.
+  useExperiment('trial_target_plan');
 
   // Source-aware copy: Section 13D
   const isFromPaidSocial = utmMedium === 'paid_social' || utmMedium === 'cpc';

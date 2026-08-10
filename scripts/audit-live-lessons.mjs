@@ -8,7 +8,12 @@
 //      those fields at client write time; Admin-SDK writes bypass rules, so
 //      seeded content leaks unless the data itself is moved to
 //      /lessonContent).
-//   2. Report lessons with no video (the "YouTube Placeholder" audit).
+//   2. Report lessons with no PUBLICLY-VISIBLE video (the "YouTube
+//      Placeholder" audit). LIMITATION: correctly-migrated premium videos
+//      live in the gated /lessonContent collection, which this anonymous
+//      script cannot read — so the no-video count is an UPPER BOUND. For
+//      the exact number, re-run the tally with authorized (admin) access
+//      to /lessonContent.
 //   3. Snapshot the real module/lesson structure + tiers (source of truth
 //      for reconciling marketing claims).
 //
@@ -91,5 +96,8 @@ console.log('\n========== SUMMARY ==========');
 console.log(`lessons total: ${lessonCount}`);
 console.log(`metadata docs carrying content fields (world-readable): ${leaks.length}`);
 for (const l of leaks) console.log(`  LEAK ${l.path} tier=${l.tier} fields=${l.fields.join(',')}`);
-console.log(`lessons with no video field: ${noVideo.length}`);
+console.log(
+  `lessons with no publicly-visible video: ${noVideo.length} of ${lessonCount} ` +
+    '(UPPER BOUND — gated /lessonContent may hold videos this anonymous audit cannot see)'
+);
 console.log(`anonymous read of /lessonContent/lesson_9: ${lessonContentClosed}`);

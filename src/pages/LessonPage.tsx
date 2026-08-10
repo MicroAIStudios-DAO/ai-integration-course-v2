@@ -432,8 +432,9 @@ The detailed content for this lesson is being prepared. Please check back soon o
           </nav>
 
           {/* Video Player — rendered only when a video actually exists.
-              47 of 52 live lessons have no video (audit-live-lessons.mjs,
-              Jul 2026); showing a "being prepared" placeholder on paid
+              Up to 47 of 52 live lessons have no publicly-visible video
+              (audit-live-lessons.mjs, Jul 2026 — gated /lessonContent may
+              hold more); showing a "being prepared" placeholder on paid
               content advertised something that wasn't shipping. */}
           {videoUrlToPlay && (
             <div className="mb-10">

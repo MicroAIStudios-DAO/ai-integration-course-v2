@@ -856,13 +856,21 @@ export const trackLessonGateImpression = (
   }
 };
 
+/** Gated surfaces that can emit upgrade CTAs — extend the union when adding
+ * a new surface so event dimensions stay consistent (no free-text drift). */
+export type UpgradeCtaSurface =
+  | 'lesson_page_gate'
+  | 'curriculum_row'
+  | 'curriculum_banner'
+  | 'start_trial_page';
+
 /**
  * Track an upgrade-CTA click from a gated surface.
  * Trigger: any "unlock/upgrade/start trial" CTA rendered because content
  * was locked.
  */
 export const trackUpgradeCtaClick = (
-  surface: string,
+  surface: UpgradeCtaSurface,
   destination: string,
   lessonId?: string
 ): void => {
@@ -890,6 +898,7 @@ export const trackPlanListView = (
     window.gtag('event', 'view_item_list', {
       item_list_id: 'pricing_plans',
       item_list_name: 'Pricing Plans',
+      currency: 'USD',
       items: plans.map((p, index) => ({
         item_id: p.planKey,
         item_name: p.name,
