@@ -409,3 +409,23 @@ export const pricingTldr =
 
 export const faqTldr =
   'AI Integration Course is a build-first AI automation curriculum with free open lessons, an AI tutor (Allie), and a $1 seven-day Pro Trial — then $29.99/month, or $239.88/year on annual billing. Every paid plan carries the 14-Day Build Guarantee.';
+
+// Objection-handling Q&A rendered on /pricing and /start-trial. Copy is the
+// pricing page's original on-page objection section, verbatim.
+export const pricingObjections: FaqItem[] = [
+  {
+    question: '"I\'m not technical."',
+    answer:
+      'You do not need to be technical to start. The path is built to get you moving with guided, practical steps — not coding or heavy theory.'
+  },
+  {
+    question: '"I don\'t have time."',
+    answer:
+      'Your first useful win should take minutes, not days. Most lessons are intentionally short and built for real schedules.'
+  },
+  {
+    question: '"What if it\'s not worth it?"',
+    answer:
+      "That's exactly why the guarantee exists. If you don't build something useful in 14 days, you get your money back."
+  }
+];

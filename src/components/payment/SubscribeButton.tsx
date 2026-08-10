@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PlanKey, getPlan } from '../../config/pricing';
-import { trackBeginCheckout } from '../../utils/analytics';
+import { trackBeginCheckout, trackCTAClick } from '../../utils/analytics';
 import { startCheckoutForPlan } from '../../utils/checkout';
 
 interface SubscribeButtonProps {
@@ -35,6 +35,9 @@ const SubscribeButton: React.FC<SubscribeButtonProps> = ({
         ? Number((14.99 * normalizedSeatCount).toFixed(2))
         : plan.analyticsValue;
 
+      // Per-plan CTA click precedes begin_checkout so per-tier click→checkout
+      // funnels are measurable (Phase 4.8).
+      trackCTAClick(plan.name, 'subscribe_button', planKey);
       trackBeginCheckout(
         checkoutValue,
         'USD',

@@ -1,8 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getCourses, getUserCourseProgress, isFoundersLesson, isFreeLesson } from '../firebaseService';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  getCourses,
+  getUserCourseProgress,
+  getUserProfile,
+  isAdminProfile,
+  isFoundersLesson,
+  isFreeLesson,
+  isPublicPreviewLesson,
+  userHasPaidAccess,
+} from '../firebaseService';
 import { Course, Module, Lesson, UserCourseProgress } from '../types/course';
 import { useAuth } from '../context/AuthContext';
+import { trackLessonGateImpression, trackUpgradeCtaClick } from '../utils/analytics';
 import CourseSchema from '../components/seo/CourseSchema';
 import SEO from '../components/SEO';
 import '../styles/lesson-content.css';
@@ -58,6 +68,10 @@ const CourseOverviewPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [userProgress, setUserProgress] = useState<UserCourseProgress | null>(null);
+  // Paid entitlement (premium / founding / active sub / trial / admin).
+  // Drives the lock badges and upgrade CTAs — the old UI only distinguished
+  // anonymous visitors, so signed-in free users saw no Pro merchandising.
+  const [hasPaidEntitlement, setHasPaidEntitlement] = useState<boolean>(false);
   // Accordion: track which modules are expanded (all open by default)
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
   const toggleModule = (moduleId: string) => {
@@ -115,8 +129,11 @@ const CourseOverviewPage: React.FC = () => {
           if (currentUser && fetchedCourse.id) {
             const progress = await fetchUserProgress(fetchedCourse.id);
             setUserProgress(progress);
+            const profile = await getUserProfile(currentUser.uid).catch(() => null);
+            setHasPaidEntitlement(userHasPaidAccess(profile) || isAdminProfile(profile));
           } else {
             setUserProgress(null);
+            setHasPaidEntitlement(false);
           }
         } else {
           setError('No courses available. Please try again later.');
@@ -162,9 +179,18 @@ const CourseOverviewPage: React.FC = () => {
 
   // Function to navigate to the lesson page
   const handleLessonClick = (lesson: Lesson, moduleId: string) => {
-    // If the lesson is premium and user is not logged in, navigate to login
     const lessonIsFree = isFreeLesson(lesson);
-    if (!lessonIsFree && !currentUser) {
+    const foundersLesson = isFoundersLesson(lesson);
+    // Locked premium lesson + no entitlement → this is a gate hit. Send the
+    // visitor to the trial offer (a login wall for someone with no account
+    // was the old dead-end) and record the funnel moment.
+    if (!lessonIsFree && !foundersLesson && !hasPaidEntitlement) {
+      trackLessonGateImpression(lesson.id, lesson.tier ?? 'premium', 'curriculum_row');
+      trackUpgradeCtaClick('curriculum_row', '/start-trial', lesson.id);
+      navigate('/start-trial');
+      return;
+    }
+    if (!lessonIsFree && !currentUser && !isPublicPreviewLesson(lesson)) {
       navigate('/login', { state: { from: `/courses/${course?.id}/modules/${moduleId}/lessons/${lesson.id}` } });
       return;
     }
@@ -296,6 +322,28 @@ const CourseOverviewPage: React.FC = () => {
               </p>
             </div>
 
+            {/* Upgrade banner — the value ladder for non-entitled viewers.
+                Counts are computed from the live curriculum, never hardcoded. */}
+            {!hasPaidEntitlement && modulesWithDisplayLessons.length > 0 && (
+              <div className="mb-10 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-300">
+                    Pro curriculum
+                  </p>
+                  <p className="mt-2 text-slate-100 font-sans">
+                    {`Unlock all ${modulesWithDisplayLessons.reduce((n, m) => n + m.displayLessons.length, 0)} lessons across ${modulesWithDisplayLessons.length} modules — free lessons stay open forever.`}
+                  </p>
+                </div>
+                <Link
+                  to="/start-trial"
+                  onClick={() => trackUpgradeCtaClick('curriculum_banner', '/start-trial')}
+                  className="flex-shrink-0 inline-flex items-center justify-center rounded-xl bg-amber-500 hover:bg-amber-400 px-5 py-3 font-bold text-slate-950 transition-colors"
+                >
+                  Start the $1 Pro trial
+                </Link>
+              </div>
+            )}
+
             {/* Lesson dropdown */}
             <div className="mb-10">
               <label className="text-sm uppercase tracking-[0.2em] text-slate-300 font-headings font-semibold">
@@ -370,13 +418,17 @@ const CourseOverviewPage: React.FC = () => {
                   {module.displayLessons.map((lesson) => {
                     const lessonIsFree = isFreeLesson(lesson);
                     const foundersLesson = isFoundersLesson(lesson);
-                    
+                    // Locked = premium lesson and the viewer has no paid
+                    // entitlement (anonymous OR signed-in free account —
+                    // the old check only styled anonymous visitors).
+                    const lessonLocked = !lessonIsFree && !foundersLesson && !hasPaidEntitlement;
+
                     return (
                     <li 
                       key={lesson.id} 
                       onClick={() => handleLessonClick(lesson, module.id)}
                       className={`w-[98%] mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-4 rounded-xl transition-all duration-200 ease-in-out cursor-pointer 
-                                  ${(!lessonIsFree && (!currentUser)) 
+                                  ${lessonLocked
                                     ? 'bg-white/5 text-slate-300 hover:bg-white/10'
                                     : 'bg-gradient-to-r from-cyan-500/10 to-fuchsia-500/10 hover:from-cyan-500/20 hover:to-fuchsia-500/20 text-white'}
                                   ${lessonIsFree ? 'border border-cyan-400/30' : foundersLesson ? 'border border-amber-400/30' : 'border border-white/10'}
@@ -406,11 +458,20 @@ const CourseOverviewPage: React.FC = () => {
                         {foundersLesson && !lessonIsFree && (
                           <span className="text-xs bg-amber-400/20 text-amber-100 px-2 py-1 rounded-full font-sans">Founders</span>
                         )}
-                        {(!lessonIsFree && !foundersLesson && (!currentUser)) && (
-                          <span className="text-xs bg-amber-400/20 text-amber-200 px-2 py-1 rounded-full font-sans">Premium</span>
+                        {lessonLocked && (
+                          <span className="inline-flex items-center gap-1 text-xs bg-amber-400/20 text-amber-200 px-2 py-1 rounded-full font-sans">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                            </svg>
+                            Pro
+                          </span>
                         )}
                         <span className="text-slate-300 text-sm font-sans">
-                          {(!lessonIsFree && (!currentUser)) ? 'Login to access' : foundersLesson && !lessonIsFree ? 'Open founders lesson' : 'View Lesson'}
+                          {lessonLocked
+                            ? 'Unlock with the $1 trial'
+                            : foundersLesson && !lessonIsFree
+                              ? 'Open founders lesson'
+                              : 'View Lesson'}
                         </span>
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
@@ -434,46 +495,29 @@ const CourseOverviewPage: React.FC = () => {
           </div>{/* end flex-1 main content */}
         </div>
 
-        {/* CROSS-SELL: Synconis Labs Ecosystem */}
-        <div className="lg-card-surface mt-12 rounded-2xl p-6 md:p-8">
-          <p className="text-xs uppercase tracking-[0.2em] text-cyan-400 mb-2">From the {BRAND.ventureName} Ecosystem</p>
-          <h3 className="text-xl font-bold text-white mb-2">Ready to Deploy What You've Learned?</h3>
-          <p className="text-sm text-slate-400 mb-6">The course teaches the skills. These tools let you ship them at scale.</p>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <a
-              href="https://buy.stripe.com/8wMeYG9Yz0Vb2Oc7sH"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 hover:border-amber-500/40 transition-colors"
-            >
-              <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
-                <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-white">Founder Autopilot</p>
-                <p className="text-xs text-slate-400">17 AI agents for CRM, scheduling &amp; invoicing &mdash; from $39/mo</p>
-              </div>
-            </a>
-            <a
-              href="https://buy.stripe.com/5kA4k2caN1Zf6asfZd"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4 hover:border-cyan-500/40 transition-colors"
-            >
-              <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center shrink-0">
-                <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-white">ProofGuard AI</p>
-                <p className="text-xs text-slate-400">AI compliance &amp; audit trails &mdash; from $299/mo</p>
-              </div>
-            </a>
-          </div>
-        </div>
+        {/* Synconis Labs ecosystem — deliberately demoted to a footnote.
+            /courses is the highest-intent page in the funnel; its primary
+            CTA is the subscription, not a sibling product (Phase 4.4). */}
+        <p className="mt-12 text-center text-xs text-slate-500">
+          From the {BRAND.ventureName} ecosystem:{' '}
+          <a
+            href="https://buy.stripe.com/8wMeYG9Yz0Vb2Oc7sH"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-slate-300 transition-colors"
+          >
+            Founder Autopilot
+          </a>
+          {' · '}
+          <a
+            href="https://buy.stripe.com/5kA4k2caN1Zf6asfZd"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-slate-300 transition-colors"
+          >
+            ProofGuard AI
+          </a>
+        </p>
 
       </div>
     </div>

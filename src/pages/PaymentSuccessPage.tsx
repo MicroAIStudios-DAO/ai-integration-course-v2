@@ -5,6 +5,7 @@ import { db, auth } from "../config/firebase";
 import {
   trackPurchase,
   trackGoogleAdsPurchaseConversion,
+  trackTrialStart,
   setUserProperties,
 } from "../utils/analytics";
 import { plans, type PlanKey } from "../config/pricing";
@@ -156,19 +157,29 @@ const PaymentSuccessPage: React.FC = () => {
         const queryPlan = new URLSearchParams(location.search).get("plan") as PlanKey | null;
         const estimatedPlan = plans[queryPlan || "explorer"] || plans.explorer;
 
-        if (typeof window !== "undefined" && (window as any).dataLayer) {
-          (window as any).dataLayer.push({
-            event: "purchase",
-            ecommerce: {
-              transaction_id: checkoutSessionId,
-              value: estimatedPlan.analyticsValue,
-              currency: "USD",
-            },
-          });
-        }
+        if (queryPlan === "pro_trial") {
+          // A $1 trial start is NOT a purchase conversion (see the guard
+          // comment on trackGoogleAdsPurchaseConversion). trial_start fires
+          // ONLY from the verified-summary effect below: this fallback runs
+          // before fetchCheckoutSessionSummary confirms the session, so
+          // firing here would (a) count fabricated /payment-success URLs and
+          // (b) double-fire alongside the verified effect, which uses a
+          // different dedup key.
+        } else {
+          if (typeof window !== "undefined" && (window as any).dataLayer) {
+            (window as any).dataLayer.push({
+              event: "purchase",
+              ecommerce: {
+                transaction_id: checkoutSessionId,
+                value: estimatedPlan.analyticsValue,
+                currency: "USD",
+              },
+            });
+          }
 
-        trackPurchase(checkoutSessionId, estimatedPlan.analyticsValue, "USD", 0, estimatedPlan.name, queryPlan || ("explorer" as PlanKey));
-        trackGoogleAdsPurchaseConversion(checkoutSessionId, estimatedPlan.analyticsValue, "");
+          trackPurchase(checkoutSessionId, estimatedPlan.analyticsValue, "USD", 0, estimatedPlan.name, queryPlan || ("explorer" as PlanKey));
+          trackGoogleAdsPurchaseConversion(checkoutSessionId, estimatedPlan.analyticsValue, "");
+        }
 
         sessionStorage.setItem(fallbackKey, "true");
       }
@@ -186,8 +197,13 @@ const PaymentSuccessPage: React.FC = () => {
 
     const purchaseValue = summary.analyticsValue > 0 ? summary.analyticsValue : plan.analyticsValue;
 
-    trackPurchase(summary.sessionId, purchaseValue, "USD", 0, summary.planName, summary.planKey);
-    trackGoogleAdsPurchaseConversion(summary.sessionId, purchaseValue, summary.email);
+    if (summary.planKey === "pro_trial") {
+      // Trial starts report as trial_start, never purchase (Phase 4.8).
+      trackTrialStart(summary.sessionId, summary.email);
+    } else {
+      trackPurchase(summary.sessionId, purchaseValue, "USD", 0, summary.planName, summary.planKey);
+      trackGoogleAdsPurchaseConversion(summary.sessionId, purchaseValue, summary.email);
+    }
 
     setUserProperties({
       subscription_status:
