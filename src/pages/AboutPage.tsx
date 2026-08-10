@@ -129,10 +129,10 @@ const AboutPage: React.FC = () => {
         {/* ── Verified Case Studies ── */}
         <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
           <h2 className="text-2xl font-headings font-bold text-slate-950">
-            Verified client outcomes
+            Client outcomes from real engagements
           </h2>
           <p className="mt-2 text-slate-600 text-sm">
-            The following results are drawn from real engagements. Industry and company names are anonymised at client request.
+            The following results are drawn from real engagements, as reported within those projects. Industry and company names are anonymised at client request.
           </p>
           <div className="mt-6 grid gap-5 md:grid-cols-3">
             {CASE_STUDIES.map((cs) => (

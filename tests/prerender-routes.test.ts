@@ -72,7 +72,7 @@ describe.skipIf(!hasBuild)('prerendered routes (build/)', () => {
     expect(descLen, `${route}: meta description is ${descLen} chars (must be 25-160)`).toBeLessThanOrEqual(160);
 
     expect(html, `${route}: title is still the homepage default`).not.toContain(
-      '<title>Advanced AI Integration & Systems Engineering | AI Integration Course</title>'
+      '<title>Practical AI Automation Training | AI Integration Course</title>'
     );
 
     // Social-card contract: exactly one description, absolute social images,
