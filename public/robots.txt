@@ -17,7 +17,7 @@ Disallow: /course_content/lessons/
 # Gated course/module/lesson routes are client-rendered, auth-gated shells
 # with nothing crawlable. Keep the public overview crawlable, but do not
 # permit crawling deeper course shells.
-Disallow: /courses/
+Disallow: /courses/*/
 
 # Allow static assets
 Allow: /static/
@@ -36,7 +36,7 @@ Disallow: /api/
 Disallow: /__/
 Disallow: /firebase/
 Disallow: /course_content/lessons/
-Disallow: /courses/
+Disallow: /courses/*/
 
 User-agent: OAI-SearchBot
 Allow: /
@@ -45,7 +45,7 @@ Disallow: /api/
 Disallow: /__/
 Disallow: /firebase/
 Disallow: /course_content/lessons/
-Disallow: /courses/
+Disallow: /courses/*/
 
 User-agent: ClaudeBot
 Allow: /
@@ -54,7 +54,7 @@ Disallow: /api/
 Disallow: /__/
 Disallow: /firebase/
 Disallow: /course_content/lessons/
-Disallow: /courses/
+Disallow: /courses/*/
 
 User-agent: PerplexityBot
 Allow: /
@@ -63,7 +63,7 @@ Disallow: /api/
 Disallow: /__/
 Disallow: /firebase/
 Disallow: /course_content/lessons/
-Disallow: /courses/
+Disallow: /courses/*/
 
 User-agent: CCBot
 Allow: /
@@ -72,7 +72,7 @@ Disallow: /api/
 Disallow: /__/
 Disallow: /firebase/
 Disallow: /course_content/lessons/
-Disallow: /courses/
+Disallow: /courses/*/
 
 User-agent: Google-Extended
 Allow: /
@@ -81,7 +81,7 @@ Disallow: /api/
 Disallow: /__/
 Disallow: /firebase/
 Disallow: /course_content/lessons/
-Disallow: /courses/
+Disallow: /courses/*/
 
 # Sitemap location
 Sitemap: https://aiintegrationcourse.com/sitemap.xml

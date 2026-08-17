@@ -17,7 +17,7 @@ describe('CRO and SEO batch', () => {
 
   it('prerenders lead capture and keeps gated course shells out of crawlers', () => {
     expect(read('scripts/prerender-blogs.mjs')).toContain('Email capture form');
-    expect(read('public/robots.txt')).toContain('Disallow: /courses/');
+    expect(read('public/robots.txt')).toContain('Disallow: /courses/*/');
     expect(read('public/sitemap.xml')).not.toContain('/courses/course_');
   });
 

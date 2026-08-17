@@ -38,7 +38,7 @@ steps:
     timeout: 300s
 
   # Step 4: Verify the hosted IndexNow key and submit the deployed sitemap.
-  - name: 'node:20'
+  - name: 'node:22'
     id: 'ping-indexnow'
     entrypoint: 'node'
     args: ['scripts/indexnow-ping.mjs']
