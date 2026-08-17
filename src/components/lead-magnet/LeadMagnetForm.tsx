@@ -18,6 +18,7 @@ const LeadMagnetForm: React.FC<LeadMagnetFormProps> = ({
   onSuccess,
 }) => {
   const [email, setEmail] = useState('');
+  const [consent, setConsent] = useState(false);
   const [status, setStatus] = useState<SubmissionStatus>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [downloadPath, setDownloadPath] = useState(topWorkflowsLeadMagnet.downloadPath);
@@ -63,6 +64,8 @@ const LeadMagnetForm: React.FC<LeadMagnetFormProps> = ({
       const submitLeadMagnet = httpsCallable(functions, 'submitLeadMagnetV2');
       const result = await submitLeadMagnet({
         email,
+        consent,
+        marketingConsent: consent,
         source,
         leadMagnetId: topWorkflowsLeadMagnet.id,
         pagePath: typeof window !== 'undefined' ? window.location.pathname : '/',
@@ -97,6 +100,17 @@ const LeadMagnetForm: React.FC<LeadMagnetFormProps> = ({
         <button type="submit" className={buttonClassName} disabled={isSubmitting}>
           {isSubmitting ? 'Unlocking...' : topWorkflowsLeadMagnet.ctaLabel}
         </button>
+         <label className={`flex items-start gap-2 text-xs ${helpTextClassName}`}>
+           <input
+             type="checkbox"
+             required
+             checked={consent}
+             onChange={(event) => setConsent(event.target.checked)}
+             disabled={isSubmitting}
+             className="mt-0.5"
+           />
+           <span>I agree to receive the guide and occasional build tips. Unsubscribe anytime.</span>
+         </label>
       </form>
 
       {status === 'success' && (

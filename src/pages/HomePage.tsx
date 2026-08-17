@@ -41,6 +41,7 @@ const HomePage: React.FC = () => {
     login: buildExternalUrl(baseUrl, '/login'),
     signup: buildExternalUrl(baseUrl, '/pricing'),
     pricing: buildExternalUrl(baseUrl, '/pricing'),
+    trial: buildExternalUrl(baseUrl, '/start-trial'),
     about: buildExternalUrl(baseUrl, '/about'),
     blogs: buildExternalUrl(baseUrl, '/blogs'),
     library: buildExternalUrl(baseUrl, '/library'),
@@ -107,7 +108,7 @@ const HomePage: React.FC = () => {
             </a>
           ) : (
             <a
-              href={nav.pricing}
+              href={nav.trial}
               className="hidden md:inline-flex rounded-xl bg-cyan-500 px-5 py-2.5 text-sm font-bold uppercase tracking-[0.1em] text-slate-950 shadow-lg shadow-cyan-500/25 hover:bg-cyan-400 transition-colors"
             >
               Get Started
@@ -146,7 +147,7 @@ const HomePage: React.FC = () => {
               className="inline-flex flex-col items-center rounded-2xl bg-cyan-500 px-8 py-4 text-slate-950 shadow-xl shadow-cyan-500/20 transition-all hover:bg-cyan-400 hover:shadow-cyan-400/30 hover:scale-[1.02]"
             >
               <span className="text-base font-bold uppercase tracking-[0.1em]">Ship Your First Agent This Week</span>
-              <span className="text-xs font-semibold mt-1 opacity-80">$29.99/mo &mdash; 14-day money-back guarantee</span>
+              <span className="text-xs font-semibold mt-1 opacity-80">$1 &mdash; cancel in two clicks &mdash; 14-day guarantee</span>
             </a>
             <a
               href="#demo"

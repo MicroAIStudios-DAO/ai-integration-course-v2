@@ -1,6 +1,7 @@
 export interface FaqItem {
   question: string;
   answer: string;
+  link?: { label: string; href: string };
 }
 
 export interface VideoClip {
@@ -62,12 +63,14 @@ export const homepageFaqItems: FaqItem[] = [
   {
     question: 'How do I integrate Gemini API with Python?',
     answer:
-      'We walk you through setup step by step: create an API key, configure a Python client, send prompts, and connect Gemini outputs into real workflows like email triage and reporting automations.'
+      'We walk you through setup step by step: create an API key, configure a Python client, send prompts, and connect Gemini outputs into real workflows like email triage and reporting automations.',
+    link: { label: 'See the Gemini function-calling guide', href: '/library/function-calling-with-gemini-1-5-pro' },
   },
   {
     question: 'Is this course for non-coders?',
     answer:
-      'Yes. Non-coders can use the no-code automation path, while developers can take the Python and API modules for deeper custom integrations.'
+      'Yes. Non-coders can use the no-code automation path, while developers can take the Python and API modules for deeper custom integrations.',
+    link: { label: 'Start the $1 seven-day trial', href: '/start-trial' },
   },
   {
     question: 'How to use AI for business automation?',
@@ -77,7 +80,8 @@ export const homepageFaqItems: FaqItem[] = [
   {
     question: 'Does the course cover OpenAI, Anthropic, and Gemini workflows?',
     answer:
-      'Yes. The curriculum is implementation-focused, so the emphasis is on choosing the right model for the task, wiring prompts into tools, and shipping stable automations instead of chasing one vendor.'
+      'Yes. The curriculum is implementation-focused, so the emphasis is on choosing the right model for the task, wiring prompts into tools, and shipping stable automations instead of chasing one vendor.',
+    link: { label: 'Compare OpenAI and Anthropic workflows', href: '/library/openai-vs-anthropic-for-automation' },
   },
   {
     question: 'Will I ship a real workflow or just watch lessons?',

@@ -3,6 +3,8 @@ import { Link, useParams } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { resourceLibraryItems } from '../content/marketingPages';
 import { getBlogPostBySlug } from '../content/blogPosts';
+import LeadMagnetForm from '../components/lead-magnet/LeadMagnetForm';
+import { topWorkflowsLeadMagnet } from '../content/leadMagnets';
 
 const ResourceDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -111,12 +113,19 @@ const ResourceDetailPage: React.FC = () => {
               Use this guide as the strategy layer, then use the course to turn it into a real workflow with prompts, tool calls, guardrails, and rollout steps.
             </p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <Link to="/pricing" className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-5 py-3 font-semibold text-white hover:bg-slate-800">
-                See pricing
+              <Link to="/start-trial" className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-5 py-3 font-semibold text-white hover:bg-slate-800">
+                Start the $1 seven-day trial
               </Link>
-              <Link to="/courses" className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-5 py-3 font-semibold text-slate-900 hover:bg-slate-100">
-                View curriculum
+              <Link to="/pricing" className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-5 py-3 font-semibold text-slate-900 hover:bg-slate-100">
+                Compare all plans
               </Link>
+            </div>
+          </div>
+          <div className="mt-10 rounded-2xl border border-cyan-200 bg-cyan-50 p-6">
+            <h2 className="text-xl font-bold text-slate-950">{topWorkflowsLeadMagnet.title}</h2>
+            <p className="mt-2 text-slate-700">{topWorkflowsLeadMagnet.description}</p>
+            <div className="mt-4">
+              <LeadMagnetForm source={`library_${resource.slug}`} theme="light" />
             </div>
           </div>
         </div>

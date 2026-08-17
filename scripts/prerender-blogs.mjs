@@ -173,6 +173,17 @@ function renderBlocks(blocks) {
 const tldrBlock = (text) =>
   `<p><strong>TL;DR for AI search engines:</strong> ${escapeHtml(text)}</p>`;
 
+const leadMagnetCaptureHtml = (source) => `
+  <section aria-label="Free AI automation roadmap">
+    <h2>Top 5 AI Automation Workflows</h2>
+    <p>Get the free roadmap and workflow guide delivered to your inbox.</p>
+    <form aria-label="Email capture form" data-lead-source="${escapeHtml(source)}">
+      <label>Email address <input type="email" name="email" autocomplete="email" required></label>
+      <label><input type="checkbox" name="consent" required> I agree to receive the guide and occasional build tips.</label>
+      <button type="submit">Get the free guide</button>
+    </form>
+  </section>`;
+
 // ─── Prerendered global chrome ───────────────────────────────────────────────
 // Mirrors SiteHeader.tsx / SiteFooter.tsx via src/content/siteLinks.ts so
 // every prerendered page carries the same crawlable nav/footer links users
@@ -303,6 +314,7 @@ function blogBody(post, articleHtml, ctx) {
     `<p>${escapeHtml(post.summary)}</p>`,
     articleHtml,
     '</article>',
+    leadMagnetCaptureHtml(`blog_${post.slug}`),
     '<h2>Keep reading</h2>',
     '<ul>',
     ...siblings.map(
@@ -401,7 +413,8 @@ function detailPageBody(basePath, crumbName, item, ctx) {
   }
   parts.push(
     '</article>',
-    `<p><a href="/pricing">Explore the AI Integration Course — $1 Pro trial</a> &bull; <a href="${basePath}">Back to ${escapeHtml(crumbName)}</a></p>`,
+    leadMagnetCaptureHtml(`library_${item.slug}`),
+    `<p><a href="/start-trial">Start the $1 seven-day trial</a> &bull; <a href="/pricing">Compare all plans</a> &bull; <a href="${basePath}">Back to ${escapeHtml(crumbName)}</a></p>`,
     chromeFooterHtml(ctx.siteLinks)
   );
   return parts.join('\n');
@@ -535,8 +548,19 @@ function staticRouteBody(route, ctx) {
     // content in the raw HTML too. TL;DR mirrors the visible block.
     parts.push(tldrBlock(ctx.faqTldr));
     for (const faq of ctx.homepageFaqItems) {
-      parts.push(`<h2>${escapeHtml(faq.question)}</h2>`, `<p>${escapeHtml(faq.answer)}</p>`);
+      parts.push(
+        `<h2>${escapeHtml(faq.question)}</h2>`,
+        `<p>${escapeHtml(faq.answer)}${
+          faq.link
+            ? ` <a href="${escapeHtml(faq.link.href)}">${escapeHtml(faq.link.label)}</a>`
+            : ''
+        }</p>`
+      );
     }
+  }
+  if (route.path === '/faq') {
+    parts.push(leadMagnetCaptureHtml('faq_inline'));
+    parts.push('<p>Ready to build? <a href="/start-trial">Start the $1 seven-day trial</a>.</p>');
   }
   parts.push('</main>');
   if (withChrome) {
@@ -727,8 +751,10 @@ function main() {
       '<main>',
       `<h1>${escapeHtml(homepage.h1)}</h1>`,
       `<p>${escapeHtml(homepage.blurb)}</p>`,
+      leadMagnetCaptureHtml('homepage_inline'),
       ...renderBlocks(pageBodies['/']),
-      `<p><a href="/pricing">Start the $1 Pro trial</a> &bull; <a href="/courses">Course overview</a> &bull; <a href="/blogs">Blog</a> &bull; <a href="/faq">FAQ</a></p>`,
+      `<p><a href="/start-trial">Start the $1 Pro trial</a> &bull; <a href="/pricing">Compare all plans</a> &bull; <a href="/courses">Course overview</a> &bull; <a href="/blogs">Blog</a> &bull; <a href="/faq">FAQ</a></p>`,
+      '<p>$1 — cancel in two clicks — 14-day guarantee.</p>',
       '</main>',
       chromeFooterHtml(ctx.siteLinks),
     ].join('\n');

@@ -21,6 +21,7 @@ const HOST = 'aiintegrationcourse.com';
 // still propagate to all IndexNow engines, but hitting Bing directly makes
 // them attributable in the Bing Webmaster Tools IndexNow dashboard.
 const ENDPOINT = 'https://www.bing.com/indexnow';
+const KEY_FILE = path.join(REPO_ROOT, `${INDEXNOW_KEY}.txt`);
 
 function loadSitemapUrls() {
   const candidates = [
@@ -36,6 +37,19 @@ function loadSitemapUrls() {
 }
 
 async function main() {
+  if (!existsSync(KEY_FILE) || readFileSync(KEY_FILE, 'utf8').trim() !== INDEXNOW_KEY) {
+    console.warn('indexnow-ping: local key file is missing or does not match the configured key.');
+    return;
+  }
+
+  const keyResponse = await fetch(`https://${HOST}/${INDEXNOW_KEY}.txt`);
+  const hostedKey = (await keyResponse.text()).trim();
+  if (!keyResponse.ok || hostedKey !== INDEXNOW_KEY) {
+    console.warn(`indexnow-ping: hosted key verification failed (HTTP ${keyResponse.status}).`);
+    return;
+  }
+  console.log(`✅ IndexNow key verified at https://${HOST}/${INDEXNOW_KEY}.txt`);
+
   const urls = loadSitemapUrls();
   if (urls.length === 0) {
     console.warn('indexnow-ping: no sitemap URLs found, skipping.');

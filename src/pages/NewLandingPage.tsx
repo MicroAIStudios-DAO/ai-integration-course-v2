@@ -88,7 +88,7 @@ const NewLandingPage: React.FC = () => {
         {/* Dual Actions with Low-Friction Entry */}
         <div className="flex flex-col sm:flex-row gap-4 mb-16 justify-center w-full max-w-md">
           <Link
-            to="/checkout/start?plan=pro_trial"
+            to="/start-trial"
             className="flex-1 text-center bg-amber-500 hover:bg-amber-400 text-slate-950 px-8 py-4 rounded-xl text-md font-bold shadow-lg shadow-amber-500/10 hover:shadow-amber-500/20 transition-all hover:scale-[1.03] active:scale-[0.98]"
           >
             Start $1 Trial Now
@@ -101,6 +101,7 @@ const NewLandingPage: React.FC = () => {
             Get My Free Roadmap →
           </Link>
         </div>
+        <p className="text-xs text-slate-400">Start for $1 — cancel in two clicks — 14-day guarantee.</p>
 
         {/* Premium Academic Campus Visual */}
         <div className="w-full max-w-5xl mb-24 relative group">
@@ -458,7 +459,7 @@ const NewLandingPage: React.FC = () => {
 
           <div className="mt-8 flex flex-col gap-3 justify-center">
             <Link
-              to="/checkout/start?plan=pro_trial"
+              to="/start-trial"
               className="bg-amber-500 hover:bg-amber-400 text-slate-950 px-8 py-4 rounded-xl font-bold uppercase text-sm tracking-wider shadow shadow-amber-500/20 hover:scale-[1.01] transition-transform"
             >
               Start $1 Trial Now
@@ -469,6 +470,7 @@ const NewLandingPage: React.FC = () => {
             >
               Or compare all tuition plans
             </Link>
+            <p className="text-xs text-slate-400">$1 — cancel in two clicks — 14-day guarantee.</p>
           </div>
         </div>
 

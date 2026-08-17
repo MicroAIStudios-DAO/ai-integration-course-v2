@@ -6,6 +6,7 @@ if (!admin.apps.length) {
 }
 
 const LEAD_MAGNET_COLLECTION = 'lead_magnet_signups';
+const LEADS_COLLECTION = 'leads';
 const DEFAULT_LEAD_MAGNET_ID = 'top-5-ai-automation-workflows-2026';
 const DEFAULT_DOWNLOAD_PATH = '/assets/top-5-ai-automation-workflows-2026.html';
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -34,6 +35,22 @@ export const submitLeadMagnetV2 = onCall(
     const pagePath = normalizeText(request.data?.pagePath, '/') || '/';
     const referrer = normalizeText(request.data?.referrer, '');
     const userAgent = normalizeText(request.rawRequest.get('user-agent'), '');
+    const marketingConsent = request.data?.marketingConsent === true;
+    const now = admin.firestore.FieldValue.serverTimestamp();
+
+    await admin.firestore().collection(LEADS_COLLECTION).doc(email).set(
+      {
+        email,
+        source,
+        sourcePath: pagePath,
+        timestamp: now,
+        consent: marketingConsent,
+        marketingConsent,
+        leadMagnetId,
+        updatedAt: now,
+      },
+      { merge: true }
+    );
 
     const docRef = admin
       .firestore()
@@ -49,7 +66,7 @@ export const submitLeadMagnetV2 = onCall(
       referrer: referrer || null,
       userAgent: userAgent || null,
       downloadPath: DEFAULT_DOWNLOAD_PATH,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: now,
     };
 
     if (request.auth?.uid) {
@@ -61,7 +78,7 @@ export const submitLeadMagnetV2 = onCall(
         ? basePayload
         : {
             ...basePayload,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: now,
             firstSource: source,
             firstPagePath: pagePath,
             status: 'new',

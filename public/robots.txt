@@ -14,10 +14,11 @@ Disallow: /firebase/
 # keep crawlers away from the path as defense-in-depth.
 Disallow: /course_content/lessons/
 
-# Gated course module/lesson routes are client-rendered, auth-gated shells
-# with nothing crawlable — keep crawlers out of them. The prerendered
-# /courses overview page itself stays crawlable.
-Disallow: /courses/*/modules/
+# Gated course/module/lesson routes are client-rendered, auth-gated shells
+# with nothing crawlable. Keep the public overview crawlable, but do not
+# permit crawling deeper course shells.
+Disallow: /courses/
+Allow: /courses$
 
 # Allow static assets
 Allow: /static/
@@ -36,7 +37,8 @@ Disallow: /api/
 Disallow: /__/
 Disallow: /firebase/
 Disallow: /course_content/lessons/
-Disallow: /courses/*/modules/
+Disallow: /courses/
+Allow: /courses$
 
 User-agent: OAI-SearchBot
 Allow: /
@@ -45,7 +47,8 @@ Disallow: /api/
 Disallow: /__/
 Disallow: /firebase/
 Disallow: /course_content/lessons/
-Disallow: /courses/*/modules/
+Disallow: /courses/
+Allow: /courses$
 
 User-agent: ClaudeBot
 Allow: /
@@ -54,7 +57,8 @@ Disallow: /api/
 Disallow: /__/
 Disallow: /firebase/
 Disallow: /course_content/lessons/
-Disallow: /courses/*/modules/
+Disallow: /courses/
+Allow: /courses$
 
 User-agent: PerplexityBot
 Allow: /
@@ -63,7 +67,8 @@ Disallow: /api/
 Disallow: /__/
 Disallow: /firebase/
 Disallow: /course_content/lessons/
-Disallow: /courses/*/modules/
+Disallow: /courses/
+Allow: /courses$
 
 User-agent: CCBot
 Allow: /
@@ -72,7 +77,8 @@ Disallow: /api/
 Disallow: /__/
 Disallow: /firebase/
 Disallow: /course_content/lessons/
-Disallow: /courses/*/modules/
+Disallow: /courses/
+Allow: /courses$
 
 User-agent: Google-Extended
 Allow: /
@@ -81,7 +87,8 @@ Disallow: /api/
 Disallow: /__/
 Disallow: /firebase/
 Disallow: /course_content/lessons/
-Disallow: /courses/*/modules/
+Disallow: /courses/
+Allow: /courses$
 
 # Sitemap location
 Sitemap: https://aiintegrationcourse.com/sitemap.xml

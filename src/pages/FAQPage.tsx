@@ -2,6 +2,8 @@ import React from 'react';
 import CourseSchema from '../components/seo/CourseSchema';
 import SEO from '../components/SEO';
 import { faqTldr, homepageFaqItems } from '../content/marketingPages';
+import LeadMagnetForm from '../components/lead-magnet/LeadMagnetForm';
+import { topWorkflowsLeadMagnet } from '../content/leadMagnets';
 
 const FAQPage: React.FC = () => {
   return (
@@ -29,10 +31,27 @@ const FAQPage: React.FC = () => {
               {homepageFaqItems.map((item) => (
                 <details key={item.question} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                   <summary className="cursor-pointer text-lg font-semibold text-slate-950">{item.question}</summary>
-                  <p className="mt-3 leading-relaxed text-slate-700">{item.answer}</p>
+                  <p className="mt-3 leading-relaxed text-slate-700">
+                    {item.answer}{' '}
+                    {item.link && (
+                      <a href={item.link.href} className="font-semibold text-cyan-700 underline hover:text-cyan-900">
+                        {item.link.label}
+                      </a>
+                    )}
+                  </p>
                 </details>
               ))}
             </div>
+            <div className="mt-10 rounded-2xl border border-cyan-200 bg-cyan-50 p-6">
+              <h2 className="text-2xl font-bold text-slate-950">{topWorkflowsLeadMagnet.title}</h2>
+              <p className="mt-2 text-slate-700">{topWorkflowsLeadMagnet.description}</p>
+              <div className="mt-4">
+                <LeadMagnetForm source="faq_inline" theme="light" />
+              </div>
+            </div>
+            <p className="mt-8 text-center text-slate-700">
+              Ready to build? <a href="/start-trial" className="font-semibold text-cyan-700 underline">Start the $1 seven-day trial</a>.
+            </p>
           </div>
         </div>
       </div>
