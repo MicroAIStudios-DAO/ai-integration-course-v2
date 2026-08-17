@@ -18,7 +18,6 @@ Disallow: /course_content/lessons/
 # with nothing crawlable. Keep the public overview crawlable, but do not
 # permit crawling deeper course shells.
 Disallow: /courses/
-Allow: /courses$
 
 # Allow static assets
 Allow: /static/
@@ -38,7 +37,6 @@ Disallow: /__/
 Disallow: /firebase/
 Disallow: /course_content/lessons/
 Disallow: /courses/
-Allow: /courses$
 
 User-agent: OAI-SearchBot
 Allow: /
@@ -48,7 +46,6 @@ Disallow: /__/
 Disallow: /firebase/
 Disallow: /course_content/lessons/
 Disallow: /courses/
-Allow: /courses$
 
 User-agent: ClaudeBot
 Allow: /
@@ -58,7 +55,6 @@ Disallow: /__/
 Disallow: /firebase/
 Disallow: /course_content/lessons/
 Disallow: /courses/
-Allow: /courses$
 
 User-agent: PerplexityBot
 Allow: /
@@ -68,7 +64,6 @@ Disallow: /__/
 Disallow: /firebase/
 Disallow: /course_content/lessons/
 Disallow: /courses/
-Allow: /courses$
 
 User-agent: CCBot
 Allow: /
@@ -78,7 +73,6 @@ Disallow: /__/
 Disallow: /firebase/
 Disallow: /course_content/lessons/
 Disallow: /courses/
-Allow: /courses$
 
 User-agent: Google-Extended
 Allow: /
@@ -88,7 +82,6 @@ Disallow: /__/
 Disallow: /firebase/
 Disallow: /course_content/lessons/
 Disallow: /courses/
-Allow: /courses$
 
 # Sitemap location
 Sitemap: https://aiintegrationcourse.com/sitemap.xml

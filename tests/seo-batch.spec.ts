@@ -26,5 +26,6 @@ describe('CRO and SEO batch', () => {
     expect(source).toContain(".collection(LEADS_COLLECTION).doc(email)");
     expect(source).toContain('sourcePath: pagePath');
     expect(source).toContain('consent: marketingConsent');
+    expect(source).not.toMatch(/^\s+marketingConsent,\s*$/m);
   });
 });

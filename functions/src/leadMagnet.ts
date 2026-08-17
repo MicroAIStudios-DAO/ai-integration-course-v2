@@ -45,7 +45,6 @@ export const submitLeadMagnetV2 = onCall(
         sourcePath: pagePath,
         timestamp: now,
         consent: marketingConsent,
-        marketingConsent,
         leadMagnetId,
         updatedAt: now,
       },
