@@ -165,7 +165,7 @@ export const onLeadCreated = onDocumentCreated('leads/{leadId}', async (event) =
     checkout_funnel_stage: 'lead_captured',
     lifecyclestage: 'lead',
     hs_lead_status: 'NEW',
-    hs_marketing_email_opt_in: lead.marketingConsent === true,
+    hs_marketing_email_opt_in: lead.consent === true || lead.marketingConsent === true,
     hs_sms_opt_in: lead.smsConsent === true,
   });
 

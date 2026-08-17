@@ -6,6 +6,8 @@ import SEO from '../components/SEO';
 import { blogPosts, getBlogPostBySlug } from '../content/blogPosts';
 import '../styles/blog-content.css';
 import { MarkdownPre } from '../components/common/CopyableCodeBlock';
+import LeadMagnetForm from '../components/lead-magnet/LeadMagnetForm';
+import { topWorkflowsLeadMagnet } from '../content/leadMagnets';
 
 const formatDate = (value: string): string =>
   new Date(value).toLocaleDateString('en-US', {
@@ -225,18 +227,14 @@ const BlogPostPage: React.FC = () => {
           <div className="mt-10 rounded-[2rem] border border-cyan-200 bg-gradient-to-br from-cyan-50 to-slate-50 px-6 py-8 shadow-sm md:px-10">
             <p className="text-xs font-semibold uppercase tracking-widest text-cyan-700">Free Resource</p>
             <h2 className="mt-2 text-2xl font-bold text-slate-950">
-              Get the 2026 AI Coding Stack Cheat Sheet
+              {topWorkflowsLeadMagnet.title}
             </h2>
             <p className="mt-3 max-w-2xl text-slate-700">
-              The exact Cursor + Claude Code + Gemini workflow, the prompts that get the best results from each tool,
-              and the n8n glue layer that ties it all together — delivered free to your inbox.
+              {topWorkflowsLeadMagnet.description}
             </p>
-            <Link
-              to="/pricing"
-              className="mt-6 inline-flex items-center rounded-xl bg-slate-950 px-6 py-3 font-semibold text-white hover:bg-slate-800 transition-colors"
-            >
-              Get the Free Cheat Sheet →
-            </Link>
+            <div className="mt-6 max-w-md">
+              <LeadMagnetForm source={`blog_${post.slug}`} theme="light" />
+            </div>
           </div>
         )}
 

@@ -153,6 +153,8 @@ print_success "Verified that PROJECT_ID '$PROJECT_ID' exists and is accessible."
 firebase deploy "${FIREBASE_FLAGS[@]}"
 
 if [ $? -eq 0 ]; then
+    print_status "Submitting the deployed URL set to IndexNow..."
+    node scripts/indexnow-ping.mjs || print_warning "IndexNow submission failed; deployment remains successful."
     print_success "🎉 Production deployment completed successfully!"
     print_status "Your application is now live at: https://$SITE_ID.web.app"
 else
