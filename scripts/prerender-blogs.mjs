@@ -177,7 +177,7 @@ const leadMagnetCaptureHtml = (source) => `
   <section aria-label="Free AI automation roadmap">
     <h2>Top 5 AI Automation Workflows</h2>
     <p>Get the free roadmap and workflow guide delivered to your inbox.</p>
-    <form aria-label="Email capture form" data-lead-source="${escapeHtml(source)}">
+    <form aria-label="Email capture form" data-lead-source="${escapeHtml(source)}" onsubmit="return false">
       <label>Email address <input type="email" name="email" autocomplete="email" required></label>
       <label><input type="checkbox" name="consent" required> I agree to receive the guide and occasional build tips.</label>
       <button type="submit">Get the free guide</button>
