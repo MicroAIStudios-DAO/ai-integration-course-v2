@@ -21,7 +21,7 @@ const HOST = 'aiintegrationcourse.com';
 // still propagate to all IndexNow engines, but hitting Bing directly makes
 // them attributable in the Bing Webmaster Tools IndexNow dashboard.
 const ENDPOINT = 'https://www.bing.com/indexnow';
-const KEY_FILE = path.join(REPO_ROOT, `${INDEXNOW_KEY}.txt`);
+const KEY_FILE = path.join(REPO_ROOT, 'public', `${INDEXNOW_KEY}.txt`);
 
 function loadSitemapUrls() {
   const candidates = [
