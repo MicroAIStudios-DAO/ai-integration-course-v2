@@ -51,7 +51,7 @@
   color: var(--lg-ink);
   font-family: 'Open Sans', 'Segoe UI', system-ui, sans-serif;
   text-shadow: var(--lg-halo-body);
-  overflow-x: clip;
+  overflow-x: hidden;
 }
 
 .textbook-page { padding: 1.5rem 0 5rem; }
@@ -336,3 +336,17 @@
   .textbook-header h1, .lesson-content h1, .lesson-content h2, .lesson-content h3 { color: #111; text-shadow: none; }
   .lesson-content { color: #2d3748; }
 }
+
+/* ── Mobile fix: Neutralize Layout wrapper when Liquid Glass pages render ──
+   The Layout component adds container/padding/light-bg that conflicts with
+   the full-bleed dark Liquid Glass theme on mobile viewports. CSS :has()
+   removes those constraints without touching Layout.tsx or other pages. ──── */
+main:has(> .lg-page) {
+  padding: 0 !important;
+  max-width: none !important;
+  width: 100% !important;
+}
+.flex.min-h-screen:has(.lg-page) {
+  background: #0a0f1c !important;
+}
+
