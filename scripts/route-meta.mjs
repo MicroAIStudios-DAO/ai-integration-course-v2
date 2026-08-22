@@ -173,5 +173,5 @@ export const staticRoutes = [
 export const homepage = {
   h1: 'Build AI Workflows That Actually Work',
   blurb:
-    'The hands-on curriculum for developers and technical founders who need to ship reliable, production-grade AI agents — not brittle prompt demos. Master fault-tolerant agent architectures, production environments, and API-first design.',
+    'The implementation-first curriculum for business owners, operators, and builders who want working AI automations — not prompt demos. Seven modules, every one ending in a deployable project, with an AI tutor and sandbox at your side.',
 };

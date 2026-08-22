@@ -20,7 +20,7 @@ const NewLandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans relative overflow-hidden selection:bg-amber-500 selection:text-slate-950">
       <SEO
-        title="Advanced AI Integration & Systems Engineering"
+        title="Practical AI Automation Training"
         // Mirrors index.html's static description (search-length, ≤160 chars)
         // so raw HTML and the hydrated DOM agree.
         description="Practical AI automation training for business owners and developers. Learn Gemini API integration, AI workflow automation, and real deployment patterns."
@@ -79,7 +79,7 @@ const NewLandingPage: React.FC = () => {
 
         {/* Subheadline */}
         <p className="text-lg md:text-xl lg:text-2xl max-w-3xl text-slate-300 mb-6 leading-relaxed">
-          The hands-on curriculum for developers and technical founders who need to ship <span className="text-white font-semibold">reliable, production-grade AI agents</span> — not brittle prompt demos. Master fault-tolerant agent architectures, production environments, and API-first design.
+          The implementation-first curriculum for <span className="text-white font-semibold">business owners, operators, and builders</span> who want working AI automations — not prompt demos. Seven modules, every one ending in a deployable project, with an AI tutor and sandbox at your side.
         </p>
         <p className="text-sm md:text-base max-w-2xl text-slate-400 mb-10">
           No CS degree required, and no copy-paste prompt templates either. Start from your level and complete your first deployable automation in under 15 minutes.
@@ -181,7 +181,7 @@ const NewLandingPage: React.FC = () => {
                   <span className="text-amber-500 font-bold mt-0.5">✓</span>
                   <div>
                     <h4 className="text-sm font-bold text-white uppercase tracking-wide">Academic Rigor & Certifications</h4>
-                    <p className="text-xs text-slate-400 mt-0.5">Earn permanent cryptography-backed completion badges upon passing five rigorous module sandbox builds.</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Earn permanent cryptography-backed completion badges as you finish the module project builds.</p>
                   </div>
                 </div>
               </div>
@@ -225,9 +225,9 @@ const NewLandingPage: React.FC = () => {
                 <div className="w-12 h-12 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-xl text-cyan-400 font-bold mb-6">
                   🏗️
                 </div>
-                <h3 className="text-xl font-bold text-white font-headings uppercase mb-3">5 Deployable Blueprints</h3>
+                <h3 className="text-xl font-bold text-white font-headings uppercase mb-3">Deployable Module Projects</h3>
                 <p className="text-slate-400 text-sm leading-relaxed flex-grow">
-                  Build complete end-to-end applications. Learn the structural integration patterns for content orchestration pipelines, real-time query decoders, persistent memories, and certified vector engines.
+                  Every applied module ends in a working build you keep — an AI helpdesk, a deal underwriter, a strategy brief generator, a creative brief engine — plus the technical founders builds for persistent memory and search-grounded agents.
                 </p>
               </div>
             </div>
@@ -316,39 +316,63 @@ const NewLandingPage: React.FC = () => {
               Rigorous Curriculum Architecture
             </h2>
             <p className="mt-4 text-slate-400 text-sm max-w-xl mx-auto">
-              Our curriculum consists of 5 modular engineering projects, complete with source files, live test environments, and active diagnostics.
+              7 modules, 52 lessons. Every applied module ends in a deployable project, and the free lessons stay open forever.
             </p>
           </div>
 
+          {/* The REAL curriculum — titles, counts, and project names verified
+              against live Firestore (scripts/audit-live-lessons.mjs). Keep in
+              sync with the course; do not re-invent modules (Phase 4.2). */}
           <div className="space-y-4">
             {[
               {
-                num: "Module 01",
-                title: "Foundation & Serverless Environments",
-                description: "Establish your high-performance sandbox workspace. Master core API configurations, rate-limit defenses, and execute your first programmatic workflow script.",
-                lessons: "4 Lessons • 1 Hands-On Sandbox Build",
-                status: "Live"
+                num: "Module 1",
+                title: "Foundations of AI Integration",
+                description: "Start here free: core AI concepts, defining the automation opportunity, and your first hands-on build with the open Content Architect founders lesson.",
+                lessons: "8 Lessons • 5 Free",
+                status: "Free to Start"
               },
               {
-                num: "Module 02",
-                title: "The Informed Architect & Agentic Decoders",
-                description: "Integrate live web awareness modules using Serper.dev and search APIs. Ground your agents dynamically to avoid hallucinations and verify factual timelines.",
-                lessons: "6 Lessons • 2 Sandbox Builds",
-                status: "Live"
+                num: "Module 2",
+                title: "Building AI Products",
+                description: "AI in finance and investment — blockchain synergy, security and trust, investment trends — plus the open Informed Architect founders build, ending in the AI Portfolio Risk Snapshot + Investment Memo project.",
+                lessons: "5 Lessons • 1 Project",
+                status: "Free Preview"
               },
               {
-                num: "Module 03",
-                title: "Persistent Memory Layers (Vector DBs)",
-                description: "Connect your AI engines to vector storage layers (Pinecone / Firestore Embeddings). Structure long-term user profile recall and semantic document querying.",
-                lessons: "8 Lessons • 1 Advanced System Deploy",
-                status: "Beta"
+                num: "Module 3",
+                title: "Advanced AI Techniques",
+                description: "Launching AI-powered ventures — idea validation, MVP development, data strategy, and funding — plus the Persistent Memory founders build (vector databases), ending in the Startup Validator + Experiment Planner project.",
+                lessons: "8 Lessons • 1 Project",
+                status: "Pro"
               },
               {
-                num: "Module 04",
-                title: "Autonomous Workflow Orchestration",
-                description: "Design multi-agent orchestrator systems that communicate asynchronously. Build agent fallback schemas, conditional routing, and diagnostic monitoring pipelines.",
-                lessons: "5 Lessons • 1 Production Deploy",
-                status: "Coming Soon"
+                num: "Module 4",
+                title: "AI for Small Business",
+                description: "Customer service, marketing, operations, and tool selection for small teams, ending in the Small Business AI Helpdesk (FAQ + SOP assistant) project.",
+                lessons: "8 Lessons • 1 Project",
+                status: "Pro"
+              },
+              {
+                num: "Module 5",
+                title: "AI for Real Estate",
+                description: "Lead generation, valuation, marketing, and property management workflows, ending in the Real Estate Deal Underwriter + Listing Optimizer project.",
+                lessons: "8 Lessons • 1 Project",
+                status: "Pro"
+              },
+              {
+                num: "Module 6",
+                title: "AI for Executive Leadership",
+                description: "Strategic planning, operational excellence, and leadership decision-making with AI, ending in the Executive AI Strategy Brief Generator project.",
+                lessons: "6 Lessons • 1 Project",
+                status: "Pro"
+              },
+              {
+                num: "Module 7",
+                title: "AI and Creative Industries",
+                description: "Generative AI across visual arts, music, writing, film, and games, ending in the Creative Brief + Shot List Generator project.",
+                lessons: "9 Lessons • 1 Project",
+                status: "Pro"
               }
             ].map((module) => (
               <div key={module.num} className="border border-white/10 rounded-2xl bg-slate-950 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-amber-500/20 transition-colors">
@@ -363,11 +387,9 @@ const NewLandingPage: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-4 flex-shrink-0">
                   <span className={`text-[10px] uppercase tracking-wider font-bold px-3 py-1 rounded-full border ${
-                    module.status === "Live"
+                    module.status.startsWith("Free")
                       ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-                      : module.status === "Beta"
-                        ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
-                        : "border-white/10 bg-white/5 text-slate-400"
+                      : "border-amber-500/30 bg-amber-500/10 text-amber-300"
                   }`}>
                     {module.status}
                   </span>
@@ -388,8 +410,8 @@ const NewLandingPage: React.FC = () => {
               <p className="text-xs text-slate-400 mt-2 uppercase tracking-wider font-semibold">Practical Implementation</p>
             </div>
             <div className="p-6 border border-white/5 rounded-2xl bg-slate-950/50">
-              <p className="text-4xl md:text-5xl font-extrabold text-amber-500 font-headings">5</p>
-              <p className="text-xs text-slate-400 mt-2 uppercase tracking-wider font-semibold">Core Free Modules</p>
+              <p className="text-4xl md:text-5xl font-extrabold text-amber-500 font-headings">7</p>
+              <p className="text-xs text-slate-400 mt-2 uppercase tracking-wider font-semibold">Modules · Free Lessons Open</p>
             </div>
             <div className="p-6 border border-white/5 rounded-2xl bg-slate-950/50">
               <p className="text-4xl md:text-5xl font-extrabold text-amber-500 font-headings">14 Days</p>
@@ -435,7 +457,7 @@ const NewLandingPage: React.FC = () => {
           Admissions Are Now Open
         </h2>
         <p className="text-slate-300 mb-8 max-w-xl mx-auto text-sm md:text-base leading-relaxed">
-          Create a free student profile to immediately begin five baseline automation modules. When you are ready to master advanced multi-agent structures, transition to our premium tuition tiers.
+          Create a free student profile and start the open lessons immediately — five free lessons plus two open founders builds. When you are ready for the full curriculum, transition to Pro access.
         </p>
 
         {/* Dynamic Tuition Matric Container card */}
@@ -443,18 +465,21 @@ const NewLandingPage: React.FC = () => {
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-slate-950 text-[10px] font-black uppercase px-4 py-1 rounded-full tracking-widest">
             Recommended Track
           </div>
-          <span className="text-xs text-amber-400 uppercase tracking-widest font-bold">Standard Enrollment</span>
-          <h3 className="text-3xl font-extrabold text-white mt-2 font-headings uppercase">PIONEER COHORT</h3>
+          {/* Self-paced membership — the old "PIONEER COHORT" badge implied a
+              cohort product that doesn't exist (Phase 4.2). One trial rule
+              everywhere: $1 for 7 days, then $29.99/month unless cancelled. */}
+          <span className="text-xs text-amber-400 uppercase tracking-widest font-bold">Self-Paced Membership</span>
+          <h3 className="text-3xl font-extrabold text-white mt-2 font-headings uppercase">Pro Access</h3>
           <p className="text-slate-400 text-xs mt-2 max-w-md mx-auto">
             Full curriculum unlock, continuous workspace computations, contextual AI tutoring and verified cryptography credentials.
           </p>
           <div className="h-px bg-white/10 my-6" />
           <div className="flex justify-center items-baseline gap-2">
-            <span className="text-4xl md:text-5xl font-black text-white font-headings">$19.99</span>
-            <span className="text-slate-400 text-sm">/ month (Annual)</span>
+            <span className="text-4xl md:text-5xl font-black text-white font-headings">$1</span>
+            <span className="text-slate-400 text-sm">for a 7-day trial</span>
           </div>
           <p className="text-slate-400 text-xs mt-2">
-            Standard monthly is available at $29.99/mo. Start with a $1 seven-day trial — backed by our 14-Day Build Guarantee.
+            Then $29.99/month unless cancelled before day 8 — backed by our 14-Day Build Guarantee. Prefer annual? $239.88/year ($19.99/mo equivalent) saves $120.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 justify-center">

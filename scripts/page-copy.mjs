@@ -46,7 +46,7 @@ export const homepageBlocks = [
   },
   { h3: 'Academic Rigor & Certifications' },
   {
-    p: 'Earn permanent cryptography-backed completion badges upon passing five rigorous module sandbox builds.',
+    p: 'Earn permanent cryptography-backed completion badges as you finish the module project builds.',
   },
   { h2: 'A Superior Digital Campus Experience' },
   {
@@ -56,9 +56,9 @@ export const homepageBlocks = [
   {
     p: 'Never get stuck. Our specialized academic AI model is fine-tuned on the syllabus code repository. It reviews your workspace, answers queries, and helps you troubleshoot rate limits instantly.',
   },
-  { h3: '5 Deployable Blueprints' },
+  { h3: 'Deployable Module Projects' },
   {
-    p: 'Build complete end-to-end applications. Learn the structural integration patterns for content orchestration pipelines, real-time query decoders, persistent memories, and certified vector engines.',
+    p: 'Every applied module ends in a working build you keep — an AI helpdesk, a deal underwriter, a strategy brief generator, a creative brief engine — plus the technical founders builds for persistent memory and search-grounded agents.',
   },
   { h3: 'Active Workspace Sandboxing' },
   {
@@ -85,28 +85,40 @@ export const homepageBlocks = [
   },
   { h2: 'Rigorous Curriculum Architecture' },
   {
-    p: 'Our curriculum consists of 5 modular engineering projects, complete with source files, live test environments, and active diagnostics.',
+    p: '7 modules, 52 lessons. Every applied module ends in a deployable project, and the free lessons stay open forever.',
   },
-  { h3: 'Module 01: Foundation & Serverless Environments' },
+  { h3: 'Module 1: Foundations of AI Integration' },
   {
-    p: '4 Lessons • 1 Hands-On Sandbox Build. Establish your high-performance sandbox workspace. Master core API configurations, rate-limit defenses, and execute your first programmatic workflow script.',
+    p: '8 Lessons • 5 Free. Start here free: core AI concepts, defining the automation opportunity, and your first hands-on build with the open Content Architect founders lesson.',
   },
-  { h3: 'Module 02: The Informed Architect & Agentic Decoders' },
+  { h3: 'Module 2: Building AI Products' },
   {
-    p: '6 Lessons • 2 Sandbox Builds. Integrate live web awareness modules using Serper.dev and search APIs. Ground your agents dynamically to avoid hallucinations and verify factual timelines.',
+    p: '5 Lessons • 1 Project. AI in finance and investment — blockchain synergy, security and trust, investment trends — plus the open Informed Architect founders build, ending in the AI Portfolio Risk Snapshot + Investment Memo project.',
   },
-  { h3: 'Module 03: Persistent Memory Layers (Vector DBs)' },
+  { h3: 'Module 3: Advanced AI Techniques' },
   {
-    p: '8 Lessons • 1 Advanced System Deploy. Connect your AI engines to vector storage layers (Pinecone / Firestore Embeddings). Structure long-term user profile recall and semantic document querying. Status: Beta.',
+    p: '8 Lessons • 1 Project. Launching AI-powered ventures — idea validation, MVP development, data strategy, and funding — plus the Persistent Memory founders build (vector databases), ending in the Startup Validator + Experiment Planner project.',
   },
-  { h3: 'Module 04: Autonomous Workflow Orchestration' },
+  { h3: 'Module 4: AI for Small Business' },
   {
-    p: '5 Lessons • 1 Production Deploy. Design multi-agent orchestrator systems that communicate asynchronously. Build agent fallback schemas, conditional routing, and diagnostic monitoring pipelines. Status: Coming Soon.',
+    p: '8 Lessons • 1 Project. Customer service, marketing, operations, and tool selection for small teams, ending in the Small Business AI Helpdesk (FAQ + SOP assistant) project.',
+  },
+  { h3: 'Module 5: AI for Real Estate' },
+  {
+    p: '8 Lessons • 1 Project. Lead generation, valuation, marketing, and property management workflows, ending in the Real Estate Deal Underwriter + Listing Optimizer project.',
+  },
+  { h3: 'Module 6: AI for Executive Leadership' },
+  {
+    p: '6 Lessons • 1 Project. Strategic planning, operational excellence, and leadership decision-making with AI, ending in the Executive AI Strategy Brief Generator project.',
+  },
+  { h3: 'Module 7: AI and Creative Industries' },
+  {
+    p: '9 Lessons • 1 Project. Generative AI across visual arts, music, writing, film, and games, ending in the Creative Brief + Shot List Generator project.',
   },
   {
     ul: [
       '100% Practical Implementation',
-      '5 Core Free Modules',
+      '7 Modules · Free Lessons Open',
       '14 Days Build Guarantee',
       '24/7 Contextual Workspace Help',
     ],
@@ -117,11 +129,11 @@ export const homepageBlocks = [
   },
   { h2: 'Admissions Are Now Open' },
   {
-    p: 'Create a free student profile to immediately begin five baseline automation modules. When you are ready to master advanced multi-agent structures, transition to our premium tuition tiers.',
+    p: 'Create a free student profile and start the open lessons immediately — five free lessons plus two open founders builds. When you are ready for the full curriculum, transition to Pro access.',
   },
-  { h3: 'Standard Enrollment' },
+  { h3: 'Pro Access — Self-Paced Membership' },
   {
-    p: 'Full curriculum unlock, continuous workspace computations, contextual AI tutoring and verified cryptography credentials. $19.99 / month billed annually. Standard monthly is available at $29.99/mo. Start with a $1 seven-day trial — backed by our 14-Day Build Guarantee.',
+    p: 'Full curriculum unlock, continuous workspace computations, contextual AI tutoring and verified cryptography credentials. $1 for a 7-day trial, then $29.99/month unless cancelled before day 8 — backed by our 14-Day Build Guarantee. Prefer annual? $239.88/year ($19.99/mo equivalent) saves $120.',
   },
 ];
 
@@ -196,9 +208,9 @@ export const aboutBlocks = [
   {
     p: 'The platform is also built to stay current. AI tooling evolves monthly. The curriculum is reviewed and updated on the same cadence, and every lesson notes the last-updated date so you always know you are learning against the current state of the ecosystem — not a snapshot from 18 months ago.',
   },
-  { h2: 'Verified client outcomes' },
+  { h2: 'Client outcomes from real engagements' },
   {
-    p: 'The following results are drawn from real engagements. Industry and company names are anonymised at client request.',
+    p: 'The following results are drawn from real engagements, as reported within those projects. Industry and company names are anonymised at client request.',
   },
   { h3: 'Marketing Agency — Client Onboarding Automation' },
   {
